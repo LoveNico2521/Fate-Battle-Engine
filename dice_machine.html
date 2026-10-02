@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>我們的問題 - 16:9 寬螢幕全功能連鎖擲骰系統</title>
+  <title>我們的問題 - 16:9 全螢幕無限連鎖擲骰系統</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     @keyframes roll3d {
@@ -12,7 +12,6 @@
       100% { transform: rotateX(720deg) rotateY(360deg) scale(1); opacity: 1; }
     }
     .animate-roll { animation: roll3d 0.45s ease-out; }
-    /* 自訂滾動條 */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
     ::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.8); border-radius: 4px; }
@@ -31,11 +30,11 @@
           TRPG System
         </div>
         <h1 class="text-2xl font-black bg-gradient-to-r from-amber-300 via-amber-400 to-amber-500 bg-clip-text text-transparent">
-          《我們的問題》全螢幕連鎖擲骰系統
+          《我們的問題》全螢幕無限連鎖擲骰系統
         </h1>
       </div>
       <div class="text-xs text-slate-400 font-mono flex items-center gap-4">
-        <span>連鎖追擲 (Chain Loop)</span>
+        <span>抵銷後自動重擲原始骰</span>
         <span>•</span>
         <span>CS/CF 抵銷回歸提示 (Neutralization)</span>
         <span>•</span>
@@ -79,12 +78,12 @@
         <div class="space-y-3 pt-2">
           <button onclick="executeRoll('1d10')" class="w-full py-4 px-4 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg border border-indigo-400/30 transition-all flex flex-col items-center justify-center gap-1 group">
             <span class="text-lg tracking-wide">🎲 擲 1d10 連鎖</span>
-            <span class="text-[11px] text-indigo-200 opacity-80">10 ➔ 1d2 (1:CS / 2:CF) ➔ 自動持續追擲</span>
+            <span class="text-[11px] text-indigo-200 opacity-80">10 ➔ 1d2 (1:CS / 2:CF) ➔ 抵銷重擲原始骰</span>
           </button>
 
           <button onclick="executeRoll('1d100')" class="w-full py-4 px-4 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold rounded-2xl shadow-lg border border-emerald-400/30 transition-all flex flex-col items-center justify-center gap-1 group">
             <span class="text-lg tracking-wide">🎯 擲 1d100 高級連鎖</span>
-            <span class="text-[11px] text-emerald-200 opacity-80">=5 ➔ 1d10 ➔ 10(1d2=1:返回 1d100 / 1d2=2:續擲 1d10)</span>
+            <span class="text-[11px] text-emerald-200 opacity-80">=5 ➔ 1d10 ➔ 1d2 (CS:返1d100 / CF:續1d10 / 抵銷:重擲原始骰)</span>
           </button>
         </div>
 
@@ -166,12 +165,12 @@
       diceContainer.classList.add('animate-roll');
     }
 
-    // 核心連鎖引擎
+    // 核心連鎖引擎 (包含抵銷後重擲原始骰邏輯)
     function rollChainEngine(startType, boost) {
       let steps = [];
-      let currentMode = startType; // '1d100', '1d10', or standard
+      let currentMode = startType;
       let continueLoop = true;
-      let lastOutcome = null; // 'CS' or 'CF'
+      let lastOutcome = null; // 'CS' 或 'CF'
       let csStrike = 0;
       let cfStrike = 0;
       let returnedToList = false;
@@ -189,13 +188,28 @@
             step.outcome = 'DF-Trigger';
             step.msg = '🎲 1d100 = 5 觸發追擲 1d10！';
             steps.push(step);
-            currentMode = '1d10'; // 進入 1d10 連鎖追擲
+            currentMode = '1d10';
           } else if (raw100 >= 95) {
-            step.outcome = 'CS';
-            csStrike++;
-            step.msg = `✨ 1d100 = ${raw100} (>=95 大成功)`;
-            steps.push(step);
-            continueLoop = false;
+            const currentOutcome = 'CS';
+            // 檢查是否與上次抵銷
+            if (lastOutcome && lastOutcome !== currentOutcome) {
+              step.returnNotice = true;
+              returnedToList = true;
+              step.msg = `⚠️ 1d100 = ${raw100} (CS) 與前次 ${lastOutcome} 相互抵銷！請回歸原本列表 (Return to original list)`;
+              csStrike = 0;
+              cfStrike = 0;
+              lastOutcome = null;
+              currentMode = startType; // 重新擲原始骰！
+              steps.push(step);
+              continueLoop = true;
+            } else {
+              step.outcome = 'CS';
+              csStrike++;
+              lastOutcome = 'CS';
+              step.msg = `✨ 1d100 = ${raw100} (>=95 大成功)`;
+              steps.push(step);
+              continueLoop = false;
+            }
           } else {
             step.msg = `1d100 普通結果: ${raw100}`;
             steps.push(step);
@@ -211,32 +225,36 @@
             const d2 = Math.floor(Math.random() * 2) + 1;
             step.extraD2 = d2;
             const currentOutcome = (d2 === 1) ? 'CS' : 'CF';
-            step.outcome = currentOutcome;
 
             // 檢查 CS/CF 相互抵銷
             if (lastOutcome && lastOutcome !== currentOutcome) {
               step.returnNotice = true;
               returnedToList = true;
-              step.msg = `⚠️ 觸發 CS/CF 相互抵銷！請返回原本列表 (Return to original list)`;
+              step.outcome = currentOutcome;
+              step.msg = `⚠️ 1d10=10 (1d2=${d2}:${currentOutcome}) 觸發 CS/CF 相互抵銷！請回歸原本列表 (Return to original list)`;
               csStrike = 0;
               cfStrike = 0;
               lastOutcome = null;
+              currentMode = startType; // 重新擲原始骰！
+              steps.push(step);
+              continueLoop = true; // 繼續迴圈以進行原始骰重擲！
             } else {
+              step.outcome = currentOutcome;
               if (currentOutcome === 'CS') {
                 csStrike++;
                 step.msg = `✨ 1d10=10 ➔ 1d2=1 (CS)！返回 1d100 重新擲骰！`;
-                currentMode = '1d100'; // "if=10 and 1d2=1(cs) return to 1d100"
+                currentMode = '1d100';
               } else {
                 cfStrike++;
                 step.msg = `💥 1d10=10 ➔ 1d2=2 (CF)！繼續追擲下一次 1d10！`;
-                currentMode = '1d10';  // "if 1d100=5 and 1d10=10, 1d2=2(cf) > 1d10"
+                currentMode = '1d10';
               }
               lastOutcome = currentOutcome;
+              steps.push(step);
+              continueLoop = true;
             }
-            steps.push(step);
-            continueLoop = true;
           } else {
-            step.msg = `1d10 連鎖終點 ➔ 原始: ${raw10}`;
+            step.msg = `1d10 普通結果 ➔ 原始: ${raw10}`;
             steps.push(step);
             continueLoop = false;
           }
@@ -315,7 +333,7 @@
           if (s.returnNotice) {
             flowHtml += `
               <div class="p-2.5 bg-amber-950/90 border border-amber-400 rounded-xl text-amber-300 text-center font-bold text-xs animate-pulse shadow-lg">
-                ⚠️ 注意：已觸發 CS/CF 抵銷機制！請返回原本列表 (Return to original list)
+                ⚠️ 注意：已觸發 CS/CF 抵銷機制！已重置連擊並重新進行原始骰 (${type}) 擲骰！請返回原本列表 (Return to original list)
               </div>
             `;
           }
