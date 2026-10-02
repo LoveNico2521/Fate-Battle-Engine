@@ -12,9 +12,9 @@
       100% { transform: rotateX(720deg) rotateY(360deg) scale(1); opacity: 1; }
     }
     .animate-roll { animation: roll3d 0.45s ease-out; }
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar { width: 6px(M); height: 6px(M); }
     ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
-    ::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.8); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.8); border-radius: 4px(M); }
     ::-webkit-scrollbar-thumb:hover { background: rgba(71, 85, 105, 1); }
   </style>
 </head>
@@ -34,7 +34,7 @@
         </h1>
       </div>
       <div class="text-xs text-slate-400 font-mono flex items-center gap-4">
-        <span>ra (&le; 壓骰) / ro (&ge; 闖骰) 雙檢定</span>
+        <span>ra (<= 壓骰) / ro (>= 闖骰) 雙檢定</span>
         <span>•</span>
         <span>與基準同向 ➔ 深入 (+1)</span>
         <span>•</span>
@@ -78,13 +78,13 @@
           <div class="space-y-2 bg-slate-900/90 border border-slate-700/80 rounded-xl p-3">
             <div class="flex justify-between items-center">
               <label class="text-xs font-bold text-amber-400">🎯 檢定模式與目標值 (Target)</label>
-              <span id="mode-desc" class="text-[10px] text-slate-400 font-mono">ra (&le; 目標值成功)</span>
+              <span id="mode-desc" class="text-[10px] text-slate-400 font-mono">ra (<= 目標值成功)</span>
             </div>
             
             <div class="grid grid-cols-2 gap-2">
               <div class="flex rounded-lg overflow-hidden border border-slate-700 bg-slate-950 p-0.5">
-                <button id="btn-mode-ra" onclick="setCheckMode('ra')" class="flex-1 py-1 text-xs font-bold rounded-md bg-indigo-600 text-white transition">ra (&le;)</button>
-                <button id="btn-mode-ro" onclick="setCheckMode('ro')" class="flex-1 py-1 text-xs font-bold rounded-md text-slate-400 hover:text-white transition">ro (&ge;)</button>
+                <button id="btn-mode-ra" onclick="setCheckMode('ra')" class="flex-1 py-1 text-xs font-bold rounded-md bg-indigo-600 text-white transition">ra (<=)</button>
+                <button id="btn-mode-ro" onclick="setCheckMode('ro')" class="flex-1 py-1 text-xs font-bold rounded-md text-slate-400 hover:text-white transition">ro (>=)</button>
               </div>
 
               <div class="flex items-center bg-slate-950 border border-slate-700 rounded-lg overflow-hidden px-2">
@@ -100,12 +100,12 @@
         <div class="space-y-3 pt-1">
           <button onclick="executeRoll('1d10')" class="w-full py-3.5 px-4 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg border border-indigo-400/30 transition-all flex flex-col items-center justify-center gap-1">
             <span class="text-base tracking-wide">🎲 擲 1d10 堆疊連鎖</span>
-            <span class="text-[10px] text-indigo-200 opacity-80">同向 ➔ 深入加疊 (+1) | 反向 ➔ 退回上層 (-1)</span>
+            <span class="text-[10px] text-indigo-200 opacity-80">1d2=1: 大失敗 | 1d2=2: 大成功</span>
           </button>
 
           <button onclick="executeRoll('1d100')" class="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold rounded-2xl shadow-lg border border-emerald-400/30 transition-all flex flex-col items-center justify-center gap-1">
             <span class="text-base tracking-wide">🎯 擲 1d100 堆疊連鎖 (ra/ro)</span>
-            <span class="text-[10px] text-emerald-200 opacity-80">&le;5 / &ge;96 ➔ 推進追擲 1d10 | 比對目標值</span>
+            <span class="text-[10px] text-emerald-200 opacity-80">1~5 ➔ 追擲 1d10 | 96~100 ➔ 大失敗</span>
           </button>
         </div>
 
@@ -206,19 +206,18 @@
       diceContainer.classList.add('animate-roll');
     }
 
-    // 核心引擎：精確比對首個基準結果 (initialChainOutcome)
     function rollChainEngine(startType, boost, targetVal, mode) {
       let steps = [];
-      let currentLevel = 0; // s0
-      let initialChainOutcome = null; // 紀錄第一個出現的 CS 或 CF 作為基準
+      let currentLevel = 0;
+      let initialChainOutcome = null;
 
       function getDieType(lvl) {
         return lvl === 0 ? startType : '1d10';
       }
 
       let continueLoop = true;
-      let csStrike = 0;
-      let cfStrike = 0;
+      let failStrike = 0;    // 原 csStrike 替換為 大失敗連擊數
+      let successStrike = 0; // 原 cfStrike 替換為 大成功連擊數
       let loopSafety = 0;
 
       while (continueLoop && loopSafety < 50) {
@@ -245,17 +244,17 @@
 
           if (raw100 <= 5) {
             step.outcome = 'DF-Trigger';
-            currentLevel++; // 進入 s1
-            step.msg = `🎲 1d100 = ${raw100} (Low 5: <=5) ➔ 進入 s${currentLevel} (1d10)！ (${checkDetail})`;
+            currentLevel++;
+            step.msg = `🎲 1d100 = ${raw100} (1~5) ➔ 進入 s${currentLevel} (1d10)！ (${checkDetail})`;
             steps.push(step);
             continueLoop = true;
           } else if (raw100 >= 96) {
-            const currentOutcome = 'CS';
+            const currentOutcome = '大失敗';
             if (!initialChainOutcome) initialChainOutcome = currentOutcome;
-            csStrike++;
+            failStrike++;
             step.outcome = currentOutcome;
-            currentLevel++; // 進入 s1
-            step.msg = `✨ 1d100 = ${raw100} (Top 5: >=96 大成功) ➔ 進入 s${currentLevel} (1d10)！ | ${checkDetail}`;
+            currentLevel++;
+            step.msg = `💥 1d100 = ${raw100} (96~100: 大失敗) ➔ 進入 s${currentLevel} (1d10)！ | ${checkDetail}`;
             steps.push(step);
             continueLoop = true;
           } else {
@@ -281,30 +280,28 @@
           if (raw10 === 10) {
             const d2 = Math.floor(Math.random() * 2) + 1;
             step.extraD2 = d2;
-            const currentOutcome = (d2 === 1) ? 'CS' : 'CF';
+            
+            // d2=1 為「大失敗」；d2=2 為「大成功」
+            const currentOutcome = (d2 === 1) ? '大失敗' : '大成功';
             step.outcome = currentOutcome;
 
-            if (currentOutcome === 'CS') csStrike++;
-            else cfStrike++;
+            if (currentOutcome === '大失敗') failStrike++;
+            else successStrike++;
 
-            // 如果這是連鎖中第一個出現的 CS/CF，設定為基準
             if (!initialChainOutcome) {
               initialChainOutcome = currentOutcome;
             }
 
-            // 與第一個基準結果比較同反向
             if (currentOutcome === initialChainOutcome) {
-              // 同向 ➔ +1 深入加疊 (sN -> sN+1)
               currentLevel++;
-              step.msg = `${currentOutcome === 'CS' ? '✨' : '💥'} 1d10=10 ➔ 1d2=${d2} (${currentOutcome})！與基準 (${initialChainOutcome}) 同向 ➔ 深入加疊至 s${currentLevel} (1d10)！`;
+              step.msg = `${currentOutcome === '大失敗' ? '💥' : '✨'} 1d10=10 ➔ 1d2=${d2} (${currentOutcome})！與基準 (${initialChainOutcome}) 同向 ➔ 深入加疊至 s${currentLevel} (1d10)！`;
             } else {
-              // 反向 ➔ -1 退回上層 (sN -> sN-1)
               if (currentLevel > 0) {
                 currentLevel--;
                 let prevDie = getDieType(currentLevel);
-                step.msg = `${currentOutcome === 'CS' ? '✨' : '💥'} 1d10=10 ➔ 1d2=${d2} (${currentOutcome})！與基準 (${initialChainOutcome}) 反向 ➔ 退回 s${currentLevel} (${prevDie})！`;
+                step.msg = `${currentOutcome === '大失敗' ? '💥' : '✨'} 1d10=10 ➔ 1d2=${d2} (${currentOutcome})！與基準 (${initialChainOutcome}) 反向 ➔ 退回 s${currentLevel} (${prevDie})！`;
               } else {
-                step.msg = `${currentOutcome === 'CS' ? '✨' : '💥'} 1d10=10 ➔ 1d2=${d2} (${currentOutcome})！與基準 (${initialChainOutcome}) 反向 ➔ 退回頂層 s0！`;
+                step.msg = `${currentOutcome === '大失敗' ? '💥' : '✨'} 1d10=10 ➔ 1d2=${d2} (${currentOutcome})！與基準 (${initialChainOutcome}) 反向 ➔ 退回頂層 s0！`;
               }
             }
 
@@ -326,7 +323,7 @@
         }
       }
 
-      return { steps, csStrike, cfStrike };
+      return { steps, failStrike, successStrike };
     }
 
     function executeRoll(type) {
@@ -339,18 +336,19 @@
       chainFlowDisplay.classList.remove('hidden');
 
       let allRuns = [];
-      let totalCS = 0, totalCF = 0;
+      let totalFail = 0, totalSuccess = 0;
 
       for (let i = 0; i < count; i++) {
         const run = rollChainEngine(type, boost, targetVal, checkMode);
         allRuns.push(run);
-        totalCS += run.csStrike;
-        totalCF += run.cfStrike;
+        totalFail += run.failStrike;
+        totalSuccess += run.successStrike;
       }
 
+      // 替換標籤顯示為 x重大失敗 / x重大成功
       let strikeHtml = '';
-      if (totalCS > 0) strikeHtml += `<span class="px-3 py-1 bg-emerald-950 border border-emerald-500/60 text-emerald-400 rounded-full">✨ CS Strike x${totalCS}</span>`;
-      if (totalCF > 0) strikeHtml += `<span class="px-3 py-1 bg-rose-950 border border-rose-500/60 text-rose-400 rounded-full">💥 CF Strike x${totalCF}</span>`;
+      if (totalFail > 0) strikeHtml += `<span class="px-3 py-1 bg-rose-950 border border-rose-500/60 text-rose-400 rounded-full">💥 ${totalFail}重大失敗</span>`;
+      if (totalSuccess > 0) strikeHtml += `<span class="px-3 py-1 bg-emerald-950 border border-emerald-500/60 text-emerald-400 rounded-full">✨ ${totalSuccess}重大成功</span>`;
       strikeBadges.innerHTML = strikeHtml;
 
       let flowHtml = '';
@@ -361,10 +359,10 @@
 
         run.steps.forEach((s, sIdx) => {
           let stepBg = 'bg-slate-900 border-slate-800';
-          if (s.outcome === 'CS') {
-            stepBg = 'bg-emerald-950/40 border-emerald-500/40';
-          } else if (s.outcome === 'CF') {
+          if (s.outcome === '大失敗') {
             stepBg = 'bg-rose-950/40 border-rose-500/40';
+          } else if (s.outcome === '大成功') {
+            stepBg = 'bg-emerald-950/40 border-emerald-500/40';
           } else if (s.outcome === 'DF-Trigger') {
             stepBg = 'bg-amber-950/40 border-amber-500/40';
           }
@@ -388,7 +386,7 @@
       chainFlowDisplay.innerHTML = flowHtml;
 
       const boostText = boost !== 0 ? ` (Boost:${boost >= 0 ? '+' : ''}${boost})` : '';
-      const summaryText = `${count}x ${type}${boostText} [${checkMode.toUpperCase()}:${targetVal}] ➔ 連鎖檢定完成 [CS Strike:${totalCS} | CF Strike:${totalCF}]`;
+      const summaryText = `${count}x ${type}${boostText} [${checkMode.toUpperCase()}:${targetVal}] ➔ 連鎖檢定完成 [${totalFail}重大失敗 | ${totalSuccess}重大成功]`;
       addHistory(summaryText);
     }
 
