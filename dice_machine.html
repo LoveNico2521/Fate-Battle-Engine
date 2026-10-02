@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>我們的問題 - 專用擲骰機</title>
+  <title>我們的問題 - 專用連鎖擲骰機</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     @keyframes roll3d {
@@ -20,11 +20,11 @@
     
     <!-- 標題區 -->
     <div class="text-center space-y-1">
-      <h1 class="text-2xl font-bold tracking-wide text-amber-400">🎲 《我們的問題》擲骰機</h1>
-      <p class="text-xs text-slate-400">專用動態追擲與規則判定系統</p>
+      <h1 class="text-2xl font-bold tracking-wide text-amber-400">🎲 《我們的問題》連鎖擲骰機</h1>
+      <p class="text-xs text-slate-400">連鎖追擲 ‧ CS/CF 抵銷回歸 ‧ 連擊統計</p>
     </div>
 
-    <!-- 參數設定面板 (數量 & 加成) -->
+    <!-- 參數設定面板 -->
     <div class="grid grid-cols-2 gap-3 bg-slate-900/80 border border-slate-700/60 rounded-xl p-3">
       <div>
         <label class="block text-xs font-medium text-slate-400 mb-1">擲骰數量</label>
@@ -46,25 +46,25 @@
     </div>
 
     <!-- 主要顯示區 -->
-    <div class="bg-slate-950/80 border border-slate-700/60 rounded-xl p-4 text-center flex flex-col items-center justify-center min-h-[160px] relative overflow-hidden">
+    <div class="bg-slate-950/80 border border-slate-700/60 rounded-xl p-4 text-center flex flex-col items-center justify-center min-h-[180px] relative overflow-hidden">
       <div id="dice-container" class="w-full transition-all duration-300">
-        <div id="dice-value" class="text-6xl font-black tracking-tight text-amber-300">--</div>
-        <div id="sub-result" class="text-sm font-medium text-slate-400 mt-2 min-h-[24px]">點擊上方按鈕開始擲骰</div>
+        <div id="dice-value" class="text-5xl font-black tracking-tight text-amber-300">--</div>
+        <div id="sub-result" class="text-xs font-medium text-slate-400 mt-2 min-h-[24px]">點擊下方按鈕開始連鎖擲骰</div>
       </div>
-      <div id="multi-results-list" class="w-full space-y-1.5 hidden max-h-44 overflow-y-auto pr-1"></div>
+      <div id="chain-log-display" class="w-full space-y-1.5 hidden max-h-48 overflow-y-auto text-xs text-left pr-1"></div>
       <div id="outcome-badge" class="mt-3 hidden px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase"></div>
     </div>
 
     <!-- 擲骰控制按鈕區 -->
     <div class="grid grid-cols-2 gap-3">
       <button onclick="executeRoll('1d10')" class="py-3 px-4 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-semibold rounded-xl shadow-lg transition-all flex flex-col items-center justify-center border border-indigo-400/30">
-        <span class="text-lg">擲 1d10</span>
-        <span class="text-[10px] text-indigo-200">10 ➔ 自動加擲 1d2</span>
+        <span class="text-lg">擲 1d10 連鎖</span>
+        <span class="text-[10px] text-indigo-200">10 ➔ 1d2 ➔ 自動繼續追擲</span>
       </button>
 
       <button onclick="executeRoll('1d100')" class="py-3 px-4 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-semibold rounded-xl shadow-lg transition-all flex flex-col items-center justify-center border border-emerald-400/30">
         <span class="text-lg">擲 1d100</span>
-        <span class="text-[10px] text-emerald-200">5 (DF) / 95 (CS)</span>
+        <span class="text-[10px] text-emerald-200">&le;5 (DF) / &ge;95 (CS)</span>
       </button>
     </div>
 
@@ -95,7 +95,7 @@
     const boostInput = document.getElementById('base-boost');
     const diceValueEl = document.getElementById('dice-value');
     const subResultEl = document.getElementById('sub-result');
-    const multiResultsList = document.getElementById('multi-results-list');
+    const chainLogDisplay = document.getElementById('chain-log-display');
     const outcomeBadgeEl = document.getElementById('outcome-badge');
     const diceContainer = document.getElementById('dice-container');
     const historyLogEl = document.getElementById('history-log');
@@ -115,7 +115,7 @@
 
     function playRollAnimation() {
       diceContainer.classList.remove('animate-roll');
-      void diceContainer.offsetWidth; // 強制重繪
+      void diceContainer.offsetWidth;
       diceContainer.classList.add('animate-roll');
     }
 
@@ -129,107 +129,157 @@
       outcomeBadgeEl.classList.remove('hidden');
     }
 
+    // 處理 1d10 連鎖邏輯的核心函式
+    function roll1d10Chain(boost) {
+      let steps = [];
+      let continueChain = true;
+      let lastOutcome = null; // 'CS' or 'CF'
+      let csStrike = 0;
+      let cfStrike = 0;
+      let returnedToList = false;
+
+      while (continueChain) {
+        const raw = Math.floor(Math.random() * 10) + 1;
+        const final = raw + boost;
+        let step = { raw, final, extraD2: null, outcome: null, strikeMsg: '', returnNotice: false };
+
+        if (raw === 10) {
+          const d2 = Math.floor(Math.random() * 2) + 1;
+          step.extraD2 = d2;
+          const currentOutcome = (d2 === 1) ? 'CS' : 'CF';
+          step.outcome = currentOutcome;
+
+          // 判斷是否與前一次抵銷 (CS 碰上 CF 或 CF 碰上 CS)
+          if (lastOutcome && lastOutcome !== currentOutcome) {
+            step.returnNotice = true;
+            returnedToList = true;
+            step.strikeMsg = '⚠️ CS/CF 相互抵銷 ➔ 回歸原本列表 (Return to original list)';
+            // 抵銷後重置連擊數
+            csStrike = 0;
+            cfStrike = 0;
+            lastOutcome = null;
+          } else {
+            // 相同結果，累計 Strike
+            if (currentOutcome === 'CS') {
+              csStrike++;
+              step.strikeMsg = `✨ CS Strike x${csStrike}`;
+            } else {
+              cfStrike++;
+              step.strikeMsg = `💥 CF Strike x${cfStrike}`;
+            }
+            lastOutcome = currentOutcome;
+          }
+          steps.push(step);
+          // 骰出 10 則繼續進行下一次 1d10 追擲
+          continueChain = true;
+        } else {
+          // 一般結果，終止連鎖
+          steps.push(step);
+          continueChain = false;
+        }
+      }
+
+      return { steps, csStrike, cfStrike, returnedToList };
+    }
+
     function executeRoll(type) {
       playRollAnimation();
       const count = parseInt(countInput.value) || 1;
       const boost = parseInt(boostInput.value) || 0;
-      let rollResults = [];
-      let totalValue = 0;
 
-      for (let i = 0; i < count; i++) {
-        let item = { id: i + 1, type, raw: 0, boost, final: 0, extra: null, tag: null, tagClass: '' };
-
-        if (type === '1d10') {
-          item.raw = Math.floor(Math.random() * 10) + 1;
-          item.final = item.raw + boost;
-
-          if (item.raw === 10) {
-            const d2 = Math.floor(Math.random() * 2) + 1;
-            item.extra = d2;
-            if (d2 === 1) {
-              item.tag = '✨ CS (大成功)';
-              item.tagClass = 'bg-emerald-950/80 text-emerald-400 border-emerald-500/50';
-            } else {
-              item.tag = '💥 CF (大失敗)';
-              item.tagClass = 'bg-rose-950/80 text-rose-400 border-rose-500/50';
-            }
-          }
-        } else if (type === '1d100') {
-          item.raw = Math.floor(Math.random() * 100) + 1;
-          item.final = item.raw + boost;
-
-          if (item.raw === 5) {
-            item.tag = '☠️ DF (劇烈失敗)';
-            item.tagClass = 'bg-rose-950/80 text-rose-400 border-rose-500/50';
-          } else if (item.raw === 95) {
-            item.tag = '✨ CS (大成功)';
-            item.tagClass = 'bg-emerald-950/80 text-emerald-400 border-emerald-500/50';
-          }
-        } else {
-          const sides = parseInt(type.replace('d', ''));
-          item.raw = Math.floor(Math.random() * sides) + 1;
-          item.final = item.raw + boost;
+      if (type === '1d10') {
+        let allChainRuns = [];
+        for (let i = 0; i < count; i++) {
+          allChainRuns.push(roll1d10Chain(boost));
         }
 
-        totalValue += item.final;
-        rollResults.push(item);
-      }
+        if (count === 1 && allChainRuns[0].steps.length === 1) {
+          // 單次且無追擲
+          chainLogDisplay.classList.add('hidden');
+          diceValueEl.classList.remove('hidden');
+          subResultEl.classList.remove('hidden');
 
-      // 單顆與多顆的畫面處理
-      if (count === 1) {
-        multiResultsList.classList.add('hidden');
+          const step = allChainRuns[0].steps[0];
+          diceValueEl.innerText = step.final;
+          subResultEl.innerText = `基礎: ${step.raw}${boost !== 0 ? ` (加值: ${boost >= 0 ? '+' : ''}${boost})` : ''}`;
+          setOutcomeBadge(null);
+          addHistory(`1d10 ➔ ${step.final} (原始:${step.raw})`);
+        } else {
+          // 有連鎖追擲或多顆骰子模式
+          diceValueEl.classList.add('hidden');
+          subResultEl.classList.add('hidden');
+          setOutcomeBadge(null);
+          chainLogDisplay.classList.remove('hidden');
+
+          let html = '';
+          let historySummary = [];
+
+          allChainRuns.forEach((run, idx) => {
+            if (count > 1) html += `<div class="font-bold text-amber-400 mt-1"># 組別 ${idx + 1}：</div>`;
+            
+            run.steps.forEach((s, sIdx) => {
+              if (s.extraD2 !== null) {
+                const color = s.outcome === 'CS' ? 'text-emerald-400' : 'text-rose-400';
+                html += `
+                  <div class="bg-slate-900 border border-slate-700/70 p-2 rounded-lg space-y-1">
+                    <div class="flex justify-between font-bold">
+                      <span>第 ${sIdx + 1} 次 1d10 = 10 ➔ 追擲 1d2 = <span class="${color}">${s.extraD2} (${s.outcome})</span></span>
+                      <span class="text-amber-300">最終: ${s.final}</span>
+                    </div>
+                    ${s.strikeMsg ? `<div class="text-[11px] font-bold ${s.returnNotice ? 'text-amber-300 animate-pulse' : color}">${s.strikeMsg}</div>` : ''}
+                  </div>
+                `;
+              } else {
+                html += `<div class="bg-slate-900/60 border border-slate-800 p-1.5 rounded-lg text-slate-400">連鎖終點 1d10 ➔ 原始: ${s.raw} | 最終: ${s.final}</div>`;
+              }
+            });
+
+            if (run.returnedToList) {
+              html += `<div class="p-1.5 bg-amber-950/80 border border-amber-500/50 rounded-lg text-amber-300 text-center font-bold">⚠️ 注意：已觸發 CS/CF 抵銷，請返回原本列表！</div>`;
+            }
+          });
+
+          chainLogDisplay.innerHTML = html;
+          addHistory(`1d10 連鎖完成 (${count}組) | 包含追擲與抵銷檢查`);
+        }
+
+      } else if (type === '1d100') {
+        chainLogDisplay.classList.add('hidden');
         diceValueEl.classList.remove('hidden');
         subResultEl.classList.remove('hidden');
 
-        const res = rollResults[0];
-        diceValueEl.innerText = res.final;
+        const raw = Math.floor(Math.random() * 100) + 1;
+        const final = raw + boost;
+        diceValueEl.innerText = final;
 
-        let subText = `基礎: ${res.raw}`;
-        if (boost !== 0) subText += ` (${boost >= 0 ? '+' : ''}${boost})`;
+        let subText = `基礎: ${raw}${boost !== 0 ? ` (加值: ${boost >= 0 ? '+' : ''}${boost})` : ''}`;
+        subResultEl.innerText = subText;
 
-        if (res.type === '1d10' && res.raw === 10) {
-          subResultEl.innerHTML = `<span class="text-amber-400 font-bold">1d10=10</span> ➔ 追擲 1d2 = <span class="font-bold ${res.extra === 1 ? 'text-emerald-400' : 'text-rose-400'}">${res.extra}</span> ${boost !== 0 ? `| 加值:${boost}` : ''}`;
-        } else {
-          subResultEl.innerText = subText;
-        }
-
-        if (res.tag) {
-          setOutcomeBadge(res.tag, res.tagClass);
+        if (raw <= 5) {
+          setOutcomeBadge('☠️ Dramatic Failure (&le;5 劇烈失敗)', 'bg-rose-950/80 text-rose-400 border-rose-500/50');
+          addHistory(`1d100 ➔ ${final} (原始:${raw}) | ☠️ DF (劇烈失敗)`);
+        } else if (raw >= 95) {
+          setOutcomeBadge('✨ Critical Success (&ge;95 大成功)', 'bg-emerald-950/80 text-emerald-400 border-emerald-500/50');
+          addHistory(`1d100 ➔ ${final} (原始:${raw}) | ✨ CS (大成功)`);
         } else {
           setOutcomeBadge(null);
+          addHistory(`1d100 ➔ ${final} (原始:${raw})`);
         }
 
       } else {
-        // 多顆模式
-        diceValueEl.classList.add('hidden');
-        subResultEl.classList.add('hidden');
+        chainLogDisplay.classList.add('hidden');
+        diceValueEl.classList.remove('hidden');
+        subResultEl.classList.remove('hidden');
+
+        const sides = parseInt(type.replace('d', ''));
+        const raw = Math.floor(Math.random() * sides) + 1;
+        const final = raw + boost;
+
+        diceValueEl.innerText = final;
+        subResultEl.innerText = `擲出 ${type} | 基礎: ${raw}`;
         setOutcomeBadge(null);
-        multiResultsList.classList.remove('hidden');
-
-        multiResultsList.innerHTML = rollResults.map(r => `
-          <div class="flex items-center justify-between bg-slate-900 border border-slate-700/60 rounded-lg px-3 py-1.5 text-xs">
-            <span class="text-slate-400 font-mono">#${r.id}</span>
-            <span class="font-bold text-amber-300 text-sm">${r.final} <span class="text-[10px] text-slate-500 font-normal">(原始:${r.raw})</span></span>
-            ${r.extra !== null ? `<span class="text-slate-300 text-[11px]">1d2=${r.extra}</span>` : ''}
-            ${r.tag ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold border ${r.tagClass}">${r.tag}</span>` : '<span class="text-slate-500">-</span>'}
-          </div>
-        `).join('');
+        addHistory(`${type} ➔ ${final} (原始:${raw})`);
       }
-
-      // 歷史紀錄處理
-      const boostText = boost !== 0 ? ` [Boost ${boost >= 0 ? '+' : ''}${boost}]` : '';
-      let logText = `${count}x ${type}${boostText} ➔ `;
-      
-      if (count === 1) {
-        const res = rollResults[0];
-        logText += `${res.final}`;
-        if (res.extra !== null) logText += ` (1d2=${res.extra})`;
-        if (res.tag) logText += ` | ${res.tag}`;
-      } else {
-        logText += `總和 ${totalValue} (` + rollResults.map(r => r.final + (r.tag ? `:${r.tag.slice(0, 4)}` : '')).join(', ') + `)`;
-      }
-
-      addHistory(logText);
     }
 
     function addHistory(text) {
