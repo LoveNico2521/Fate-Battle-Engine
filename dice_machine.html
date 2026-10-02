@@ -34,7 +34,7 @@
         </h1>
       </div>
       <div class="text-xs text-slate-400 font-mono flex items-center gap-4">
-        <span>&le;5 及 &ge;95 區間連鎖</span>
+        <span>Low 5 (&le;5) & Top 5 (&ge;96) 極端對稱區間</span>
         <span>•</span>
         <span>CS/CF 抵銷重擲原始骰</span>
         <span>•</span>
@@ -83,7 +83,7 @@
 
           <button onclick="executeRoll('1d100')" class="w-full py-4 px-4 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold rounded-2xl shadow-lg border border-emerald-400/30 transition-all flex flex-col items-center justify-center gap-1 group">
             <span class="text-lg tracking-wide">🎯 擲 1d100 高級連鎖</span>
-            <span class="text-[11px] text-emerald-200 opacity-80">&le;5 ➔ 1d10 ➔ 1d2 (CS:返1d100 / CF:續1d10 / 抵銷:重擲原始骰)</span>
+            <span class="text-[11px] text-emerald-200 opacity-80">&le;5 (1~5) ➔ 1d10 ➔ 1d2 | &ge;96 (96~100) ➔ CS</span>
           </button>
         </div>
 
@@ -165,7 +165,7 @@
       diceContainer.classList.add('animate-roll');
     }
 
-    // 核心連鎖引擎 (正確採用 <= 5 與 >= 95 區間)
+    // 核心連鎖引擎 (正確對應 Low 5: 1~5 與 Top 5: 96~100)
     function rollChainEngine(startType, boost) {
       let steps = [];
       let currentMode = startType;
@@ -184,19 +184,19 @@
           const final100 = raw100 + boost;
           let step = { type: '1d100', raw: raw100, final: final100, extraD2: null, outcome: null, msg: '', returnNotice: false };
 
-          // 正確的小於等於 5 判定 (Less than or equal to 5)
+          // Low 5 (1, 2, 3, 4, 5) 觸發 1d10 追擲
           if (raw100 <= 5) {
             step.outcome = 'DF-Trigger';
-            step.msg = `🎲 1d100 = ${raw100} (<=5) 觸發追擲 1d10！`;
+            step.msg = `🎲 1d100 = ${raw100} (Low 5: &le;5) 觸發追擲 1d10！`;
             steps.push(step);
             currentMode = '1d10';
-          // 大於等於 95 判定 (Greater than or equal to 95)
-          } else if (raw100 >= 95) {
+          // Top 5 (96, 97, 98, 99, 100) 觸發大成功 (CS)
+          } else if (raw100 >= 96) {
             const currentOutcome = 'CS';
             if (lastOutcome && lastOutcome !== currentOutcome) {
               step.returnNotice = true;
               returnedToList = true;
-              step.msg = `⚠️ 1d100 = ${raw100} (>=95:CS) 與前次 ${lastOutcome} 相互抵銷！請回歸原本列表 (Return to original list)`;
+              step.msg = `⚠️ 1d100 = ${raw100} (Top 5: &ge;96:CS) 與前次 ${lastOutcome} 相互抵銷！請回歸原本列表 (Return to original list)`;
               csStrike = 0;
               cfStrike = 0;
               lastOutcome = null;
@@ -207,7 +207,7 @@
               step.outcome = 'CS';
               csStrike++;
               lastOutcome = 'CS';
-              step.msg = `✨ 1d100 = ${raw100} (>=95 大成功)`;
+              step.msg = `✨ 1d100 = ${raw100} (Top 5: &ge;96 大成功)`;
               steps.push(step);
               continueLoop = false;
             }
