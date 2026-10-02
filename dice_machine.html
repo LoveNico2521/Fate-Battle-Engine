@@ -12,9 +12,9 @@
       100% { transform: rotateX(720deg) rotateY(360deg) scale(1); opacity: 1; }
     }
     .animate-roll { animation: roll3d 0.45s ease-out; }
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar { width: 6px(M); height: 6px(M); }
     ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
-    ::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.8); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.8); border-radius: 4px(M); }
     ::-webkit-scrollbar-thumb:hover { background: rgba(71, 85, 105, 1); }
   </style>
 </head>
@@ -206,18 +206,18 @@
       diceContainer.classList.add('animate-roll');
     }
 
+    // 核心連鎖引擎：導入「淨 Stacks 向量抵銷」演算法
     function rollChainEngine(startType, boost, targetVal, mode) {
       let steps = [];
       let currentLevel = 0;
-      let initialChainOutcome = null;
+      let initialChainOutcome = null; // 紀錄第一個出現的 CS/CF 基準種類
+      let currentStack = 0;           // 淨 Stacks 數量 (抵銷後)
 
       function getDieType(lvl) {
         return lvl === 0 ? startType : '1d10';
       }
 
       let continueLoop = true;
-      let successStrike = 0; // cs -> 大成功連擊數
-      let failStrike = 0;    // cf -> 大失敗連擊數
       let loopSafety = 0;
 
       while (continueLoop && loopSafety < 50) {
@@ -251,7 +251,7 @@
           } else if (raw100 >= 96) {
             const currentOutcome = '大成功';
             if (!initialChainOutcome) initialChainOutcome = currentOutcome;
-            successStrike++;
+            currentStack++;
             step.outcome = currentOutcome;
             currentLevel++;
             step.msg = `✨ 1d100 = ${raw100} (96~100: 大成功) ➔ 進入 s${currentLevel} (1d10)！ | ${checkDetail}`;
@@ -281,21 +281,23 @@
             const d2 = Math.floor(Math.random() * 2) + 1;
             step.extraD2 = d2;
             
-            // cs (1d2=1) 為「大成功」；cf (1d2=2) 為「大失敗」
+            // d2=1 為「大成功」；d2=2 為「大失敗」
             const currentOutcome = (d2 === 1) ? '大成功' : '大失敗';
             step.outcome = currentOutcome;
-
-            if (currentOutcome === '大成功') successStrike++;
-            else failStrike++;
 
             if (!initialChainOutcome) {
               initialChainOutcome = currentOutcome;
             }
 
             if (currentOutcome === initialChainOutcome) {
+              // 同向 ➔ +1 Stack
+              currentStack++;
               currentLevel++;
               step.msg = `${currentOutcome === '大成功' ? '✨' : '💥'} 1d10=10 ➔ 1d2=${d2} (${currentOutcome})！與基準 (${initialChainOutcome}) 同向 ➔ 深入加疊至 s${currentLevel} (1d10)！`;
             } else {
+              // 反向 ➔ -1 Stack (抵銷)
+              if (currentStack > 0) currentStack--;
+              
               if (currentLevel > 0) {
                 currentLevel--;
                 let prevDie = getDieType(currentLevel);
@@ -323,7 +325,12 @@
         }
       }
 
-      return { steps, successStrike, failStrike };
+      // 回傳淨 Stack 結算狀態
+      return { 
+        steps, 
+        finalStack: currentStack, 
+        baseOutcome: initialChainOutcome 
+      };
     }
 
     function executeRoll(type) {
@@ -336,18 +343,24 @@
       chainFlowDisplay.classList.remove('hidden');
 
       let allRuns = [];
-      let totalSuccess = 0, totalFail = 0;
+      let totalSuccessStacks = 0;
+      let totalFailStacks = 0;
 
       for (let i = 0; i < count; i++) {
         const run = rollChainEngine(type, boost, targetVal, checkMode);
         allRuns.push(run);
-        totalSuccess += run.successStrike;
-        totalFail += run.failStrike;
+
+        if (run.finalStack > 0 && run.baseOutcome) {
+          if (run.baseOutcome === '大成功') totalSuccessStacks += run.finalStack;
+          if (run.baseOutcome === '大失敗') totalFailStacks += run.finalStack;
+        }
       }
 
+      // 頂部總結算 Badges
       let strikeHtml = '';
-      if (totalSuccess > 0) strikeHtml += `<span class="px-3 py-1 bg-emerald-950 border border-emerald-500/60 text-emerald-400 rounded-full">✨ ${totalSuccess}重大成功</span>`;
-      if (totalFail > 0) strikeHtml += `<span class="px-3 py-1 bg-rose-950 border border-rose-500/60 text-rose-400 rounded-full">💥 ${totalFail}重大失敗</span>`;
+      if (totalSuccessStacks > 0) strikeHtml += `<span class="px-3 py-1 bg-emerald-950 border border-emerald-500/60 text-emerald-400 rounded-full">✨ 淨計: ${totalSuccessStacks}重大成功</span>`;
+      if (totalFailStacks > 0) strikeHtml += `<span class="px-3 py-1 bg-rose-950 border border-rose-500/60 text-rose-400 rounded-full">💥 淨計: ${totalFailStacks}重大失敗</span>`;
+      if (totalSuccessStacks === 0 && totalFailStacks === 0) strikeHtml += `<span class="px-3 py-1 bg-slate-800 border border-slate-700 text-slate-400 rounded-full">⚪ 淨計: 0 Stacks</span>`;
       strikeBadges.innerHTML = strikeHtml;
 
       let flowHtml = '';
@@ -366,14 +379,18 @@
             stepBg = 'bg-amber-950/40 border-amber-500/40';
           }
 
-          // 在該組連鎖的最後一步 (Last Roll) 顯示最終累積的 Stacks 結算
+          // 在最後一步顯示真正的淨 Stacks (抵銷後)
           const isLast = (sIdx === run.steps.length - 1);
           let stackBadge = '';
           if (isLast) {
-            if (run.successStrike > 0) {
-              stackBadge = `<span class="px-2.5 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 rounded-lg font-black text-xs">✨ 最終結算：${run.successStrike}重大成功</span>`;
-            } else if (run.failStrike > 0) {
-              stackBadge = `<span class="px-2.5 py-1 bg-rose-500/20 text-rose-300 border border-rose-500/50 rounded-lg font-black text-xs">💥 最終結算：${run.failStrike}重大失敗</span>`;
+            if (run.finalStack > 0 && run.baseOutcome) {
+              if (run.baseOutcome === '大成功') {
+                stackBadge = `<span class="px-2.5 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 rounded-lg font-black text-xs">✨ 最終結算：${run.finalStack}重大成功</span>`;
+              } else {
+                stackBadge = `<span class="px-2.5 py-1 bg-rose-500/20 text-rose-300 border border-rose-500/50 rounded-lg font-black text-xs">💥 最終結算：${run.finalStack}重大失敗</span>`;
+              }
+            } else {
+              stackBadge = `<span class="px-2 py-0.5 bg-slate-800 text-slate-400 border border-slate-700 rounded text-[11px] font-bold">⚪ 最終結算：0 Stacks</span>`;
             }
           }
 
@@ -397,7 +414,7 @@
       chainFlowDisplay.innerHTML = flowHtml;
 
       const boostText = boost !== 0 ? ` (Boost:${boost >= 0 ? '+' : ''}${boost})` : '';
-      const summaryText = `${count}x ${type}${boostText} [${checkMode.toUpperCase()}:${targetVal}] ➔ 連鎖檢定完成 [${totalSuccess}重大成功 | ${totalFail}重大失敗]`;
+      const summaryText = `${count}x ${type}${boostText} [${checkMode.toUpperCase()}:${targetVal}] ➔ 連鎖檢定完成 [淨計: ${totalSuccessStacks}重大成功 / ${totalFailStacks}重大失敗]`;
       addHistory(summaryText);
     }
 
