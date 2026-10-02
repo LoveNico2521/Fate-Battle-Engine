@@ -34,9 +34,9 @@
         </h1>
       </div>
       <div class="text-xs text-slate-400 font-mono flex items-center gap-4">
-        <span>抵銷後自動重擲原始骰</span>
+        <span>&le;5 及 &ge;95 區間連鎖</span>
         <span>•</span>
-        <span>CS/CF 抵銷回歸提示 (Neutralization)</span>
+        <span>CS/CF 抵銷重擲原始骰</span>
         <span>•</span>
         <span>Strike 累計 (Combo)</span>
       </div>
@@ -83,7 +83,7 @@
 
           <button onclick="executeRoll('1d100')" class="w-full py-4 px-4 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold rounded-2xl shadow-lg border border-emerald-400/30 transition-all flex flex-col items-center justify-center gap-1 group">
             <span class="text-lg tracking-wide">🎯 擲 1d100 高級連鎖</span>
-            <span class="text-[11px] text-emerald-200 opacity-80">=5 ➔ 1d10 ➔ 1d2 (CS:返1d100 / CF:續1d10 / 抵銷:重擲原始骰)</span>
+            <span class="text-[11px] text-emerald-200 opacity-80">&le;5 ➔ 1d10 ➔ 1d2 (CS:返1d100 / CF:續1d10 / 抵銷:重擲原始骰)</span>
           </button>
         </div>
 
@@ -165,7 +165,7 @@
       diceContainer.classList.add('animate-roll');
     }
 
-    // 核心連鎖引擎 (包含抵銷後重擲原始骰邏輯)
+    // 核心連鎖引擎 (正確採用 <= 5 與 >= 95 區間)
     function rollChainEngine(startType, boost) {
       let steps = [];
       let currentMode = startType;
@@ -184,22 +184,23 @@
           const final100 = raw100 + boost;
           let step = { type: '1d100', raw: raw100, final: final100, extraD2: null, outcome: null, msg: '', returnNotice: false };
 
-          if (raw100 === 5) {
+          // 正確的小於等於 5 判定 (Less than or equal to 5)
+          if (raw100 <= 5) {
             step.outcome = 'DF-Trigger';
-            step.msg = '🎲 1d100 = 5 觸發追擲 1d10！';
+            step.msg = `🎲 1d100 = ${raw100} (<=5) 觸發追擲 1d10！`;
             steps.push(step);
             currentMode = '1d10';
+          // 大於等於 95 判定 (Greater than or equal to 95)
           } else if (raw100 >= 95) {
             const currentOutcome = 'CS';
-            // 檢查是否與上次抵銷
             if (lastOutcome && lastOutcome !== currentOutcome) {
               step.returnNotice = true;
               returnedToList = true;
-              step.msg = `⚠️ 1d100 = ${raw100} (CS) 與前次 ${lastOutcome} 相互抵銷！請回歸原本列表 (Return to original list)`;
+              step.msg = `⚠️ 1d100 = ${raw100} (>=95:CS) 與前次 ${lastOutcome} 相互抵銷！請回歸原本列表 (Return to original list)`;
               csStrike = 0;
               cfStrike = 0;
               lastOutcome = null;
-              currentMode = startType; // 重新擲原始骰！
+              currentMode = startType; // 重擲原始骰
               steps.push(step);
               continueLoop = true;
             } else {
@@ -226,7 +227,6 @@
             step.extraD2 = d2;
             const currentOutcome = (d2 === 1) ? 'CS' : 'CF';
 
-            // 檢查 CS/CF 相互抵銷
             if (lastOutcome && lastOutcome !== currentOutcome) {
               step.returnNotice = true;
               returnedToList = true;
@@ -235,9 +235,9 @@
               csStrike = 0;
               cfStrike = 0;
               lastOutcome = null;
-              currentMode = startType; // 重新擲原始骰！
+              currentMode = startType; // 重擲原始骰
               steps.push(step);
-              continueLoop = true; // 繼續迴圈以進行原始骰重擲！
+              continueLoop = true;
             } else {
               step.outcome = currentOutcome;
               if (currentOutcome === 'CS') {
@@ -259,7 +259,6 @@
             continueLoop = false;
           }
         } else {
-          // 通用標準骰子 (d4, d6, d8, d12, d20)
           const sides = parseInt(startType.replace('d', ''));
           const raw = Math.floor(Math.random() * sides) + 1;
           const final = raw + boost;
@@ -289,13 +288,11 @@
         totalCF += run.cfStrike;
       }
 
-      // 更新 Strike 標籤
       let strikeHtml = '';
       if (totalCS > 0) strikeHtml += `<span class="px-3 py-1 bg-emerald-950 border border-emerald-500/60 text-emerald-400 rounded-full">✨ CS Strike x${totalCS}</span>`;
       if (totalCF > 0) strikeHtml += `<span class="px-3 py-1 bg-rose-950 border border-rose-500/60 text-rose-400 rounded-full">💥 CF Strike x${totalCF}</span>`;
       strikeBadges.innerHTML = strikeHtml;
 
-      // 渲染連鎖流程圖譜
       let flowHtml = '';
       allRuns.forEach((run, idx) => {
         if (count > 1) {
@@ -304,17 +301,12 @@
 
         run.steps.forEach((s, sIdx) => {
           let stepBg = 'bg-slate-900 border-slate-800';
-          let tagColor = 'text-slate-300';
-
           if (s.outcome === 'CS') {
             stepBg = 'bg-emerald-950/40 border-emerald-500/40';
-            tagColor = 'text-emerald-400';
           } else if (s.outcome === 'CF') {
             stepBg = 'bg-rose-950/40 border-rose-500/40';
-            tagColor = 'text-rose-400';
           } else if (s.outcome === 'DF-Trigger') {
             stepBg = 'bg-amber-950/40 border-amber-500/40';
-            tagColor = 'text-amber-400';
           }
 
           flowHtml += `
@@ -342,7 +334,6 @@
 
       chainFlowDisplay.innerHTML = flowHtml;
 
-      // 歷史紀錄處理
       const boostText = boost !== 0 ? ` (Boost:${boost >= 0 ? '+' : ''}${boost})` : '';
       const summaryText = `${count}x ${type}${boostText} ➔ 完成 ${allRuns.length} 組連鎖 [CS Strike:${totalCS} | CF Strike:${totalCF}]`;
       addHistory(summaryText);
