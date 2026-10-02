@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>我們的問題 - 16:9 全螢幕 RA/RO 無限連鎖擲骰系統</title>
+  <title>我們的問題 - 16:9 全螢幕層級堆疊寫作檢定系統</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     @keyframes roll3d {
@@ -30,15 +30,15 @@
           TRPG System
         </div>
         <h1 class="text-2xl font-black bg-gradient-to-r from-amber-300 via-amber-400 to-amber-500 bg-clip-text text-transparent">
-          《我們的問題》全螢幕 RA/RO 連鎖檢定系統
+          《我們的問題》全螢幕寫作檢定系統
         </h1>
       </div>
       <div class="text-xs text-slate-400 font-mono flex items-center gap-4">
         <span>ra (&le; 壓骰) / ro (&ge; 闖骰) 雙檢定</span>
         <span>•</span>
-        <span>Low 5 (&le;5) / Top 5 (&ge;96) 極端連鎖</span>
+        <span>CS (1d2=1) ➔ 進階追擲</span>
         <span>•</span>
-        <span>CS/CF 抵銷重擲</span>
+        <span>CF (1d2=2) ➔ 抵銷退回</span>
       </div>
     </div>
 
@@ -99,13 +99,13 @@
         <!-- 主要控制按鈕 -->
         <div class="space-y-3 pt-1">
           <button onclick="executeRoll('1d10')" class="w-full py-3.5 px-4 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg border border-indigo-400/30 transition-all flex flex-col items-center justify-center gap-1">
-            <span class="text-base tracking-wide">🎲 擲 1d10 連鎖</span>
-            <span class="text-[10px] text-indigo-200 opacity-80">10 ➔ 1d2 (CS:續擲1d10 / CF:續擲1d10 / 抵銷重擲)</span>
+            <span class="text-base tracking-wide">🎲 擲 1d10 堆疊連鎖</span>
+            <span class="text-[10px] text-indigo-200 opacity-80">1d2=1 ➔ 進階追擲 | 1d2=2 ➔ 抵銷退回</span>
           </button>
 
           <button onclick="executeRoll('1d100')" class="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold rounded-2xl shadow-lg border border-emerald-400/30 transition-all flex flex-col items-center justify-center gap-1">
-            <span class="text-base tracking-wide">🎯 擲 1d100 高級連鎖 (ra/ro)</span>
-            <span class="text-[10px] text-emerald-200 opacity-80">&le;5 (1~5:追擲) | &ge;96 (96~100:CS) | 比對目標值</span>
+            <span class="text-base tracking-wide">🎯 擲 1d100 堆疊連鎖 (ra/ro)</span>
+            <span class="text-[10px] text-emerald-200 opacity-80">&le;5 ➔ 進階追擲 1d10 | &ge;96 ➔ CS | 比對目標值</span>
           </button>
         </div>
 
@@ -137,7 +137,7 @@
           <div id="dice-container" class="flex-1 overflow-y-auto space-y-3 pr-2">
             <div id="empty-state" class="h-full flex flex-col items-center justify-center text-slate-600 space-y-2">
               <div class="text-4xl">🎲</div>
-              <div class="text-sm">設定 ra / ro 模式與目標值後，點擊左側按鈕開始擲骰</div>
+              <div class="text-sm">點擊左側按鈕開始執行寫作連鎖檢定</div>
             </div>
             <div id="chain-flow-display" class="space-y-3 hidden"></div>
           </div>
@@ -169,7 +169,7 @@
     const diceContainer = document.getElementById('dice-container');
     const historyLog = document.getElementById('history-log');
 
-    let checkMode = 'ra'; // 'ra' (<=) or 'ro' (>=)
+    let checkMode = 'ra';
     let history = [];
 
     function setCheckMode(mode) {
@@ -206,104 +206,93 @@
       diceContainer.classList.add('animate-roll');
     }
 
-    // 核心連鎖引擎 (正確對應 1d10 起手 vs 1d100 起手的 CS 流向)
+    // 內部依舊精確執行 0-based index 堆疊邏輯，但 UI 隱藏 s0/s1 標籤
     function rollChainEngine(startType, boost, targetVal, mode) {
       let steps = [];
-      let currentMode = startType;
+      let currentLevel = (startType === '1d100') ? 0 : 1; // 0-based: s0 or s1
+      let levelTypes = [];
+      levelTypes[currentLevel] = startType;
+
       let continueLoop = true;
-      let lastOutcome = null; // 'CS' 或 'CF'
       let csStrike = 0;
       let cfStrike = 0;
-      let returnedToList = false;
       let loopSafety = 0;
 
       while (continueLoop && loopSafety < 50) {
         loopSafety++;
+        let dieType = levelTypes[currentLevel] || '1d10';
 
-        if (currentMode === '1d100') {
+        if (dieType === '1d100') {
           const raw100 = Math.floor(Math.random() * 100) + 1;
           const final100 = raw100 + boost;
-          
           let isSuccess = (mode === 'ra') ? (final100 <= targetVal) : (final100 >= targetVal);
-          let checkTag = isSuccess ? '✅ 成功' : '❌ 失敗';
-          let checkDetail = `[${mode.toUpperCase()} ${mode === 'ra' ? '<=' : '>='} ${targetVal}] ➔ ${checkTag}`;
+          let checkDetail = `[${mode.toUpperCase()} ${mode === 'ra' ? '<=' : '>='} ${targetVal}] ➔ ${isSuccess ? '✅ 成功' : '❌ 失敗'}`;
 
-          let step = { type: '1d100', raw: raw100, final: final100, extraD2: null, outcome: null, msg: '', returnNotice: false, checkDetail };
+          let step = { 
+            type: '1d100', 
+            raw: raw100, 
+            final: final100, 
+            extraD2: null, 
+            outcome: null, 
+            msg: '', 
+            checkDetail 
+          };
 
-          // Low 5 (1, 2, 3, 4, 5) 觸發 1d10 追擲
           if (raw100 <= 5) {
             step.outcome = 'DF-Trigger';
-            step.msg = `🎲 1d100 = ${raw100} (Low 5: <=5) 觸發追擲 1d10！ (${checkDetail})`;
+            currentLevel++; // 推進至下一層
+            levelTypes[currentLevel] = '1d10';
+            step.msg = `🎲 1d100 = ${raw100} (Low 5: <=5) ➔ 觸發進階 1d10 追擲！ (${checkDetail})`;
             steps.push(step);
-            currentMode = '1d10';
-          // Top 5 (96, 97, 98, 99, 100) 觸發大成功 (CS)
           } else if (raw100 >= 96) {
-            const currentOutcome = 'CS';
-            if (lastOutcome && lastOutcome !== currentOutcome) {
-              step.returnNotice = true;
-              returnedToList = true;
-              step.msg = `⚠️ 1d100 = ${raw100} (Top 5: CS) 與前次 ${lastOutcome} 相互抵銷！重置連擊並回歸原本列表 (${startType})！`;
-              csStrike = 0;
-              cfStrike = 0;
-              lastOutcome = null;
-              currentMode = startType; // 重擲原始起手骰
-              steps.push(step);
-              continueLoop = true;
-            } else {
-              step.outcome = 'CS';
-              csStrike++;
-              lastOutcome = 'CS';
-              step.msg = `✨ 1d100 = ${raw100} (Top 5: >=96 大成功) | ${checkDetail}`;
-              steps.push(step);
-              continueLoop = false;
-            }
+            step.outcome = 'CS';
+            csStrike++;
+            step.msg = `✨ 1d100 = ${raw100} (Top 5: >=96 大成功) | ${checkDetail}`;
+            steps.push(step);
+            continueLoop = false;
           } else {
             step.msg = `1d100 結果: ${raw100} | ${checkDetail}`;
             steps.push(step);
             continueLoop = false;
           }
 
-        } else if (currentMode === '1d10') {
+        } else if (dieType === '1d10') {
           const raw10 = Math.floor(Math.random() * 10) + 1;
           const final10 = raw10 + boost;
-          let step = { type: '1d10', raw: raw10, final: final10, extraD2: null, outcome: null, msg: '', returnNotice: false, checkDetail: '' };
+          let step = { 
+            type: '1d10', 
+            raw: raw10, 
+            final: final10, 
+            extraD2: null, 
+            outcome: null, 
+            msg: '', 
+            checkDetail: '' 
+          };
 
           if (raw10 === 10) {
             const d2 = Math.floor(Math.random() * 2) + 1;
             step.extraD2 = d2;
             const currentOutcome = (d2 === 1) ? 'CS' : 'CF';
+            step.outcome = currentOutcome;
 
-            // 檢查 CS/CF 相互抵銷
-            if (lastOutcome && lastOutcome !== currentOutcome) {
-              step.returnNotice = true;
-              returnedToList = true;
-              step.outcome = currentOutcome;
-              step.msg = `⚠️ 1d10=10 (1d2=${d2}:${currentOutcome}) 與前次 ${lastOutcome} 相互抵銷！重置連擊並回歸原本列表 (${startType})！`;
-              csStrike = 0;
-              cfStrike = 0;
-              lastOutcome = null;
-              currentMode = startType; // 重擲原始起手骰！
+            if (d2 === 1) { // CS ➔ 推進進階 (+1 Level)
+              csStrike++;
+              currentLevel++;
+              levelTypes[currentLevel] = '1d10';
+              step.msg = `✨ 1d10=10 ➔ 1d2=1 (CS)！進階追擲下一次 1d10！`;
               steps.push(step);
               continueLoop = true;
-            } else {
-              step.outcome = currentOutcome;
-              if (currentOutcome === 'CS') {
-                csStrike++;
-                if (startType === '1d100') {
-                  step.msg = `✨ 1d10=10 ➔ 1d2=1 (CS)！返回 1d100 重新擲骰！`;
-                  currentMode = '1d100';
-                } else {
-                  step.msg = `✨ 1d10=10 ➔ 1d2=1 (CS)！繼續追擲下一次 1d10！`;
-                  currentMode = '1d10';
-                }
+            } else { // CF ➔ 抵銷退回 (-1 Level)
+              cfStrike++;
+              if (currentLevel > 0) {
+                currentLevel--;
+                step.msg = `💥 1d10=10 ➔ 1d2=2 (CF)！觸發抵銷，退回上一層 (${levelTypes[currentLevel]}) 重新擲骰！`;
               } else {
-                cfStrike++;
-                step.msg = `💥 1d10=10 ➔ 1d2=2 (CF)！繼續追擲下一次 1d10！`;
-                currentMode = '1d10';
+                step.msg = `💥 1d10=10 ➔ 1d2=2 (CF)！底層大失敗！`;
+                continueLoop = false;
               }
-              lastOutcome = currentOutcome;
               steps.push(step);
-              continueLoop = true;
+              continueLoop = (currentLevel >= 0);
             }
           } else {
             step.msg = `1d10 普通結果 ➔ 原始: ${raw10}`;
@@ -311,17 +300,17 @@
             continueLoop = false;
           }
         } else {
-          const sides = parseInt(startType.replace('d', ''));
+          const sides = parseInt(dieType.replace('d', ''));
           const raw = Math.floor(Math.random() * sides) + 1;
           const final = raw + boost;
           let isSuccess = (mode === 'ra') ? (final <= targetVal) : (final >= targetVal);
           let checkDetail = `[${mode.toUpperCase()} ${mode === 'ra' ? '<=' : '>='} ${targetVal}] ➔ ${isSuccess ? '✅ 成功' : '❌ 失敗'}`;
-          steps.push({ type: startType, raw, final, extraD2: null, outcome: null, msg: `擲出 ${startType} ➔ 原始: ${raw} | ${checkDetail}`, returnNotice: false, checkDetail });
+          steps.push({ type: dieType, raw, final, extraD2: null, outcome: null, msg: `擲出 ${dieType} ➔ 原始: ${raw} | ${checkDetail}`, checkDetail });
           continueLoop = false;
         }
       }
 
-      return { steps, csStrike, cfStrike, returnedToList };
+      return { steps, csStrike, cfStrike };
     }
 
     function executeRoll(type) {
@@ -376,21 +365,13 @@
               </div>
             </div>
           `;
-
-          if (s.returnNotice) {
-            flowHtml += `
-              <div class="p-2.5 bg-amber-950/90 border border-amber-400 rounded-xl text-amber-300 text-center font-bold text-xs animate-pulse shadow-lg">
-                ⚠️ 注意：已觸發 CS/CF 抵銷機制！已重置連擊並重新進行原始起手骰 (${type}) 擲骰！請返回原本列表 (Return to original list)
-              </div>
-            `;
-          }
         });
       });
 
       chainFlowDisplay.innerHTML = flowHtml;
 
       const boostText = boost !== 0 ? ` (Boost:${boost >= 0 ? '+' : ''}${boost})` : '';
-      const summaryText = `${count}x ${type}${boostText} [${checkMode.toUpperCase()}:${targetVal}] ➔ 完成 ${allRuns.length} 組連鎖 [CS Strike:${totalCS} | CF Strike:${totalCF}]`;
+      const summaryText = `${count}x ${type}${boostText} [${checkMode.toUpperCase()}:${targetVal}] ➔ 連鎖檢定完成 [CS Strike:${totalCS} | CF Strike:${totalCF}]`;
       addHistory(summaryText);
     }
 
