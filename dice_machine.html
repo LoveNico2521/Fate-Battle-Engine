@@ -12,9 +12,9 @@
       100% { transform: rotateX(720deg) rotateY(360deg) scale(1); opacity: 1; }
     }
     .animate-roll { animation: roll3d 0.45s ease-out; }
-    ::-webkit-scrollbar { width: 6px(M); height: 6px(M); }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
-    ::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.8); border-radius: 4px(M); }
+    ::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.8); border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: rgba(71, 85, 105, 1); }
   </style>
 </head>
@@ -34,7 +34,7 @@
         </h1>
       </div>
       <div class="text-xs text-slate-400 font-mono flex items-center gap-4">
-        <span>ra (<= 壓骰) / ro (>= 闖骰) 雙檢定</span>
+        <span>ra (<= 目標值) / ro (>= 目標值) 雙檢定</span>
         <span>•</span>
         <span>與基準同向 ➔ 深入 (+1)</span>
         <span>•</span>
@@ -100,12 +100,12 @@
         <div class="space-y-3 pt-1">
           <button onclick="executeRoll('1d10')" class="w-full py-3.5 px-4 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg border border-indigo-400/30 transition-all flex flex-col items-center justify-center gap-1">
             <span class="text-base tracking-wide">🎲 擲 1d10 堆疊連鎖</span>
-            <span class="text-[10px] text-indigo-200 opacity-80">1d2=1: 大失敗 | 1d2=2: 大成功</span>
+            <span class="text-[10px] text-indigo-200 opacity-80">1d2=1: 大成功 | 1d2=2: 大失敗</span>
           </button>
 
           <button onclick="executeRoll('1d100')" class="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold rounded-2xl shadow-lg border border-emerald-400/30 transition-all flex flex-col items-center justify-center gap-1">
             <span class="text-base tracking-wide">🎯 擲 1d100 堆疊連鎖 (ra/ro)</span>
-            <span class="text-[10px] text-emerald-200 opacity-80">1~5 ➔ 追擲 1d10 | 96~100 ➔ 大失敗</span>
+            <span class="text-[10px] text-emerald-200 opacity-80">1~5 ➔ 追擲 1d10 | 96~100 ➔ 大成功</span>
           </button>
         </div>
 
@@ -216,8 +216,8 @@
       }
 
       let continueLoop = true;
-      let failStrike = 0;    // 原 csStrike 替換為 大失敗連擊數
-      let successStrike = 0; // 原 cfStrike 替換為 大成功連擊數
+      let successStrike = 0; // cs -> 大成功連擊數
+      let failStrike = 0;    // cf -> 大失敗連擊數
       let loopSafety = 0;
 
       while (continueLoop && loopSafety < 50) {
@@ -249,12 +249,12 @@
             steps.push(step);
             continueLoop = true;
           } else if (raw100 >= 96) {
-            const currentOutcome = '大失敗';
+            const currentOutcome = '大成功';
             if (!initialChainOutcome) initialChainOutcome = currentOutcome;
-            failStrike++;
+            successStrike++;
             step.outcome = currentOutcome;
             currentLevel++;
-            step.msg = `💥 1d100 = ${raw100} (96~100: 大失敗) ➔ 進入 s${currentLevel} (1d10)！ | ${checkDetail}`;
+            step.msg = `✨ 1d100 = ${raw100} (96~100: 大成功) ➔ 進入 s${currentLevel} (1d10)！ | ${checkDetail}`;
             steps.push(step);
             continueLoop = true;
           } else {
@@ -281,12 +281,12 @@
             const d2 = Math.floor(Math.random() * 2) + 1;
             step.extraD2 = d2;
             
-            // d2=1 為「大失敗」；d2=2 為「大成功」
-            const currentOutcome = (d2 === 1) ? '大失敗' : '大成功';
+            // cs (1d2=1) 為「大成功」；cf (1d2=2) 為「大失敗」
+            const currentOutcome = (d2 === 1) ? '大成功' : '大失敗';
             step.outcome = currentOutcome;
 
-            if (currentOutcome === '大失敗') failStrike++;
-            else successStrike++;
+            if (currentOutcome === '大成功') successStrike++;
+            else failStrike++;
 
             if (!initialChainOutcome) {
               initialChainOutcome = currentOutcome;
@@ -294,14 +294,14 @@
 
             if (currentOutcome === initialChainOutcome) {
               currentLevel++;
-              step.msg = `${currentOutcome === '大失敗' ? '💥' : '✨'} 1d10=10 ➔ 1d2=${d2} (${currentOutcome})！與基準 (${initialChainOutcome}) 同向 ➔ 深入加疊至 s${currentLevel} (1d10)！`;
+              step.msg = `${currentOutcome === '大成功' ? '✨' : '💥'} 1d10=10 ➔ 1d2=${d2} (${currentOutcome})！與基準 (${initialChainOutcome}) 同向 ➔ 深入加疊至 s${currentLevel} (1d10)！`;
             } else {
               if (currentLevel > 0) {
                 currentLevel--;
                 let prevDie = getDieType(currentLevel);
-                step.msg = `${currentOutcome === '大失敗' ? '💥' : '✨'} 1d10=10 ➔ 1d2=${d2} (${currentOutcome})！與基準 (${initialChainOutcome}) 反向 ➔ 退回 s${currentLevel} (${prevDie})！`;
+                step.msg = `${currentOutcome === '大成功' ? '✨' : '💥'} 1d10=10 ➔ 1d2=${d2} (${currentOutcome})！與基準 (${initialChainOutcome}) 反向 ➔ 退回 s${currentLevel} (${prevDie})！`;
               } else {
-                step.msg = `${currentOutcome === '大失敗' ? '💥' : '✨'} 1d10=10 ➔ 1d2=${d2} (${currentOutcome})！與基準 (${initialChainOutcome}) 反向 ➔ 退回頂層 s0！`;
+                step.msg = `${currentOutcome === '大成功' ? '✨' : '💥'} 1d10=10 ➔ 1d2=${d2} (${currentOutcome})！與基準 (${initialChainOutcome}) 反向 ➔ 退回頂層 s0！`;
               }
             }
 
@@ -323,7 +323,7 @@
         }
       }
 
-      return { steps, failStrike, successStrike };
+      return { steps, successStrike, failStrike };
     }
 
     function executeRoll(type) {
@@ -336,19 +336,18 @@
       chainFlowDisplay.classList.remove('hidden');
 
       let allRuns = [];
-      let totalFail = 0, totalSuccess = 0;
+      let totalSuccess = 0, totalFail = 0;
 
       for (let i = 0; i < count; i++) {
         const run = rollChainEngine(type, boost, targetVal, checkMode);
         allRuns.push(run);
-        totalFail += run.failStrike;
         totalSuccess += run.successStrike;
+        totalFail += run.failStrike;
       }
 
-      // 替換標籤顯示為 x重大失敗 / x重大成功
       let strikeHtml = '';
-      if (totalFail > 0) strikeHtml += `<span class="px-3 py-1 bg-rose-950 border border-rose-500/60 text-rose-400 rounded-full">💥 ${totalFail}重大失敗</span>`;
       if (totalSuccess > 0) strikeHtml += `<span class="px-3 py-1 bg-emerald-950 border border-emerald-500/60 text-emerald-400 rounded-full">✨ ${totalSuccess}重大成功</span>`;
+      if (totalFail > 0) strikeHtml += `<span class="px-3 py-1 bg-rose-950 border border-rose-500/60 text-rose-400 rounded-full">💥 ${totalFail}重大失敗</span>`;
       strikeBadges.innerHTML = strikeHtml;
 
       let flowHtml = '';
@@ -359,12 +358,23 @@
 
         run.steps.forEach((s, sIdx) => {
           let stepBg = 'bg-slate-900 border-slate-800';
-          if (s.outcome === '大失敗') {
-            stepBg = 'bg-rose-950/40 border-rose-500/40';
-          } else if (s.outcome === '大成功') {
+          if (s.outcome === '大成功') {
             stepBg = 'bg-emerald-950/40 border-emerald-500/40';
+          } else if (s.outcome === '大失敗') {
+            stepBg = 'bg-rose-950/40 border-rose-500/40';
           } else if (s.outcome === 'DF-Trigger') {
             stepBg = 'bg-amber-950/40 border-amber-500/40';
+          }
+
+          // 在該組連鎖的最後一步 (Last Roll) 顯示最終累積的 Stacks 結算
+          const isLast = (sIdx === run.steps.length - 1);
+          let stackBadge = '';
+          if (isLast) {
+            if (run.successStrike > 0) {
+              stackBadge = `<span class="px-2.5 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 rounded-lg font-black text-xs">✨ 最終結算：${run.successStrike}重大成功</span>`;
+            } else if (run.failStrike > 0) {
+              stackBadge = `<span class="px-2.5 py-1 bg-rose-500/20 text-rose-300 border border-rose-500/50 rounded-lg font-black text-xs">💥 最終結算：${run.failStrike}重大失敗</span>`;
+            }
           }
 
           flowHtml += `
@@ -376,6 +386,7 @@
               </div>
               <div class="flex items-center gap-2">
                 ${s.extraD2 ? `<span class="font-mono bg-slate-800 px-2 py-0.5 rounded text-amber-300">1d2 = ${s.extraD2}</span>` : ''}
+                ${stackBadge}
                 <span class="text-sm font-black text-amber-400 font-mono">最終: ${s.final}</span>
               </div>
             </div>
@@ -386,7 +397,7 @@
       chainFlowDisplay.innerHTML = flowHtml;
 
       const boostText = boost !== 0 ? ` (Boost:${boost >= 0 ? '+' : ''}${boost})` : '';
-      const summaryText = `${count}x ${type}${boostText} [${checkMode.toUpperCase()}:${targetVal}] ➔ 連鎖檢定完成 [${totalFail}重大失敗 | ${totalSuccess}重大成功]`;
+      const summaryText = `${count}x ${type}${boostText} [${checkMode.toUpperCase()}:${targetVal}] ➔ 連鎖檢定完成 [${totalSuccess}重大成功 | ${totalFail}重大失敗]`;
       addHistory(summaryText);
     }
 
