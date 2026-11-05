@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TRPG 全螢幕寫作檢定系統</title>
+  <title>《Fate》TRPG 全螢幕寫作檢定系統</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     @keyframes roll3d {
@@ -22,14 +22,14 @@
 
   <div class="w-full max-w-[1600px] md:aspect-video bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl flex flex-col p-4 md:p-6 space-y-4 overflow-hidden relative">
     
-    <!-- 頂部標題列 (等主人給正確名稱後可修改這裡) -->
+    <!-- 頂部標題列 -->
     <div class="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-800 pb-3 gap-2">
       <div class="flex items-center gap-3">
         <div class="px-3 py-1 bg-indigo-500/10 border border-indigo-500/30 rounded-xl text-indigo-400 font-black text-sm tracking-wider uppercase">
-          TRPG System
+          Fate / 菲特
         </div>
         <h1 class="text-xl md:text-2xl font-black bg-gradient-to-r from-amber-300 via-amber-400 to-amber-500 bg-clip-text text-transparent">
-          《自訂檢定系統》 <!-- 主人可以自己改名字喵 -->
+          《Fate》全螢幕寫作檢定系統
         </h1>
       </div>
       <div class="hidden md:flex text-xs text-slate-400 font-mono items-center gap-4">
@@ -48,8 +48,9 @@
       <div class="col-span-1 md:col-span-4 bg-slate-950/60 border border-slate-800/80 rounded-2xl p-4 md:p-5 flex flex-col justify-between space-y-4">
         
         <div class="space-y-4">
-          <div class="text-xs font-bold text-slate-400 tracking-wider uppercase border-b border-slate-800 pb-2">
-            ⚙️ 擲骰參數設定
+          <div class="text-xs font-bold text-slate-400 tracking-wider uppercase border-b border-slate-800 pb-2 flex justify-between">
+            <span>⚙️ 擲骰參數設定</span>
+            <span class="text-[9px] text-slate-600 font-normal">PC: 空白鍵擲1d100 / 1擲1d10</span>
           </div>
 
           <div class="grid grid-cols-2 gap-3">
@@ -128,10 +129,10 @@
             <div id="strike-badges" class="flex gap-2 text-xs font-bold flex-wrap"></div>
           </div>
 
-          <div id="dice-container" class="flex-1 overflow-y-auto space-y-3 pr-2">
+          <div id="dice-container" class="flex-1 overflow-y-auto space-y-3 pr-2 scroll-smooth">
             <div id="empty-state" class="h-full flex flex-col items-center justify-center text-slate-600 space-y-2 py-10">
               <div class="text-4xl">🎲</div>
-              <div class="text-sm">點擊上方按鈕開始執行檢定</div>
+              <div class="text-sm">讓菲特為你轉動命運的骰子，點擊上方按鈕開始檢定</div>
             </div>
             <div id="chain-flow-display" class="space-y-3 hidden"></div>
           </div>
@@ -141,14 +142,13 @@
         <div class="h-40 md:h-44 bg-slate-950/50 border border-slate-800/80 rounded-2xl p-4 flex flex-col min-h-0 space-y-2">
           <div class="flex justify-between items-center text-xs text-slate-400">
             <span class="font-bold flex items-center gap-1.5">📜 完整擲骰歷史紀錄</span>
-            <!-- 新增：匯出 CSV 按鈕 -->
             <div class="flex items-center gap-1 md:gap-2">
               <button onclick="exportHistoryToCSV()" class="text-emerald-500 hover:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 px-2 py-1 rounded transition">匯出 CSV</button>
               <button onclick="clearHistory()" class="text-slate-500 hover:text-slate-300 underline px-2 py-1">清除</button>
             </div>
           </div>
           <div id="history-log" class="flex-1 overflow-y-auto text-xs space-y-1.5 font-mono pr-1">
-            <div class="text-slate-600 text-center py-4">尚無歷史紀錄</div>
+            <!-- 歷史紀錄會在這裡生成 -->
           </div>
         </div>
 
@@ -170,6 +170,39 @@
     let checkMode = 'ra';
     let history = [];
 
+    // 載入本地存檔 (Fate 專屬 Key)
+    function loadSettings() {
+      const savedSettings = localStorage.getItem('fate_dice_settings');
+      if (savedSettings) {
+        const s = JSON.parse(savedSettings);
+        countInput.value = s.count || 1;
+        boostInput.value = s.boost || 0;
+        targetValueInput.value = s.target || 50;
+        setCheckMode(s.mode || 'ra');
+      }
+      
+      const savedHistory = localStorage.getItem('fate_dice_history');
+      if (savedHistory) {
+        history = JSON.parse(savedHistory);
+      }
+      renderHistory();
+    }
+
+    // 儲存設定與歷史
+    function saveSettings() {
+      const s = {
+        count: parseInt(countInput.value) || 1,
+        boost: parseInt(boostInput.value) || 0,
+        target: parseInt(targetValueInput.value) || 50,
+        mode: checkMode
+      };
+      localStorage.setItem('fate_dice_settings', JSON.stringify(s));
+    }
+
+    function saveHistory() {
+      localStorage.setItem('fate_dice_history', JSON.stringify(history));
+    }
+
     function setCheckMode(mode) {
       checkMode = mode;
       const btnRa = document.getElementById('btn-mode-ra');
@@ -185,17 +218,20 @@
         btnRa.className = "flex-1 py-1.5 md:py-1 text-xs font-bold rounded-md text-slate-400 hover:text-white transition";
         modeDesc.innerText = "ro (>= 目標值成功)";
       }
+      saveSettings();
     }
 
     function adjustCount(delta) {
       let val = parseInt(countInput.value) || 1;
       val = Math.max(1, Math.min(20, val + delta));
       countInput.value = val;
+      saveSettings();
     }
 
     function adjustBoost(delta) {
       let val = parseInt(boostInput.value) || 0;
       boostInput.value = val + delta;
+      saveSettings();
     }
 
     function playAnimation() {
@@ -204,6 +240,7 @@
       diceContainer.classList.add('animate-roll');
     }
 
+    // 核心連鎖引擎
     function rollChainEngine(startType, boost, targetVal, mode) {
       let steps = [];
       let currentLevel = 0;
@@ -301,9 +338,19 @@
 
     function executeRoll(type) {
       playAnimation();
-      const count = parseInt(countInput.value) || 1;
+      
+      // 防呆機制
+      let count = parseInt(countInput.value) || 1;
+      count = Math.max(1, Math.min(20, count));
+      countInput.value = count;
+      
       const boost = parseInt(boostInput.value) || 0;
-      const targetVal = parseInt(targetValueInput.value) || 50;
+      
+      let targetVal = parseInt(targetValueInput.value) || 50;
+      targetVal = Math.max(1, Math.min(100, targetVal));
+      targetValueInput.value = targetVal;
+
+      saveSettings(); // 每次擲骰前存檔
 
       emptyState.classList.add('hidden');
       chainFlowDisplay.classList.remove('hidden');
@@ -372,6 +419,11 @@
 
       chainFlowDisplay.innerHTML = flowHtml;
 
+      // 自動滾動到底部，讓玩家看到最新結果
+      setTimeout(() => {
+        diceContainer.scrollTop = diceContainer.scrollHeight;
+      }, 50);
+
       const boostText = boost !== 0 ? ` (B:${boost >= 0 ? '+' : ''}${boost})` : '';
       const summaryText = `${count}x ${type}${boostText} [${checkMode.toUpperCase()}:${targetVal}] ➔ 淨計: ${totalSuccessStacks}成功 / ${totalFailStacks}失敗`;
       addHistory(summaryText);
@@ -380,13 +432,15 @@
     function addHistory(text) {
       const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       history.unshift({ time: now, text });
+      saveHistory(); // 存檔
       renderHistory();
     }
 
     function clearHistory() {
       if (history.length === 0) return;
-      if (confirm("確定要清除所有歷史紀錄嗎喵？")) {
+      if (confirm("菲特問：確定要清除所有歷史紀錄嗎喵？")) {
         history = [];
+        saveHistory();
         renderHistory();
       }
     }
@@ -404,35 +458,47 @@
       `).join('');
     }
 
-    // 新增：匯出 CSV 功能
     function exportHistoryToCSV() {
       if (history.length === 0) {
-        alert("目前沒有歷史紀錄可以匯出喵！");
+        alert("菲特表示：目前沒有歷史紀錄可以匯出喵！");
         return;
       }
       
-      // 加上 \uFEFF 讓 Excel 能正確辨識 UTF-8 中文，避免亂碼
       let csvContent = "\uFEFF時間,擲骰紀錄\n";
-      
-      // 因為 history 是用 unshift 加到最前面，匯出時 reverse 讓時間順序由舊到新
       const reversedHistory = [...history].reverse();
       
       reversedHistory.forEach(item => {
-        // 避免內容包含逗號導致 CSV 格式跑掉，用雙引號包起來
         const safeText = `"${item.text.replace(/"/g, '""')}"`;
         csvContent += `${item.time},${safeText}\n`;
       });
 
-      // 建立 Blob 與下載連結
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.setAttribute("href", url);
-      link.setAttribute("download", `TRPG_Log_${new Date().toISOString().slice(0,10)}.csv`);
+      link.setAttribute("download", `Fate_Log_${new Date().toISOString().slice(0,10)}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
     }
+
+    // 鍵盤快捷鍵監聽
+    document.addEventListener('keydown', function(e) {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      
+      if (e.code === 'Space' || e.key === 'Enter') {
+        e.preventDefault(); 
+        executeRoll('1d100');
+      } else if (e.key === '1') {
+        executeRoll('1d10');
+      } else if (e.key === '2') {
+        executeRoll('1d100');
+      }
+    });
+
+    // 頁面載入時初始化
+    window.addEventListener('DOMContentLoaded', loadSettings);
+
   </script>
 </body>
 </html>
