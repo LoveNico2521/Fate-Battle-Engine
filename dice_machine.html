@@ -114,7 +114,7 @@
             <select id="boost-mode-100" onchange="saveSettings()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors">
               <option value="v1">v1: 降面 1d(100-Boost) + Boost (CF看原始值)</option>
               <option value="v2">v2: 原始 1d100 + Boost (CF看原始值)</option>
-              <option value="v3">v3: 降面 1d(100-|Boost|) + Boost (CF看最終值)</option>
+              <option value="v3">v3: 降面 1d(100-|Boost|) + 正Boost加值 (CF/CS看最終值)</option>
             </select>
           </div>
 
@@ -445,28 +445,34 @@
 
         if (dieType === '1d100') {
           let sides = 100;
+          let raw100, final100;
+          let isCF = false;
+          let isCS = false;
+
           if (boostMode100 === 'v1') {
             sides = Math.max(1, 100 - boost);
-          } else if (boostMode100 === 'v3') {
+            raw100 = getRnd(sides, debugSeq, state);
+            final100 = raw100 + boost;
+            isCF = (raw100 <= 5);
+            isCS = (final100 >= 96);
+          } else if (boostMode100 === 'v2') {
+            sides = 100;
+            raw100 = getRnd(sides, debugSeq, state);
+            final100 = raw100 + boost;
+            isCF = (raw100 <= 5);
+            isCS = (final100 >= 96);
+          } else { // v3
             sides = Math.max(1, 100 - Math.abs(boost));
+            raw100 = getRnd(sides, debugSeq, state);
+            final100 = (boost >= 0) ? (raw100 + boost) : raw100;
+            isCF = (final100 <= 5);
+            isCS = (final100 >= 96);
           }
-          
-          const raw100 = getRnd(sides, debugSeq, state);
-          const final100 = raw100 + boost;
           
           let isSuccess = (mode === 'ra') ? (final100 <= targetVal) : (final100 >= targetVal);
           let checkDetail = `[${mode.toUpperCase()} ${mode === 'ra' ? '<=' : '>='} ${targetVal}] ➔ ${isSuccess ? '✅ 成功' : '❌ 失敗'}`;
 
           let step = { levelStr, type: '1d100', raw: raw100, final: final100, extraD2: null, outcome: null, msg: '', checkDetail };
-
-          let isCF = false;
-          if (boostMode100 === 'v1' || boostMode100 === 'v2') {
-            isCF = (raw100 <= 5);
-          } else if (boostMode100 === 'v3') {
-            isCF = (final100 <= 5);
-          }
-          
-          let isCS = (final100 >= 96);
 
           if (isCS) {
             const currentOutcome = '大成功';
@@ -479,6 +485,9 @@
             continueLoop = true;
           } else if (isCF) {
             step.outcome = 'DF-Trigger';
+            // 如果是第一次出現，就設定為基準
+            if (!initialChainOutcome) initialChainOutcome = '大失敗';
+            currentStack++;
             currentLevel++;
             step.msg = `🎲 1d100 = ${raw100} (CF: ${boostMode100 === 'v3' ? '最終值<=5' : '原始值<=5'}) ➔ 進入 s${currentLevel} (1d10)！ (${checkDetail})`;
             steps.push(step);
@@ -613,14 +622,25 @@
       let hasTrigger = false;
 
       allRuns.forEach(run => {
-        const initialStep = run.steps[0];
+        // 只計算停留在 s0 的最後一顆骰子
+        let s0Step = null;
+        for (let i = run.steps.length - 1; i >= 0; i--) {
+          if (run.steps[i].levelStr === 's0') {
+            s0Step = run.steps[i];
+            break;
+          }
+        }
+        if (!s0Step) s0Step = run.steps[0];
+        
         const isTrigger = run.steps.length > 1;
         
-        totalSum += initialStep.final;
+        totalSum += s0Step.final;
         if (isTrigger) hasTrigger = true;
-        else nonTriggerSum += initialStep.final;
+        else nonTriggerSum += s0Step.final;
         
-        let partStr = boost !== 0 ? `(${initialStep.raw}${boost > 0 ? '+' : ''}${boost})` : `${initialStep.raw}`;
+        const delta = s0Step.final - s0Step.raw;
+        let partStr = delta !== 0 ? `(${s0Step.raw}${delta > 0 ? '+' : ''}${delta})` : `${s0Step.raw}`;
+        
         if (isTrigger) partStr = `<span class="text-amber-400 font-bold" title="觸發連鎖">${partStr}</span>`; 
         formulaParts.push(partStr);
       });
@@ -727,9 +747,17 @@
       // === 自動複製公式 ===
       if (autoCopyToggle.checked) {
         const parts = allRuns.map(run => {
-          const step = run.steps[0];
-          const b = boost;
-          return b !== 0 ? `(${step.raw}${b > 0 ? '+' : ''}${b})` : `${step.raw}`;
+          let s0Step = null;
+          for (let i = run.steps.length - 1; i >= 0; i--) {
+            if (run.steps[i].levelStr === 's0') {
+              s0Step = run.steps[i];
+              break;
+            }
+          }
+          if (!s0Step) s0Step = run.steps[0];
+          
+          const delta = s0Step.final - s0Step.raw;
+          return delta !== 0 ? `(${s0Step.raw}${delta > 0 ? '+' : ''}${delta})` : `${s0Step.raw}`;
         });
         const prefix = count + 'd' + (type.includes('d') ? type.split('d')[1] : type);
         const formulaString = `${prefix}=${parts.join('+')}=${totalSum}`;
