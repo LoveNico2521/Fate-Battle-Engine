@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>《Fate》安科織夢機 - 劇情推演系統</title>
+  <title>織夢者菲特《Fate》 - 劇情推演系統</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     @keyframes roll3d {
@@ -26,10 +26,10 @@
     <div class="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-800 pb-3 gap-2">
       <div class="flex items-center gap-3">
         <div class="px-3 py-1 bg-indigo-500/10 border border-indigo-500/30 rounded-xl text-indigo-400 font-black text-sm tracking-wider uppercase shadow-[0_0_10px_rgba(99,102,241,0.2)]">
-          Fate / 織夢機
+          織夢機
         </div>
         <h1 class="text-xl md:text-2xl font-black bg-gradient-to-r from-amber-300 via-amber-400 to-amber-500 bg-clip-text text-transparent">
-          《Fate》安科織夢機
+          織夢者菲特《Fate》
         </h1>
       </div>
       <div class="hidden md:flex text-xs text-slate-400 font-mono items-center gap-4">
@@ -130,9 +130,13 @@
           </div>
 
           <div id="dice-container" class="flex-1 overflow-y-auto space-y-3 pr-2 scroll-smooth">
-            <div id="empty-state" class="h-full flex flex-col items-center justify-center text-slate-600 space-y-2 py-10">
-              <div class="text-4xl">🎲</div>
-              <div class="text-sm">讓菲特為你轉動命運的骰子，編織安科之夢</div>
+            <!-- 修改：套用妮亞私心推薦的超有儀式感文字 -->
+            <div id="empty-state" class="h-full flex flex-col items-center justify-center text-slate-500 space-y-3 py-10">
+              <div class="text-4xl">🪡</div>
+              <div class="text-sm md:text-base text-center px-4 tracking-widest leading-relaxed">
+                命運的經緯在此交織<br>
+                <span class="text-indigo-400 font-bold">織夢者菲特</span> 將為你落下第一顆骰子
+              </div>
             </div>
             <div id="chain-flow-display" class="space-y-3 hidden"></div>
           </div>
@@ -190,7 +194,6 @@
       }
     }
 
-    // 載入本地存檔
     function loadSettings() {
       const s = safeGet('fate_dreamweaver_settings', null);
       if (s) {
@@ -439,7 +442,6 @@
         diceContainer.scrollTop = diceContainer.scrollHeight;
       }, 50);
 
-      // === 生成日誌詳細軌跡 ===
       let detailArr = [];
       allRuns.forEach((run, idx) => {
         let stepStrArr = run.steps.map(s => {
@@ -462,7 +464,6 @@
       addHistory(summaryText, detailText);
     }
 
-    // 修改：接收 summary 和 detail
     function addHistory(summary, detail) {
       const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       history.unshift({ time: now, summary: summary, detail: detail });
@@ -479,14 +480,12 @@
       }
     }
 
-    // 修改：渲染摘要與詳細軌跡
     function renderHistory() {
       if (!Array.isArray(history) || history.length === 0) {
         historyLog.innerHTML = `<div class="text-slate-600 text-center py-4">尚無織夢歷史紀錄</div>`;
         return;
       }
       historyLog.innerHTML = history.map(item => {
-        // 向下相容舊版資料結構
         const sText = item.summary || item.text || '無摘要';
         const dText = item.detail || '';
         
@@ -502,7 +501,6 @@
       }).join('');
     }
 
-    // 修改：匯出 CSV 包含詳細軌跡
     function exportHistoryToCSV() {
       if (!Array.isArray(history) || history.length === 0) {
         alert("菲特表示：目前沒有織夢紀錄可以匯出喵！");
@@ -535,7 +533,6 @@
       }
     }
 
-    // 鍵盤快捷鍵
     document.addEventListener('keydown', function(e) {
       const tag = e.target.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'BUTTON' || e.target.isContentEditable) return;
