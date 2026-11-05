@@ -130,7 +130,6 @@
           </div>
 
           <div id="dice-container" class="flex-1 overflow-y-auto space-y-3 pr-2 scroll-smooth">
-            <!-- 修改：套用妮亞私心推薦的超有儀式感文字 -->
             <div id="empty-state" class="h-full flex flex-col items-center justify-center text-slate-500 space-y-3 py-10">
               <div class="text-4xl">🪡</div>
               <div class="text-sm md:text-base text-center px-4 tracking-widest leading-relaxed">
@@ -140,6 +139,11 @@
             </div>
             <div id="chain-flow-display" class="space-y-3 hidden"></div>
           </div>
+        </div>
+
+        <!-- 新增：本輪總和顯示區 (放在歷史紀錄上方) -->
+        <div id="total-summary" class="hidden bg-indigo-950/40 border border-indigo-500/30 rounded-2xl p-3 flex flex-col justify-center items-center text-sm md:text-base font-bold text-indigo-300 shadow-[0_0_15px_rgba(99,102,241,0.15)] transition-all">
+          <!-- 內容會由 JS 動態生成 -->
         </div>
 
         <!-- 歷史紀錄區域 -->
@@ -170,11 +174,11 @@
     const strikeBadges = document.getElementById('strike-badges');
     const diceContainer = document.getElementById('dice-container');
     const historyLog = document.getElementById('history-log');
+    const totalSummary = document.getElementById('total-summary'); // 新增的總和區塊
 
     let checkMode = 'ra';
     let history = [];
 
-    // === 安全存取 localStorage 的輔助函式 ===
     function safeGet(key, fallback) {
       try {
         const raw = localStorage.getItem(key);
@@ -190,7 +194,7 @@
       try {
         localStorage.setItem(key, JSON.stringify(value));
       } catch (e) {
-        console.warn('[Fate] localStorage 寫入失敗（可能為無痕模式或 file:// 限制）', e);
+        console.warn('[Fate] localStorage 寫入失敗', e);
       }
     }
 
@@ -260,7 +264,6 @@
       diceContainer.classList.add('animate-roll');
     }
 
-    // 核心連鎖引擎
     function rollChainEngine(startType, boost, targetVal, mode) {
       let steps = [];
       let currentLevel = 0;
@@ -373,6 +376,7 @@
 
       emptyState.classList.add('hidden');
       chainFlowDisplay.classList.remove('hidden');
+      totalSummary.classList.add('hidden'); // 先隱藏舊的總和
 
       let allRuns = [];
       let totalSuccessStacks = 0;
@@ -442,6 +446,34 @@
         diceContainer.scrollTop = diceContainer.scrollHeight;
       }, 50);
 
+      // === 計算總和 ===
+      let totalSum = 0;
+      let formulaParts = [];
+      
+      allRuns.forEach(run => {
+        run.steps.forEach(s => {
+          // 將所有實體骰子（1d100, 1d10, d4...）的最終值加總
+          totalSum += s.final;
+          
+          // 格式化加總公式
+          if (boost !== 0) {
+            const boostStr = boost > 0 ? `+${boost}` : `${boost}`;
+            formulaParts.push(`(${s.raw}${boostStr})`);
+          } else {
+            formulaParts.push(`${s.raw}`);
+          }
+        });
+      });
+
+      // 顯示總和（如果只有一顆骰子且沒 Boost，就不顯示以免洗版）
+      if (formulaParts.length > 1 || boost !== 0) {
+        totalSummary.innerHTML = `🧮 本輪總和：<span class="font-mono text-slate-400 mx-2">${formulaParts.join(' + ')}</span> = <span class="text-amber-400 text-lg md:text-xl ml-1">${totalSum}</span>`;
+        totalSummary.classList.remove('hidden');
+      } else {
+        totalSummary.classList.add('hidden');
+      }
+
+      // === 生成日誌詳細軌跡 ===
       let detailArr = [];
       allRuns.forEach((run, idx) => {
         let stepStrArr = run.steps.map(s => {
@@ -459,7 +491,8 @@
       const detailText = detailArr.join(' | ');
 
       const boostText = boost !== 0 ? ` (B:${boost >= 0 ? '+' : ''}${boost})` : '';
-      const summaryText = `${count}x ${type}${boostText} [${checkMode.toUpperCase()}:${targetVal}] ➔ 淨計: ${totalSuccessStacks}成功 / ${totalFailStacks}失敗`;
+      const sumText = totalSummary.classList.contains('hidden') ? '' : ` ｜ 總和: ${totalSum}`;
+      const summaryText = `${count}x ${type}${boostText} [${checkMode.toUpperCase()}:${targetVal}] ➔ 淨計: ${totalSuccessStacks}成功 / ${totalFailStacks}失敗${sumText}`;
       
       addHistory(summaryText, detailText);
     }
