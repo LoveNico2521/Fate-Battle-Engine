@@ -151,7 +151,7 @@
           </div>
         </div>
 
-        <!-- 自動複製開關 (新增) -->
+        <!-- 自動複製開關 -->
         <div class="flex items-center justify-between bg-slate-900 border border-slate-700 rounded-xl p-3 mt-2 shrink-0">
           <label class="text-xs font-bold text-slate-300 cursor-pointer flex-1" for="auto-copy-toggle">自動複製公式</label>
           <input id="auto-copy-toggle" type="checkbox" onchange="saveSettings()" class="w-4 h-4 text-indigo-600 bg-slate-800 border-slate-600 rounded focus:ring-indigo-500 focus:ring-2 cursor-pointer accent-indigo-500">
@@ -249,7 +249,7 @@
     const historyLog = document.getElementById('history-log');
     const totalSummary = document.getElementById('total-summary');
     const debugSeqInput = document.getElementById('debug-seq');
-    const autoCopyToggle = document.getElementById('auto-copy-toggle'); // 新增
+    const autoCopyToggle = document.getElementById('auto-copy-toggle'); 
     
     document.addEventListener('contextmenu', e => e.preventDefault());
 
@@ -693,15 +693,16 @@
       
       addHistory(summaryText, detailText);
 
-      // === 自動複製公式 ===
+      // === 自動複製公式 (無 Boost 則無括號，總和也無括號) ===
       if (autoCopyToggle.checked) {
         const parts = allRuns.map(run => {
           const step = run.steps[0];
           const b = boost;
-          return b !== 0 ? `(${step.raw}${b > 0 ? '+' : ''}${b})` : `(${step.raw})`;
+          return b !== 0 ? `(${step.raw}${b > 0 ? '+' : ''}${b})` : `${step.raw}`;
         });
         const prefix = count + 'd' + (type.includes('d') ? type.split('d')[1] : type);
-        const formulaString = `${prefix}=${parts.join('+')}=(${totalSum})`;
+        // 這裡拔掉了總和的括號
+        const formulaString = `${prefix}=${parts.join('+')}=${totalSum}`;
         
         navigator.clipboard.writeText(formulaString).then(() => {
           showToast(`📋 已自動複製：${formulaString}`, 'success');
