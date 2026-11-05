@@ -41,7 +41,7 @@
 
     /* 禁用文字選取與右鍵選單 (除了輸入框) */
     body { user-select: none; -webkit-user-select: none; }
-    input, textarea { user-select: auto; -webkit-user-select: auto; }
+    input, textarea, select { user-select: auto; -webkit-user-select: auto; }
 
     details > summary { list-style: none; }
     details > summary::-webkit-details-marker { display: none; }
@@ -106,6 +106,16 @@
                 <button onclick="adjustBoost(1)" class="px-3 py-2 md:py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold">+</button>
               </div>
             </div>
+          </div>
+
+          <!-- 1d100 Boost 模式切換 -->
+          <div class="space-y-1">
+            <label class="block text-xs font-medium text-slate-300">1d100 Boost 模式</label>
+            <select id="boost-mode-100" onchange="saveSettings()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition-colors">
+              <option value="v1">v1: 降面 1d(100-Boost) + Boost (CF看原始值)</option>
+              <option value="v2">v2: 原始 1d100 + Boost (CF看原始值)</option>
+              <option value="v3">v3: 降面 1d(100-|Boost|) + Boost (CF看最終值)</option>
+            </select>
           </div>
 
           <div class="space-y-2 bg-slate-900/90 border border-slate-700/80 rounded-xl p-3">
@@ -242,6 +252,7 @@
     const countInput = document.getElementById('dice-count');
     const boostInput = document.getElementById('base-boost');
     const targetValueInput = document.getElementById('target-value');
+    const boostMode100Input = document.getElementById('boost-mode-100');
     const emptyState = document.getElementById('empty-state');
     const chainFlowDisplay = document.getElementById('chain-flow-display');
     const strikeBadges = document.getElementById('strike-badges');
@@ -341,6 +352,7 @@
         countInput.value = s.count || 1;
         boostInput.value = s.boost || 0;
         targetValueInput.value = s.target || 50;
+        boostMode100Input.value = s.boostMode100 || 'v2';
         setCheckMode(s.mode || 'ra');
         if (s.autoCopy) autoCopyToggle.checked = true;
       }
@@ -356,6 +368,7 @@
         count: Number(countInput.value) || 1,
         boost: Number(boostInput.value) || 0,
         target: Number(targetValueInput.value) || 50,
+        boostMode100: boostMode100Input.value,
         mode: checkMode,
         autoCopy: autoCopyToggle.checked
       });
@@ -412,7 +425,7 @@
       return Math.floor(Math.random() * max) + 1;
     }
 
-    function rollChainEngine(startType, boost, targetVal, mode, debugSeq, state) {
+    function rollChainEngine(startType, boost, targetVal, mode, debugSeq, state, boostMode100) {
       let steps = [];
       let currentLevel = 0;
       let initialChainOutcome = null; 
@@ -431,26 +444,43 @@
         let levelStr = `s${currentLevel}`;
 
         if (dieType === '1d100') {
-          const raw100 = getRnd(100, debugSeq, state);
+          let sides = 100;
+          if (boostMode100 === 'v1') {
+            sides = Math.max(1, 100 - boost);
+          } else if (boostMode100 === 'v3') {
+            sides = Math.max(1, 100 - Math.abs(boost));
+          }
+          
+          const raw100 = getRnd(sides, debugSeq, state);
           const final100 = raw100 + boost;
+          
           let isSuccess = (mode === 'ra') ? (final100 <= targetVal) : (final100 >= targetVal);
           let checkDetail = `[${mode.toUpperCase()} ${mode === 'ra' ? '<=' : '>='} ${targetVal}] ➔ ${isSuccess ? '✅ 成功' : '❌ 失敗'}`;
 
           let step = { levelStr, type: '1d100', raw: raw100, final: final100, extraD2: null, outcome: null, msg: '', checkDetail };
 
-          if (raw100 <= 5) {
-            step.outcome = 'DF-Trigger';
-            currentLevel++;
-            step.msg = `🎲 1d100 = ${raw100} (1~5) ➔ 進入 s${currentLevel} (1d10)！ (${checkDetail})`;
-            steps.push(step);
-            continueLoop = true;
-          } else if (raw100 >= 96) {
+          let isCF = false;
+          if (boostMode100 === 'v1' || boostMode100 === 'v2') {
+            isCF = (raw100 <= 5);
+          } else if (boostMode100 === 'v3') {
+            isCF = (final100 <= 5);
+          }
+          
+          let isCS = (final100 >= 96);
+
+          if (isCS) {
             const currentOutcome = '大成功';
             if (!initialChainOutcome) initialChainOutcome = currentOutcome;
             currentStack++;
             step.outcome = currentOutcome;
             currentLevel++;
-            step.msg = `✨ 1d100 = ${raw100} (96~100: 大成功) ➔ 進入 s${currentLevel} (1d10)！ | ${checkDetail}`;
+            step.msg = `✨ 1d100 = ${raw100} (CS: 最終值>=96) ➔ 進入 s${currentLevel} (1d10)！ | ${checkDetail}`;
+            steps.push(step);
+            continueLoop = true;
+          } else if (isCF) {
+            step.outcome = 'DF-Trigger';
+            currentLevel++;
+            step.msg = `🎲 1d100 = ${raw100} (CF: ${boostMode100 === 'v3' ? '最終值<=5' : '原始值<=5'}) ➔ 進入 s${currentLevel} (1d10)！ (${checkDetail})`;
             steps.push(step);
             continueLoop = true;
           } else {
@@ -634,6 +664,7 @@
       count = Math.max(1, Math.min(20, count));
       countInput.value = count;
       const boost = Number(boostInput.value) || 0;
+      const boostMode100 = boostMode100Input.value;
       let targetVal = Number(targetValueInput.value) || 50;
       targetVal = Math.max(1, Math.min(100, targetVal));
       targetValueInput.value = targetVal;
@@ -657,7 +688,7 @@
       let totalFailStacks = 0;
 
       for (let i = 0; i < count; i++) {
-        const run = rollChainEngine(type, boost, targetVal, checkMode, debugSeq, debugState);
+        const run = rollChainEngine(type, boost, targetVal, checkMode, debugSeq, debugState, boostMode100);
         allRuns.push(run);
         if (run.finalStack > 0 && run.baseOutcome) {
           if (run.baseOutcome === '大成功') totalSuccessStacks += run.finalStack;
@@ -693,7 +724,7 @@
       
       addHistory(summaryText, detailText);
 
-      // === 自動複製公式 (無 Boost 則無括號，總和也無括號) ===
+      // === 自動複製公式 ===
       if (autoCopyToggle.checked) {
         const parts = allRuns.map(run => {
           const step = run.steps[0];
@@ -701,7 +732,6 @@
           return b !== 0 ? `(${step.raw}${b > 0 ? '+' : ''}${b})` : `${step.raw}`;
         });
         const prefix = count + 'd' + (type.includes('d') ? type.split('d')[1] : type);
-        // 這裡拔掉了總和的括號
         const formulaString = `${prefix}=${parts.join('+')}=${totalSum}`;
         
         navigator.clipboard.writeText(formulaString).then(() => {
