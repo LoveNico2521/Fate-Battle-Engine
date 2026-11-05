@@ -12,9 +12,10 @@
       100% { transform: rotateX(720deg) rotateY(360deg) scale(1); opacity: 1; }
     }
     .animate-roll { animation: roll3d 0.45s ease-out; }
-    ::-webkit-scrollbar { width: 6px(M); height: 6px(M); }
+    /* 修正：移除錯誤的 (M) 單位 */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
-    ::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.8); border-radius: 4px(M); }
+    ::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.8); border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: rgba(71, 85, 105, 1); }
   </style>
 </head>
@@ -206,12 +207,12 @@
       diceContainer.classList.add('animate-roll');
     }
 
-    // 核心連鎖引擎：導入「淨 Stacks 向量抵銷」演算法
+    // 核心連鎖引擎
     function rollChainEngine(startType, boost, targetVal, mode) {
       let steps = [];
       let currentLevel = 0;
-      let initialChainOutcome = null; // 紀錄第一個出現的 CS/CF 基準種類
-      let currentStack = 0;           // 淨 Stacks 數量 (抵銷後)
+      let initialChainOutcome = null; // 首個基準 (大成功 / 大失敗)
+      let currentStack = 0;           // 淨 Stacks 抵銷數量
 
       function getDieType(lvl) {
         return lvl === 0 ? startType : '1d10';
@@ -303,7 +304,8 @@
                 let prevDie = getDieType(currentLevel);
                 step.msg = `${currentOutcome === '大成功' ? '✨' : '💥'} 1d10=10 ➔ 1d2=${d2} (${currentOutcome})！與基準 (${initialChainOutcome}) 反向 ➔ 退回 s${currentLevel} (${prevDie})！`;
               } else {
-                step.msg = `${currentOutcome === '大成功' ? '✨' : '💥'} 1d10=10 ➔ 1d2=${d2} (${currentOutcome})！與基準 (${initialChainOutcome}) 反向 ➔ 退回頂層 s0！`;
+                // 修正：文字從「退回頂層 s0」改為「退回起始層 s0」
+                step.msg = `${currentOutcome === '大成功' ? '✨' : '💥'} 1d10=10 ➔ 1d2=${d2} (${currentOutcome})！與基準 (${initialChainOutcome}) 反向 ➔ 退回起始層 s0！`;
               }
             }
 
@@ -325,7 +327,6 @@
         }
       }
 
-      // 回傳淨 Stack 結算狀態
       return { 
         steps, 
         finalStack: currentStack, 
@@ -379,7 +380,7 @@
             stepBg = 'bg-amber-950/40 border-amber-500/40';
           }
 
-          // 在最後一步顯示真正的淨 Stacks (抵銷後)
+          // 在該組連鎖的最後一步 (Last Roll) 顯示最終淨 Stacks 結算標籤
           const isLast = (sIdx === run.steps.length - 1);
           let stackBadge = '';
           if (isLast) {
