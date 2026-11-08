@@ -68,7 +68,7 @@
 
 ## 6. 迴歸測試(改代碼必跑)
 
-`tools/battery.js`:**32 個情境,全部用 debug 序列強制確定性**,涵蓋 CS/CF 連鎖、三種 Boost(含負值與鉗制)、反向退回、0 Stacks、通用骰、自訂骰語法與錯誤、自動複製格式、Markdown 複製、CSV、輸入鉗制。
+`tools/battery.js`:**31 個情境,全部用 debug 序列強制確定性**,涵蓋 CS/CF 連鎖、三種 Boost(含負值與鉗制)、反向退回、0 Stacks、通用骰、自訂骰語法與錯誤、自動複製格式、Markdown 複製、輸入鉗制(CSV 情境已移除——會觸發真實下載)。
 
 跑法:
 
@@ -81,6 +81,8 @@
 - 電池開頭會正規化 localStorage / history / stale DOM(首輪 = 次輪)
 - toast/clipboard/blob 攔截只在測試 evaluate 內生效,結束時還原
 - **fetch 一律加 `{cache: 'no-store'}`**——否則瀏覽器啟發式快取可能送舊版測試腳本
+- 同網址 goto 可能觸發 bfcache 軟導航,保留上一輪 DOM 狀態——每輪用唯一 query 參數
+- `content-visibility: auto` 的元素在視口外時 innerText 會跳過其內容——檢查紀錄用 textContent
 - s08 是哨兵情境:依賴 isCS 先於 isCF 的判定順序 + loopSafety 兜底,動了引擎順序它第一個爆
 
 ## 7. 給下一雙手的提醒

@@ -20,9 +20,6 @@
   const clip = [];
   const origWrite = navigator.clipboard.writeText.bind(navigator.clipboard);
   navigator.clipboard.writeText = t => { clip.push(t); return Promise.resolve(); };
-  let blobSize = 0;
-  const origCreate = URL.createObjectURL.bind(URL);
-  URL.createObjectURL = b => { blobSize = b.size; return origCreate(b); };
 
   const grab = () => ({
     badges: $('strike-badges').innerText,
@@ -80,8 +77,6 @@
   autoCopyToggle.checked = false;
   copyHistory(0);
   S['s29_copyhist'] = { clip: clip.splice(0) };
-  exportHistoryToCSV();
-  S['s30_csv'] = { blobSize };
   outputFormatInput.value = 'markdown';
   copyHistory(0);
   S['s31_md_copy'] = { clip: clip.splice(0) };
@@ -94,7 +89,6 @@
   // 還原掛鉤
   window.showToast = origToast;
   navigator.clipboard.writeText = origWrite;
-  URL.createObjectURL = origCreate;
 
   const json = JSON.stringify(S);
   window.__lastBatteryJson = json; // 測試用:暫存 JSON 供字元級比對
