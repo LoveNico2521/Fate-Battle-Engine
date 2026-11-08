@@ -2,10 +2,19 @@
 <html lang="zh-Hant" class="theme-dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#020617">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="織夢者菲特">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="format-detection" content="telephone=no, email=no, address=no">
   <title>織夢者菲特《Fate》 - 安科推演系統 (Classic)</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.tailwindcss.com" onerror="window.__tailwindFailed = true"></script>
   <style>
+    /* ============================================================
+       🎨 主題變數
+       ============================================================ */
     .theme-dark {
       --bg-main: #020617; --bg-panel: #0f172a; --bg-box: rgba(15, 23, 42, 0.6);
       --text-main: #f1f5f9; --text-muted: #94a3b8; --border-main: #1e293b;
@@ -22,12 +31,76 @@
       --input-bg: #44403c; --input-border: #57534e;
     }
 
-    body { background-color: var(--bg-main); color: var(--text-main); }
+    /* ============================================================
+       🌍 跨平台基礎
+       ============================================================ */
+    html, body {
+      height: 100vh;
+      height: 100dvh;                /* iOS/Android 現代瀏覽器 */
+      height: -webkit-fill-available; /* iOS Safari 舊版 fallback */
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                   "PingFang TC", "PingFang SC", "Hiragino Sans",
+                   "Noto Sans CJK TC", "Noto Sans CJK SC",
+                   "Microsoft JhengHei", "Microsoft YaHei",
+                   "Source Han Sans", "WenQuanYi Micro Hei",
+                   sans-serif;
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+      overscroll-behavior: contain;
+      touch-action: manipulation;
+    }
+
+    /* iOS Safari URL bar 收合修正 */
+    @supports (height: 100dvh) {
+      body.h-screen, .h-screen { height: 100dvh; }
+    }
+
+    /* 瀏海 / Home 條 */
+    @supports (padding: env(safe-area-inset-top)) {
+      body {
+        padding-top: max(0.5rem, env(safe-area-inset-top));
+        padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+        padding-left: max(0.5rem, env(safe-area-inset-left));
+        padding-right: max(0.5rem, env(safe-area-inset-right));
+      }
+      @media (min-width: 768px) {
+        body {
+          padding-top: max(1rem, env(safe-area-inset-top));
+          padding-bottom: max(1rem, env(safe-area-inset-bottom));
+          padding-left: max(1rem, env(safe-area-inset-left));
+          padding-right: max(1rem, env(safe-area-inset-right));
+        }
+      }
+    }
+
+    /* 觸控回饋（移除 iOS 灰色 highlight） */
+    * {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* 防止 iOS input 聚焦時整頁縮放（僅移動端） */
+    @media (max-width: 768px) {
+      input[type="number"], input[type="text"], select, textarea {
+        font-size: 16px !important;
+      }
+    }
+
+    /* ============================================================
+       🎨 主題套用
+       ============================================================ */
     .main-container { background-color: var(--bg-panel); border-color: var(--border-main); }
     .panel { background-color: var(--bg-box); border-color: var(--border-main); }
     .text-muted { color: var(--text-muted); }
     .border-default { border-color: var(--border-main); }
 
+    /* ============================================================
+       🌟 原生輸入框覆蓋
+       ============================================================ */
     input:not([type="checkbox"]), select, textarea {
       background-color: var(--input-bg) !important;
       border-color: var(--input-border) !important;
@@ -62,45 +135,165 @@
     .theme-gold .text-slate-300, .theme-gold .text-slate-400 { color: #d6d3d1 !important; }
     .theme-gold .text-slate-500 { color: #a8a29e !important; }
 
+    /* ============================================================
+       ✨ 動畫
+       ============================================================ */
     @keyframes soft-drop {
-      0% { transform: translateY(-10px) scale(0.98); opacity: 0.4; }
-      60% { transform: translateY(2px) scale(1.01); opacity: 0.9; }
-      100% { transform: translateY(0) scale(1); opacity: 1; }
+      0%   { transform: translateY(-10px) scale(0.98); opacity: 0.4; }
+      60%  { transform: translateY(2px) scale(1.01);   opacity: 0.9; }
+      100% { transform: translateY(0) scale(1);        opacity: 1; }
     }
     .animate-roll { animation: soft-drop 0.25s ease-out; }
 
     @keyframes glow-green {
-      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); border-color: rgba(16, 185, 129, 1); }
-      50% { box-shadow: 0 0 15px 5px rgba(16, 185, 129, 0.4); border-color: rgba(16, 185, 129, 0.8); }
-      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); border-color: rgba(16, 185, 129, 0.4); }
+      0%   { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);   border-color: rgba(16, 185, 129, 1); }
+      50%  { box-shadow: 0 0 15px 5px rgba(16, 185, 129, 0.4); border-color: rgba(16, 185, 129, 0.8); }
+      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);     border-color: rgba(16, 185, 129, 0.4); }
     }
     @keyframes glow-red {
-      0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7); border-color: rgba(244, 63, 94, 1); }
-      50% { box-shadow: 0 0 15px 5px rgba(244, 63, 94, 0.4); border-color: rgba(244, 63, 94, 0.8); }
-      100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); border-color: rgba(244, 63, 94, 0.4); }
+      0%   { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7);    border-color: rgba(244, 63, 94, 1); }
+      50%  { box-shadow: 0 0 15px 5px rgba(244, 63, 94, 0.4); border-color: rgba(244, 63, 94, 0.8); }
+      100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0);      border-color: rgba(244, 63, 94, 0.4); }
     }
     @keyframes glow-purple {
-      0% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.7); border-color: rgba(168, 85, 247, 1); }
-      50% { box-shadow: 0 0 20px 8px rgba(168, 85, 247, 0.4); border-color: rgba(168, 85, 247, 0.8); }
-      100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0); border-color: rgba(168, 85, 247, 0.4); }
+      0%   { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.7);     border-color: rgba(168, 85, 247, 1); }
+      50%  { box-shadow: 0 0 20px 8px rgba(168, 85, 247, 0.4); border-color: rgba(168, 85, 247, 0.8); }
+      100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0);       border-color: rgba(168, 85, 247, 0.4); }
     }
-    .glow-cs { animation: glow-green 1.2s ease-out; }
-    .glow-cf { animation: glow-red 1.2s ease-out; }
+    .glow-cs   { animation: glow-green 1.2s ease-out; }
+    .glow-cf   { animation: glow-red   1.2s ease-out; }
     .glow-high { animation: glow-purple 1.5s ease-out; }
 
+    /* ============================================================
+       📜 滾動條（WebKit + Firefox）
+       ============================================================ */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.5); border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, 0.8); }
 
+    @supports (scrollbar-width: thin) {
+      #history-log, #dice-container, .panel {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(100, 116, 139, 0.5) transparent;
+      }
+    }
+
+    /* ============================================================
+       🛡️ 使用者選取
+       ============================================================ */
     body { user-select: none; -webkit-user-select: none; }
     input, textarea, select { user-select: auto; -webkit-user-select: auto; }
     details > summary { list-style: none; }
     details > summary::-webkit-details-marker { display: none; }
     .virtual-scroll-item { content-visibility: auto; contain-intrinsic-size: 60px; }
+
+    /* ============================================================
+       ⚠️ Tailwind 離線 fallback（只在 CDN 失敗時生效）
+       ============================================================ */
+    html.no-tailwind .flex { display: flex; }
+    html.no-tailwind .inline-flex { display: inline-flex; }
+    html.no-tailwind .flex-col { flex-direction: column; }
+    html.no-tailwind .flex-row { flex-direction: row; }
+    html.no-tailwind .flex-wrap { flex-wrap: wrap; }
+    html.no-tailwind .flex-1 { flex: 1 1 0%; }
+    html.no-tailwind .items-center { align-items: center; }
+    html.no-tailwind .items-start { align-items: flex-start; }
+    html.no-tailwind .justify-center { justify-content: center; }
+    html.no-tailwind .justify-between { justify-content: space-between; }
+    html.no-tailwind .justify-end { justify-content: flex-end; }
+
+    html.no-tailwind .grid { display: grid; }
+    html.no-tailwind .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+    html.no-tailwind .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    html.no-tailwind .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    html.no-tailwind .grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    html.no-tailwind .col-span-1 { grid-column: span 1 / span 1; }
+
+    html.no-tailwind .hidden { display: none; }
+    html.no-tailwind .block { display: block; }
+    html.no-tailwind .relative { position: relative; }
+    html.no-tailwind .absolute { position: absolute; }
+    html.no-tailwind .fixed { position: fixed; }
+    html.no-tailwind .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+    html.no-tailwind .overflow-hidden { overflow: hidden; }
+    html.no-tailwind .overflow-y-auto { overflow-y: auto; }
+
+    html.no-tailwind .w-full { width: 100%; }
+    html.no-tailwind .h-full { height: 100%; }
+    html.no-tailwind .h-screen { height: 100vh; height: 100dvh; }
+    html.no-tailwind .min-h-0 { min-height: 0; }
+
+    html.no-tailwind .gap-1 { gap: 0.25rem; }
+    html.no-tailwind .gap-2 { gap: 0.5rem; }
+    html.no-tailwind .gap-3 { gap: 0.75rem; }
+    html.no-tailwind .gap-4 { gap: 1rem; }
+
+    html.no-tailwind .p-1 { padding: 0.25rem; }
+    html.no-tailwind .p-2 { padding: 0.5rem; }
+    html.no-tailwind .p-3 { padding: 0.75rem; }
+    html.no-tailwind .p-4 { padding: 1rem; }
+    html.no-tailwind .px-2 { padding-left: 0.5rem; padding-right: 0.5rem; }
+    html.no-tailwind .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+    html.no-tailwind .py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+    html.no-tailwind .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+
+    html.no-tailwind .text-xs { font-size: 0.75rem; line-height: 1rem; }
+    html.no-tailwind .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+    html.no-tailwind .text-base { font-size: 1rem; line-height: 1.5rem; }
+    html.no-tailwind .text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+    html.no-tailwind .text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+    html.no-tailwind .text-2xl { font-size: 1.5rem; line-height: 2rem; }
+    html.no-tailwind .font-bold { font-weight: 700; }
+    html.no-tailwind .font-black { font-weight: 900; }
+
+    html.no-tailwind .rounded-lg { border-radius: 0.5rem; }
+    html.no-tailwind .rounded-xl { border-radius: 0.75rem; }
+    html.no-tailwind .rounded-2xl { border-radius: 1rem; }
+    html.no-tailwind .rounded-3xl { border-radius: 1.5rem; }
+    html.no-tailwind .rounded-full { border-radius: 9999px; }
+
+    html.no-tailwind .border { border-width: 1px; border-style: solid; border-color: var(--border-main); }
+    html.no-tailwind .border-b { border-bottom-width: 1px; border-bottom-style: solid; }
+
+    html.no-tailwind .bg-slate-500\/10 { background-color: rgba(100, 116, 139, 0.1); }
+    html.no-tailwind .bg-black\/10 { background-color: rgba(0, 0, 0, 0.1); }
+    html.no-tailwind .bg-indigo-600 { background-color: #4f46e5; }
+    html.no-tailwind .bg-emerald-600 { background-color: #059669; }
+    html.no-tailwind .bg-purple-600 { background-color: #9333ea; }
+    html.no-tailwind .bg-rose-600 { background-color: #e11d48; }
+    html.no-tailwind .text-white { color: #ffffff; }
+    html.no-tailwind .text-amber-500 { color: #f59e0b; }
+    html.no-tailwind .text-emerald-500 { color: #10b981; }
+
+    html.no-tailwind .transition { transition-property: color, background-color, border-color, opacity; transition-duration: 150ms; }
+    html.no-tailwind .cursor-pointer { cursor: pointer; }
+
+    /* Tailwind 失敗時隱藏需要它的元素（但保留基本操作） */
+    html.no-tailwind .shadow-2xl,
+    html.no-tailwind .shadow-lg { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+
+    /* 離線 banner 的樣式（不依賴 Tailwind） */
+    #offline-banner {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 400;
+      background: #d97706;
+      color: #ffffff;
+      font-size: 12px;
+      text-align: center;
+      padding: 8px 12px;
+      font-weight: bold;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
   </style>
 </head>
 <body class="h-screen flex items-center justify-center p-2 md:p-4 font-sans overflow-hidden transition-colors duration-300">
+
+  <!-- ⚠️ 離線警告 banner（Tailwind 失敗時才顯示） -->
+  <div id="offline-banner" style="display:none">
+    ⚠️ 離線模式：樣式不完整（請連接網路以載入完整 UI）
+  </div>
 
   <div class="w-full max-w-[1600px] h-full max-h-[900px] min-h-[800px] main-container border rounded-3xl shadow-2xl flex flex-col p-4 md:p-6 space-y-4 overflow-hidden relative transition-colors duration-300">
 
@@ -127,7 +320,6 @@
     <!-- 主內容區 -->
     <div class="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6 flex-1 min-h-0">
 
-      <!-- 左側控制欄 -->
       <div class="col-span-1 md:col-span-4 panel border rounded-2xl p-4 md:p-5 flex flex-col gap-4 overflow-y-auto">
         <div class="space-y-4">
           <div class="text-xs font-bold text-muted tracking-wider uppercase border-b border-default pb-2 flex justify-between items-center">
@@ -205,7 +397,6 @@
         </div>
       </div>
 
-      <!-- 右側展示區 -->
       <div class="col-span-1 md:col-span-8 flex flex-col space-y-4 min-h-0">
         <div class="flex-1 panel border rounded-2xl p-4 md:p-5 flex flex-col relative overflow-hidden shadow-inner min-h-[300px] md:min-h-0">
           <div class="flex flex-col md:flex-row md:justify-between md:items-center border-b border-default pb-2 mb-3 gap-2">
@@ -256,9 +447,9 @@
         <div>
           <h3 class="text-sm font-bold text-indigo-500 mb-2">🎨 介面主題</h3>
           <div class="grid grid-cols-3 gap-2">
-            <button onclick="setTheme('theme-dark')" style="background-color: #0f172a; color: #f1f5f9; border-color: #334155;" class="py-2 border rounded-lg text-xs hover:opacity-80 shadow-sm transition-all font-bold">深色 (預設)</button>
+            <button onclick="setTheme('theme-dark')"  style="background-color: #0f172a; color: #f1f5f9; border-color: #334155;" class="py-2 border rounded-lg text-xs hover:opacity-80 shadow-sm transition-all font-bold">深色 (預設)</button>
             <button onclick="setTheme('theme-light')" style="background-color: #ffffff; color: #0f172a; border-color: #cbd5e1;" class="py-2 border rounded-lg text-xs hover:opacity-80 shadow-sm transition-all font-bold">淺色</button>
-            <button onclick="setTheme('theme-gold')" style="background-color: #292524; color: #fef3c7; border-color: #d97706;" class="py-2 border rounded-lg text-xs hover:opacity-80 shadow-sm transition-all font-bold">金黃 (Fate)</button>
+            <button onclick="setTheme('theme-gold')"  style="background-color: #292524; color: #fef3c7; border-color: #d97706;" class="py-2 border rounded-lg text-xs hover:opacity-80 shadow-sm transition-all font-bold">金黃 (Fate)</button>
           </div>
         </div>
 
@@ -333,6 +524,7 @@
     const btnModeRa          = document.getElementById('btn-mode-ra');
     const btnModeRo          = document.getElementById('btn-mode-ro');
     const modeDesc           = document.getElementById('mode-desc');
+    const offlineBanner      = document.getElementById('offline-banner');
 
     // ============================================================
     // 🔢 常數
@@ -344,9 +536,121 @@
     const MAX_CHAIN_LEVEL = 50;
 
     // ============================================================
-    // 🎰 RNG 緩衝區（模組級重用，避免每次擲骰 new Uint32Array）
+    // 🌍 跨平台能力偵測（一次性）
     // ============================================================
     const rngBuffer = new Uint32Array(1);
+    let cryptoAvailable = false;
+    try {
+      window.crypto.getRandomValues(rngBuffer);
+      cryptoAvailable = true;
+    } catch (e) {
+      cryptoAvailable = false;
+    }
+
+    function checkTailwind() {
+      const probe = document.createElement('div');
+      probe.className = 'hidden';
+      probe.style.position = 'absolute';
+      probe.style.top = '-9999px';
+      document.body.appendChild(probe);
+      let ok = false;
+      try {
+        ok = getComputedStyle(probe).display === 'none';
+      } catch (e) { ok = false; }
+      probe.remove();
+      return ok;
+    }
+
+    // ============================================================
+    // 🛠️ 跨平台工具函式
+    // ============================================================
+    async function copyToClipboard(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        try {
+          await navigator.clipboard.writeText(text);
+          return true;
+        } catch (e) { /* fall through */ }
+      }
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.top = '-9999px';
+        ta.style.left = '-9999px';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        ta.setSelectionRange(0, text.length);
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        return ok;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function getTimeString() {
+      try {
+        return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      } catch (e) {
+        const d = new Date();
+        return String(d.getHours()).padStart(2, '0') + ':' +
+               String(d.getMinutes()).padStart(2, '0');
+      }
+    }
+
+    function downloadFile(content, filename, mime) {
+      const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+      if (window.pywebview && window.pywebview.api) {
+        return window.pywebview.api.save_csv(content, filename).then((response) => {
+          if (response && response.success) showToast('✅ 檔案已儲存喵！', 'success');
+          return true;
+        });
+      }
+
+      if (isiOS) {
+        // iOS Safari 對 <a download> 支援有限 → 開新視窗顯示
+        const win = window.open('', '_blank');
+        if (win) {
+          try {
+            win.document.open();
+            win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CSV 內容</title></head><body style="margin:0;padding:16px;background:#0f172a;color:#f1f5f9;font-family:monospace;"></body></html>');
+            win.document.close();
+            const pre = win.document.createElement('pre');
+            pre.style.cssText = 'white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:12px;';
+            pre.textContent = content;
+            win.document.body.appendChild(pre);
+            showToast('📄 已開啟新視窗，請長按全選複製', 'info');
+            return Promise.resolve(true);
+          } catch (e) { /* fall through */ }
+        }
+        // 開新視窗失敗 → 退回剪貼簿
+        return copyToClipboard(content).then(ok => {
+          if (ok) showToast('📋 已複製 CSV 內容到剪貼簿', 'success');
+          else showToast('❌ 無法匯出，請手動複製', 'error');
+          return ok;
+        });
+      }
+
+      // 標準下載
+      try {
+        const blob = new Blob([content], { type: mime });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        showToast('✅ 檔案已下載喵！', 'success');
+        return Promise.resolve(true);
+      } catch (e) {
+        return Promise.resolve(false);
+      }
+    }
 
     // ============================================================
     // 🧠 狀態
@@ -356,7 +660,7 @@
     let history = [];
 
     // ============================================================
-    // 🛠️ 工具函式
+    // 🧰 基礎工具
     // ============================================================
     function toInt(v, fallback) {
       const n = Math.floor(Number(v));
@@ -373,7 +677,6 @@
       };
     }
 
-    // 回傳 { hasChain, endsInS0, counted, s0Step, firstStep }
     function getS0Info(run) {
       if (!run || !run.steps || run.steps.length === 0) return null;
       if (run.steps[0].levelStr === 'custom') return null;
@@ -391,6 +694,11 @@
     function setTheme(themeName) {
       document.documentElement.className = themeName;
       localStorage.setItem('fate_theme', themeName);
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (metaTheme) {
+        const colors = { 'theme-dark': '#020617', 'theme-light': '#f1f5f9', 'theme-gold': '#1c1917' };
+        metaTheme.setAttribute('content', colors[themeName] || '#020617');
+      }
       showToast(`🎨 已切換至 ${themeName.replace('theme-', '')} 主題`, 'info');
     }
 
@@ -470,6 +778,11 @@
     function loadSettings() {
       const savedTheme = localStorage.getItem('fate_theme') || 'theme-dark';
       document.documentElement.className = savedTheme;
+      const metaTheme = document.querySelector('meta[name="theme-color"]');
+      if (metaTheme) {
+        const colors = { 'theme-dark': '#020617', 'theme-light': '#f1f5f9', 'theme-gold': '#1c1917' };
+        metaTheme.setAttribute('content', colors[savedTheme] || '#020617');
+      }
 
       const s = safeGet('fate_dreamweaver_settings', null);
       if (s) {
@@ -515,9 +828,6 @@
       saveSettings();
     }
 
-    // ============================================================
-    // 🎛️ 參數調整
-    // ============================================================
     function adjustCount(delta) {
       const val = toInt(countInput.value, 1);
       countInput.value = Math.max(1, Math.min(MAX_DICE, val + delta));
@@ -535,19 +845,22 @@
     }
 
     // ============================================================
-    // 🎲 RNG（密碼學安全，重用緩衝區）
+    // 🎲 RNG（含 fallback）
     // ============================================================
     function getRnd(max, debugSeq, state) {
       if (debugSeq && debugSeq.length > 0 && state.index < debugSeq.length) {
         const val = debugSeq[state.index++];
         return Math.max(1, Math.min(max, val));
       }
-      window.crypto.getRandomValues(rngBuffer);
-      return (rngBuffer[0] % max) + 1;
+      if (cryptoAvailable) {
+        window.crypto.getRandomValues(rngBuffer);
+        return (rngBuffer[0] % max) + 1;
+      }
+      return Math.floor(Math.random() * max) + 1;
     }
 
     // ============================================================
-    // 🔗 連鎖引擎
+    // 🔗 連鎖引擎（業務邏輯完全不變）
     // ============================================================
     function rollChainEngine(startType, boost, targetVal, mode, debugSeq, state, boostMode100) {
       const steps = [];
@@ -642,7 +955,7 @@
     }
 
     // ============================================================
-    // 🎨 渲染（全部改用陣列拼接，避免 O(n²)）
+    // 🎨 渲染
     // ============================================================
     function renderBadges(totalSuccessStacks, totalFailStacks, isDebug) {
       const parts = [];
@@ -740,7 +1053,10 @@
     }
 
     function copyTotalSum(val) {
-      navigator.clipboard.writeText(val.toString()).then(() => showToast(`📋 已複製總和：${val} 喵！`, 'success'));
+      copyToClipboard(val.toString()).then(ok => {
+        if (ok) showToast(`📋 已複製總和：${val} 喵！`, 'success');
+        else showToast('❌ 複製失敗', 'error');
+      });
     }
 
     // ============================================================
@@ -812,7 +1128,10 @@
         if (parts.length > 0) {
           const prefix = count + 'd' + (type.includes('d') ? type.split('d')[1] : type);
           const formulaString = `${prefix}=${parts.join('+')}=${totalSum}`;
-          navigator.clipboard.writeText(formulaString).then(() => showToast(`📋 已自動複製：${formulaString}`, 'success'));
+          copyToClipboard(formulaString).then(ok => {
+            if (ok) showToast(`📋 已自動複製：${formulaString}`, 'success');
+            else showToast('❌ 自動複製失敗', 'error');
+          });
         }
       }
     }
@@ -884,7 +1203,9 @@
       showToast('🎲 自訂擲骰完成！', 'success');
 
       if (autoCopyToggle.checked) {
-        navigator.clipboard.writeText(formula).then(() => showToast(`📋 已自動複製：${formula}`, 'success'));
+        copyToClipboard(formula).then(ok => {
+          if (ok) showToast(`📋 已自動複製：${formula}`, 'success');
+        });
       }
     }
 
@@ -892,7 +1213,7 @@
     // 📜 歷史
     // ============================================================
     function addHistory(summary, detail) {
-      const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const now = getTimeString();
       history.unshift({ time: now, summary, detail });
       if (history.length > MAX_HISTORY) history.pop();
       saveHistory();
@@ -929,7 +1250,10 @@
       let textToCopy = item.summary;
       if (item.detail) textToCopy += `\n詳細軌跡：${item.detail}`;
       textToCopy = formatOutputText(textToCopy);
-      navigator.clipboard.writeText(textToCopy).then(() => showToast('📋 已複製到剪貼簿喵！', 'success'));
+      copyToClipboard(textToCopy).then(ok => {
+        if (ok) showToast('📋 已複製到剪貼簿喵！', 'success');
+        else showToast('❌ 複製失敗，請長按選取', 'error');
+      });
     }
 
     function exportHistoryToCSV() {
@@ -944,25 +1268,10 @@
         const safeDetail  = `"${dText.replace(/"/g, '""')}"`;
         lines.push(`${item.time},${safeSummary},${safeDetail}`);
       });
-      // 保留原本的結尾換行，輸出位元組完全一致
       const csvContent = lines.join('\n') + '\n';
-
       const defaultFileName = `Fate_Classic_Log_${new Date().toISOString().slice(0,10)}.csv`;
-      if (window.pywebview && window.pywebview.api) {
-        window.pywebview.api.save_csv(csvContent, defaultFileName).then((response) => {
-          if (response && response.success) showToast('✅ 檔案已儲存喵！', 'success');
-        });
-      } else {
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.setAttribute("href", url);
-        link.setAttribute("download", defaultFileName);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        showToast('✅ 檔案已下載喵！', 'success');
-      }
+
+      downloadFile(csvContent, defaultFileName, 'text/csv;charset=utf-8;');
     }
 
     // ============================================================
@@ -982,7 +1291,23 @@
     // ============================================================
     // 🚀 啟動
     // ============================================================
-    window.addEventListener('DOMContentLoaded', loadSettings);
+    window.addEventListener('DOMContentLoaded', function() {
+      // Tailwind 檢測
+      const tailwindOK = checkTailwind();
+      if (!tailwindOK) {
+        document.documentElement.classList.add('no-tailwind');
+        offlineBanner.style.display = 'block';
+        // 5 秒後自動收起（避免遮擋）
+        setTimeout(() => { offlineBanner.style.display = 'none'; }, 5000);
+      }
+
+      loadSettings();
+
+      // 若 RNG 降級，提示一次
+      if (!cryptoAvailable) {
+        setTimeout(() => showToast('⚠️ 當前環境不支援加密隨機，已降級為普通隨機', 'info'), 800);
+      }
+    });
   </script>
 </body>
 </html>
