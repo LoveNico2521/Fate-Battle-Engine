@@ -217,26 +217,6 @@
           </div>
         </div>
 
-        <!-- 簡單狀態追蹤 -->
-        <div class="space-y-2 border border-default rounded-xl p-3 bg-black/10 mt-2">
-          <div class="flex justify-between items-center">
-            <span class="text-xs font-bold text-rose-500">❤️ HP</span>
-            <div class="flex items-center gap-2">
-              <button onclick="adjustStat('hp', -1)" class="w-7 h-7 bg-slate-500/20 hover:bg-rose-600 rounded-lg text-white font-bold transition">-</button>
-              <span id="stat-hp" class="text-base font-black w-8 text-center">10</span>
-              <button onclick="adjustStat('hp', 1)" class="w-7 h-7 bg-slate-500/20 hover:bg-emerald-600 rounded-lg text-white font-bold transition">+</button>
-            </div>
-          </div>
-          <div class="flex justify-between items-center">
-            <span class="text-xs font-bold text-indigo-400">🧠 理智</span>
-            <div class="flex items-center gap-2">
-              <button onclick="adjustStat('san', -1)" class="w-7 h-7 bg-slate-500/20 hover:bg-rose-600 rounded-lg text-white font-bold transition">-</button>
-              <span id="stat-san" class="text-base font-black w-8 text-center">50</span>
-              <button onclick="adjustStat('san', 1)" class="w-7 h-7 bg-slate-500/20 hover:bg-emerald-600 rounded-lg text-white font-bold transition">+</button>
-            </div>
-          </div>
-        </div>
-
         <div class="flex items-center justify-between border border-default rounded-xl p-3 mt-2 shrink-0 bg-black/10">
           <label class="text-xs font-bold text-muted cursor-pointer flex-1" for="auto-copy-toggle">自動複製公式</label>
           <input id="auto-copy-toggle" type="checkbox" onchange="saveSettings()" class="w-4 h-4 text-indigo-600 bg-slate-800 border-slate-600 rounded focus:ring-indigo-500 focus:ring-2 cursor-pointer accent-indigo-500">
@@ -364,7 +344,6 @@
     const outputFormatInput = document.getElementById('output-format');
     const autoCopyToggle = document.getElementById('auto-copy-toggle'); 
     
-    let charStats = { hp: 10, san: 50 };
     document.addEventListener('contextmenu', e => e.preventDefault());
     let checkMode = 'ra';
     let history = [];
@@ -385,15 +364,6 @@
       document.documentElement.className = themeName;
       localStorage.setItem('fate_theme', themeName);
       showToast(`🎨 已切換至 ${themeName.replace('theme-', '')} 主題`, 'info');
-    }
-
-    function adjustStat(stat, delta) {
-      charStats[stat] += delta;
-      if (charStats[stat] < 0) charStats[stat] = 0;
-      document.getElementById(`stat-${stat}`).innerText = charStats[stat];
-      localStorage.setItem('fate_char_stats', JSON.stringify(charStats));
-      if (delta < 0) showToast(`💥 ${stat.toUpperCase()} 減少 ${-delta} 點！`, 'error');
-      if (delta > 0) showToast(`💚 ${stat.toUpperCase()} 恢復 ${delta} 點！`, 'success');
     }
 
     function rollCustomDice() {
@@ -469,13 +439,6 @@
     function loadSettings() {
       const savedTheme = localStorage.getItem('fate_theme') || 'theme-dark';
       document.documentElement.className = savedTheme;
-      
-      const savedStats = safeGet('fate_char_stats', null);
-      if (savedStats) {
-        charStats = savedStats;
-        document.getElementById('stat-hp').innerText = charStats.hp;
-        document.getElementById('stat-san').innerText = charStats.san;
-      }
       
       const s = safeGet('fate_dreamweaver_settings', null);
       if (s) {
@@ -562,8 +525,7 @@
           } else if (isCF) {
             step.outcome = 'DF-Trigger';
             if (!initialChainOutcome) initialChainOutcome = '大暴走';
-            // ✅ DF-Trigger 只推層級，不動淨 Stack
-            currentLevel++;
+            currentStack++; currentLevel++;
             step.msg = `🎲 1d100 = ${raw100} (CF: ${boostMode100 === 'v3' ? '最終值<=5' : '原始值<=5'}) ➔ 進入 s${currentLevel} (1d10)！ (${checkDetail})`;
             steps.push(step); continueLoop = true;
           } else {
@@ -596,10 +558,10 @@
             steps.push(step); continueLoop = false;
           }
         } else {
-          // ✅ 通用骰子：單純擲骰顯示，不套用 ra/ro 成功/失敗判定
           const sides = parseInt(dieType.replace('d', '')); const raw = getRnd(sides, debugSeq, state); const final = raw + boost;
-          const boostStr = boost !== 0 ? ` + ${boost} = ${final}` : '';
-          steps.push({ levelStr, type: dieType, raw, final, extraD2: null, outcome: null, msg: `🎲 擲出 ${dieType} ➔ 結果: ${raw}${boostStr}`, checkDetail: '' });
+          let isSuccess = (mode === 'ra') ? (final <= targetVal) : (final >= targetVal);
+          let checkDetail = `[${mode.toUpperCase()} ${mode === 'ra' ? '<=' : '>='} ${targetVal}] ➔ ${isSuccess ? '✅ 成功' : '❌ 失敗'}`;
+          steps.push({ levelStr, type: dieType, raw, final, extraD2: null, outcome: null, msg: `擲出 ${dieType} ➔ 原始: ${raw} | ${checkDetail}`, checkDetail });
           continueLoop = false;
         }
       }
@@ -630,7 +592,6 @@
           
           const isLast = (sIdx === run.steps.length - 1);
           let stackBadge = '';
-          // ✅ 最終結算標籤只在每組連鎖的最後一顆骰子（Last Roll）顯示
           if (isLast && s.levelStr !== 'custom') {
             if (run.finalStack > 0 && run.baseOutcome) {
               if (run.baseOutcome === '大成功') stackBadge = `<span class="px-2 py-1 bg-emerald-500/20 text-emerald-500 border border-emerald-500/50 rounded-lg font-black text-[10px] md:text-xs">✨ 結算：${run.finalStack}重大成功</span>`;
