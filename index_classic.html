@@ -1458,6 +1458,14 @@
         rounds++;
         // 每回合一次雙向對拼(88:633~642F:T1~T9 每 T 雙方各擲攻擊一次,敗方擲受傷表)
         steps.push(battleTurn(A, B, rounds, 'player', debugSeq, state));
+        // 支援位(炎火村 4865F 援護手式):每回合末對敵固定傷害(隊友不出戰,僅火力支援)
+        const supA = A.supportDmg || 0;
+        if (supA > 0 && B.hp > 0) {
+          B.hp -= supA;
+          const st = steps[steps.length - 1];
+          st.clash += ` 🤝支援位追加 ${supA}`;
+          st.foeHp = Math.max(0, B.hp);
+        }
         if (A.hp <= 0) {
           if (phaseBreak(A, A.name)) steps.push({ round: rounds, side: 'player', actor: A.name, skillName: '—', clash: `💀血條擊破!${A.name} 進入下一段(剩 ${A.bars} 段,滿血)`, dmg: 0, diceParts: [], counterNote: '', foeHp: Math.max(0, B.hp) });
           else { winner = B; break; }
@@ -1659,6 +1667,7 @@
               <label class="flex flex-col items-center gap-0.5 text-[11px]"><span class="text-muted">Atk</span><input type="number" value="${c.atk}" min="1" onchange="forgeActor('${side}', 'atk', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center font-bold" /></label>
               <label class="flex flex-col items-center gap-0.5 text-[11px]"><span class="text-muted">Hp</span><input type="number" value="${c.hp}" min="1" onchange="forgeActor('${side}', 'hp', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center font-bold" /></label>
               <label class="flex flex-col items-center gap-0.5 text-[11px]"><span class="text-muted">血條段</span><input type="number" value="${c.bars || 1}" min="1" max="9" onchange="forgeActor('${side}', 'bars', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center font-bold" /></label>
+              <label class="flex flex-col items-center gap-0.5 text-[11px]"><span class="text-muted">支援位</span><input type="number" value="${c.supportDmg || 0}" min="0" onchange="forgeActor('${side}', 'supportDmg', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center font-bold" /></label>
             </div>
             <div class="grid grid-cols-3 gap-2 text-[11px]">
               <label class="flex flex-col items-center gap-0.5"><span class="text-muted">regen</span><input type="number" value="${c.regen || 0}" min="0" onchange="forgeActor('${side}', 'regen', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center" /></label>
