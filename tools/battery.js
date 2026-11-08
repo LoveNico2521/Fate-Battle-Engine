@@ -100,12 +100,13 @@
   const onlyNormal = side => { battle[side].skills = [{ id: side + 'n', name: '普通攻擊', ct: 0, atkMod: 0, mult: 1, dice: '', cost: 0, counter: 0 }]; };
   S['b01_instant'] = B('60,40', () => { battle.player.skills = [BATTLE_DEFAULT.player.skills[1]]; battle.enemy.skills = [BATTLE_DEFAULT.enemy.skills[0]]; renderBattleCards(); }); // 超人烈海王對拼 926 vs 265 差值 661 ➔ 即決勝(A-1)
   S['b02_hit_injury'] = B('60,40,7,20,50,70,10,8', () => { onlyNormal('player'); onlyNormal('enemy'); battle.enemy.hp = 5; renderBattleCards(); }); // R1 命中受傷表 7=大傷3;R2 特大4 ➔ 勝
-  S['b03_counter'] = B('60,40,5,60,30,40,80,10,6,70', () => { onlyNormal('player'); battle.enemy.skills = [BATTLE_DEFAULT.enemy.skills[0], { id: 'ex', name: '紅海皇', ct: 0, atkMod: 0, mult: 1, dice: '', cost: 0, counter: 50 }]; battle.enemy.hp = 2; renderBattleCards(); }); // 破解 60≥50、70≥50 ➔ 減半後擊殺
+  S['b03_counter'] = B('60,40,5,60,1,30,40,80,10,6,70', () => { onlyNormal('player'); battle.enemy.skills = [BATTLE_DEFAULT.enemy.skills[0], { id: 'ex', name: '紅海皇', ct: 0, atkMod: 0, mult: 1, dice: '', cost: 0, counter: 50 }]; battle.enemy.hp = 2; renderBattleCards(); }); // 敵二技(R1 選技骰 1=普攻)破解 60/70≥50 ➔ 減半後擊殺
   S['b04_direct'] = B('4', () => { battle.player.skills = [{ id: 'y1', name: 'Flower star', ct: 0, atkMod: 0, mult: 1, dice: '2+1d5', cost: 0, counter: 0, alwaysHit: 1 }]; battle.enemy.hp = 6; renderBattleCards(); }); // 直接傷害技:跳過對拼,2+4=6 一擊
   S['b05_injury10'] = B('60,40,10,2', () => { onlyNormal('player'); battle.enemy.hp = 99; renderBattleCards(); }); // 受傷表 10 極端 ➔ 1d2=2 戰鬥不能 ➔ 勝
   S['b06_draw'] = B(Array.from({ length: 200 }, (_, i) => [10, 90, 30, 90][i % 4]).join(','), () => { onlyNormal('player'); onlyNormal('enemy'); renderBattleCards(); }); // 雙方全落空 50 回合 ➔ 平局
   S['b07_nocscf'] = B('96,10,8,20,50,70,10,8', () => { onlyNormal('player'); onlyNormal('enemy'); battle.enemy.hp = 6; renderBattleCards(); }); // 骰 96 不再是 CS(傷害 4 而非 ×2=8):B 案保真驗證
   S['b08_injury10_counter'] = B('60,40,10,1,10,70,70,10,5', () => { onlyNormal('player'); onlyNormal('enemy'); battle.enemy.hp = 2; renderBattleCards(); }); // 受傷表 10 極端 ➔ 1d2=1 受擊方大成功(防禦+反擊2:烈海王 HP 17→15)➔ 敵落空 ➔ R2 中傷 2 擊殺
+  S['b09_skilldice'] = B('1,60,40,8', () => { onlyNormal('enemy'); battle.enemy.hp = 4; renderBattleCards(); }); // 原作式選技骰(88:446F):1d3=1 普攻 ➔ 對拼命中 ➔ 特大 4 擊殺;選技隨機讓 R1 不再必開大招
 
   // 還原掛鉤
   window.showToast = origToast;

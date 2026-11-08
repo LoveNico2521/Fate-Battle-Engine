@@ -1224,12 +1224,13 @@
       return { total, parts };
     }
 
-    // AI 選技:可用(ct=0 且 HP 足)中取威力估值最高;普攻(第一個 ct=0 技)永遠兜底
-    function pickBattleSkill(self) {
+    // AI 選技(原作式):可用(ct=0 且 HP 足)中擲 1dN 隨機選——原作連必殺技都用選擇骰(88:446F/1000F),
+    // 貪心最大值會讓 R1 必開大招、CT 形同虛設;隨機制保留 CT 的節奏意義。單一可用技時不擲骰。普攻(第一個 ct=0 技)兜底。
+    function pickBattleSkill(self, debugSeq, state) {
       const usable = self.skills.filter(s => (s.currentCd || 0) === 0 && (s.cost || 0) <= self.hp);
       if (usable.length === 0) return self.skills[0];
-      const power = s => ((s.atkMod || 0) + 10) * (s.mult || 1) + (s.dice ? 5 : 0);
-      return usable.reduce((best, s) => power(s) > power(best) ? s : best);
+      if (usable.length === 1) return usable[0];
+      return usable[getRnd(usable.length, debugSeq, state) - 1];
     }
 
     // 受傷表(B 案,原作 88:77F 起全域):受擊方擲 1d10 查檔;表即角色防禦畫像,本版用固定預設表,角色位移修正(±N)留作擴充
@@ -1244,7 +1245,7 @@
     function injuryLookup(roll) { return INJURY_TABLE.find(r => roll >= r.min && roll <= r.max); }
 
     function battleTurn(self, foe, round, side, debugSeq, state) {
-      const skill = pickBattleSkill(self);
+      const skill = pickBattleSkill(self, debugSeq, state);
       if (skill.cost) self.hp -= skill.cost;
       if (skill.ct > 0) skill.currentCd = skill.ct;
       const dicePartsBase = [];
