@@ -101,6 +101,7 @@
   S['b03_counter'] = B('86,60', () => { battle.enemy.skills.push({ id: 'ex', name: '紅海皇', ct: 0, atkMod: 0, mult: 1, dice: '', cost: 0, counter: 50 }); renderBattleCards(); }); // 破解 60≥50 ➔ 傷害減半
   S['b04_dice'] = B('86,3', () => { battle.player.skills = [{ id: 'x1', name: '普通攻擊', ct: 0, atkMod: 0, mult: 1, dice: '', cost: 0, counter: 0 }, { id: 'x2', name: 'Flower star', ct: 4, atkMod: 0, mult: 1, dice: '2+1d5', cost: 0, counter: 0 }]; renderBattleCards(); }); // 骰式 2+1d5 計入傷害
   S['b05_draw'] = B(Array(300).fill('2').join(',')); // 全 CF 失手 50 回合 ➔ 平局(序列 300:大招 CT 週期回歸+骰式技反覆觸發,50 回合總消費可達 150+ 骰,300 確定覆蓋全程)
+  S['b06_alwayshit'] = B('2,3', () => { battle.player.skills = [{ id: 'y1', name: 'Flower star', ct: 0, atkMod: 0, mult: 1, dice: '2+1d5', cost: 0, counter: 0, alwaysHit: 1 }]; renderBattleCards(); }); // 必中技:CF 骰 2 也不歸零,傷害 216+2+3=221 照算(A 案;序列 2=命中骰、3=骰式骰)
 
   // 還原掛鉤
   window.showToast = origToast;
