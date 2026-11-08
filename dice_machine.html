@@ -10,20 +10,17 @@
     .theme-dark {
       --bg-main: #020617; --bg-panel: #0f172a; --bg-box: rgba(15, 23, 42, 0.6);
       --text-main: #f1f5f9; --text-muted: #94a3b8; --border-main: #1e293b;
-      --input-bg: rgba(15, 23, 42, 0.5); --input-border: #334155;
-      --card-bg: #0f172a; --card-border: #1e293b;
+      --input-bg: #1e293b; --input-border: #334155;
     }
     .theme-light {
       --bg-main: #f1f5f9; --bg-panel: #ffffff; --bg-box: rgba(248, 250, 252, 0.8);
       --text-main: #0f172a; --text-muted: #475569; --border-main: #cbd5e1;
-      --input-bg: #ffffff; --input-border: #94a3b8;
-      --card-bg: #f8fafc; --card-border: #e2e8f0;
+      --input-bg: #ffffff; --input-border: #cbd5e1;
     }
     .theme-gold {
       --bg-main: #1c1917; --bg-panel: #292524; --bg-box: rgba(41, 37, 36, 0.6);
       --text-main: #fef3c7; --text-muted: #d6d3d1; --border-main: #44403c;
-      --input-bg: rgba(28, 25, 23, 0.5); --input-border: #57534e;
-      --card-bg: #292524; --card-border: #44403c;
+      --input-bg: #44403c; --input-border: #57534e;
     }
 
     /* 套用主題顏色 */
@@ -33,37 +30,48 @@
     .text-muted { color: var(--text-muted); }
     .border-default { border-color: var(--border-main); }
 
-    /* 🌟 強制覆蓋輸入框與下拉選單，解決白底白字問題 */
-    input, select, textarea {
+    /* 🌟 強制覆蓋原生輸入框與下拉選單 🌟 */
+    input:not([type="checkbox"]), select, textarea {
       background-color: var(--input-bg) !important;
       border-color: var(--input-border) !important;
       color: var(--text-main) !important;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
     }
-    /* 解決下拉選單展開後的選項背景色 */
+    
     select option {
       background-color: var(--bg-panel) !important;
       color: var(--text-main) !important;
     }
-    /* 解決 Placeholder 顏色 */
-    ::placeholder {
-      color: var(--text-muted) !important;
-      opacity: 0.7;
+    
+    select {
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") !important;
+      background-repeat: no-repeat !important;
+      background-position: right 0.5rem center !important;
+      background-size: 1em !important;
+      padding-right: 2rem !important;
+    }
+    .theme-light select {
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230f172a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") !important;
+    }
+
+    ::placeholder { color: var(--text-muted) !important; opacity: 0.7; }
+
+    #settings-modal-content, #confirm-modal-content {
+      background-color: var(--bg-panel) !important;
+      border-color: var(--border-main) !important;
+      color: var(--text-main) !important;
     }
 
     /* 覆蓋寫死的 Tailwind 顏色，確保對比度 */
-    .theme-light .text-slate-100, .theme-light .text-slate-200, .theme-light .text-white { color: #0f172a !important; }
+    .theme-light .text-slate-100, .theme-light .text-slate-200 { color: #0f172a !important; }
     .theme-light .text-slate-300, .theme-light .text-slate-400 { color: #334155 !important; }
     .theme-light .text-slate-500 { color: #64748b !important; }
-    .theme-light .text-slate-600 { color: #475569 !important; }
     
-    .theme-gold .text-slate-100, .theme-gold .text-slate-200, .theme-gold .text-white { color: #fef3c7 !important; }
+    .theme-gold .text-slate-100, .theme-gold .text-slate-200 { color: #fef3c7 !important; }
     .theme-gold .text-slate-300, .theme-gold .text-slate-400 { color: #d6d3d1 !important; }
     .theme-gold .text-slate-500 { color: #a8a29e !important; }
-    .theme-gold .text-slate-600 { color: #78716c !important; }
-
-    /* 設定彈窗背景 */
-    .theme-light #settings-modal-content, .theme-light #confirm-modal-content { background-color: #ffffff !important; border-color: #cbd5e1 !important; color: #0f172a !important; }
-    .theme-gold #settings-modal-content, .theme-gold #confirm-modal-content { background-color: #292524 !important; border-color: #44403c !important; color: #fef3c7 !important; }
 
     /* 輕柔落桌動畫 */
     @keyframes soft-drop {
@@ -126,7 +134,6 @@
           <span>•</span>
           <span>與基準同向 ➔ 深入 (+1)</span>
         </div>
-        <!-- ⚙️ 設定按鈕 -->
         <button onclick="openSettings()" class="p-2 bg-slate-500/10 hover:bg-slate-500/20 rounded-full transition-colors text-xl border border-transparent" title="設定">
           ⚙️
         </button>
@@ -136,7 +143,7 @@
     <!-- 主內容區 -->
     <div class="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6 flex-1 min-h-0">
       
-      <!-- 左側：控制與參數設定欄 -->
+      <!-- 左側控制欄 -->
       <div class="col-span-1 md:col-span-4 panel border rounded-2xl p-4 md:p-5 flex flex-col gap-4 overflow-y-auto">
         
         <div class="space-y-4">
@@ -165,13 +172,39 @@
             </div>
           </div>
 
-          <div class="space-y-1">
-            <label class="block text-xs font-medium text-muted">1d100 Boost 模式</label>
-            <select id="boost-mode-100" onchange="saveSettings()" class="w-full border border-default rounded-xl px-2 py-1.5 text-xs focus:outline-none transition-colors">
-              <option value="v1">v1: 降面 1d(100-Boost) + Boost (CF看原始值)</option>
-              <option value="v2">v2: 原始 1d100 + Boost (CF看原始值)</option>
-              <option value="v3">v3: 降面 1d(100-|Boost|) + 正Boost加值 (CF/CS看最終值)</option>
-            </select>
+          <!-- 🌟 雙陣營戰鬥追蹤器 🌟 -->
+          <div class="space-y-2 border border-indigo-500/30 rounded-xl p-3 bg-indigo-500/5">
+            <div class="flex justify-between items-center mb-1">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-indigo-500">⚔️ 戰鬥追蹤</span>
+                <span id="turn-display" class="text-[10px] bg-indigo-500/20 text-indigo-500 px-2 py-0.5 rounded-full font-bold">Turn 1</span>
+              </div>
+              <button onclick="endTurn()" class="text-[10px] bg-indigo-600 hover:bg-indigo-500 text-white px-2 py-1 rounded transition font-bold shadow-sm">下一回合 ⏭️</button>
+            </div>
+
+            <!-- 陣營切換 -->
+            <div class="grid grid-cols-2 gap-1 bg-black/20 p-1 rounded-lg">
+              <button id="tab-player" onclick="switchActor('player')" class="py-1 text-xs font-bold rounded-md bg-indigo-600 text-white transition">玩家</button>
+              <button id="tab-enemy" onclick="switchActor('enemy')" class="py-1 text-xs font-bold rounded-md opacity-50 hover:opacity-100 transition">敵人</button>
+            </div>
+
+            <!-- 當前陣營狀態 -->
+            <div class="flex justify-between text-xs px-1">
+              <span class="text-rose-500 font-bold">❤️ HP: <span id="stat-hp">10</span></span>
+              <span class="text-indigo-400 font-bold">🧠 理智: <span id="stat-san">50</span></span>
+            </div>
+
+            <!-- 技能選擇 -->
+            <div class="flex gap-2 mt-1">
+              <select id="skill-select" onchange="onSkillSelectChange()" class="flex-1 border border-default rounded-lg px-2 py-1.5 text-xs focus:outline-none">
+                <option value="">-- 選擇技能 --</option>
+              </select>
+              <button onclick="castSkill()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-xs font-bold text-white transition whitespace-nowrap">施放</button>
+            </div>
+            <div class="flex justify-between text-[10px] text-muted mt-1 h-4">
+              <span id="skill-cost-display"></span>
+              <span id="skill-cd-display"></span>
+            </div>
           </div>
 
           <div class="space-y-2 border border-default rounded-xl p-3 bg-black/10">
@@ -193,7 +226,6 @@
           </div>
         </div>
 
-        <!-- 主要控制按鈕 -->
         <div class="space-y-3 pt-1">
           <button onclick="executeRoll('1d10')" class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl shadow-lg transition-all flex flex-col items-center justify-center gap-1 border border-indigo-400/30">
             <span class="text-base tracking-wide">🎲 投下 1d10 安科連鎖</span>
@@ -205,7 +237,6 @@
           </button>
         </div>
 
-        <!-- 通用標準骰子 -->
         <div class="space-y-1.5 pt-3 border-t border-default">
           <span class="text-[11px] font-medium text-muted">通用標準骰子</span>
           <div class="grid grid-cols-5 gap-2">
@@ -215,14 +246,12 @@
             <button onclick="executeRoll('d12')" class="py-2 md:py-1.5 bg-slate-500/10 hover:bg-slate-500/20 rounded-xl text-xs font-bold transition">d12</button>
             <button onclick="executeRoll('d20')" class="py-2 md:py-1.5 bg-slate-500/10 hover:bg-slate-500/20 rounded-xl text-xs font-bold transition">d20</button>
           </div>
-          <!-- 自訂骰池 -->
           <div class="flex gap-2 mt-2">
             <input id="custom-dice-input" type="text" placeholder="自訂 (如 d100, d1000)" class="flex-1 border border-default rounded-lg px-2 py-1.5 text-xs focus:outline-none" />
             <button onclick="rollCustomDice()" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 rounded-lg text-xs font-bold text-white transition">投下</button>
           </div>
         </div>
 
-        <!-- 自動複製開關 -->
         <div class="flex items-center justify-between border border-default rounded-xl p-3 mt-2 shrink-0 bg-black/10">
           <label class="text-xs font-bold text-muted cursor-pointer flex-1" for="auto-copy-toggle">自動複製公式</label>
           <input id="auto-copy-toggle" type="checkbox" onchange="saveSettings()" class="w-4 h-4 text-indigo-600 bg-slate-800 border-slate-600 rounded focus:ring-indigo-500 focus:ring-2 cursor-pointer accent-indigo-500">
@@ -230,12 +259,10 @@
 
       </div>
 
-      <!-- 右側：連鎖視覺顯示與歷史記錄欄 -->
+      <!-- 右側展示區 -->
       <div class="col-span-1 md:col-span-8 flex flex-col space-y-4 min-h-0">
         
-        <!-- 連鎖追擲動態展示區 -->
         <div class="flex-1 panel border rounded-2xl p-4 md:p-5 flex flex-col relative overflow-hidden shadow-inner min-h-[300px] md:min-h-0">
-          
           <div class="flex flex-col md:flex-row md:justify-between md:items-center border-b border-default pb-2 mb-3 gap-2">
             <span class="text-xs font-bold text-amber-500 tracking-wider uppercase">📊 即時安科推演圖譜</span>
             <div id="strike-badges" class="flex gap-2 text-xs font-bold flex-wrap"></div>
@@ -253,12 +280,8 @@
           </div>
         </div>
 
-        <!-- 本輪總和顯示區 -->
-        <div id="total-summary" class="hidden bg-indigo-950/40 border border-indigo-500/30 rounded-2xl p-3 flex flex-col md:flex-row justify-center items-center text-sm md:text-base font-bold text-indigo-500 shadow-lg transition-all gap-2 shrink-0">
-          <!-- 內容會由 JS 動態生成 -->
-        </div>
+        <div id="total-summary" class="hidden bg-indigo-950/40 border border-indigo-500/30 rounded-2xl p-3 flex flex-col md:flex-row justify-center items-center text-sm md:text-base font-bold text-indigo-500 shadow-lg transition-all gap-2 shrink-0"></div>
 
-        <!-- 歷史紀錄區域 -->
         <div class="h-40 md:h-44 panel border rounded-2xl p-4 flex flex-col min-h-0 space-y-2 shrink-0">
           <div class="flex justify-between items-center text-xs text-muted">
             <span class="font-bold flex items-center gap-1.5">📜 安科推演紀錄 (點擊複製)</span>
@@ -277,7 +300,7 @@
     </div>
   </div>
 
-  <!-- ⚙️ 設定彈窗 (Option Page) -->
+  <!-- ⚙️ 設定彈窗 -->
   <div id="settings-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-[250] transition-opacity">
     <div class="border rounded-2xl p-6 shadow-2xl max-w-md w-full mx-4 transform scale-95 transition-transform duration-200 max-h-[90vh] overflow-y-auto" id="settings-modal-content">
       <div class="flex justify-between items-center mb-6 border-b border-default pb-2">
@@ -286,17 +309,15 @@
       </div>
       
       <div class="space-y-6">
-        <!-- 1. 主題切換 -->
         <div>
           <h3 class="text-sm font-bold text-indigo-500 mb-2">🎨 介面主題</h3>
           <div class="grid grid-cols-3 gap-2">
-            <button onclick="setTheme('theme-dark')" class="py-2 bg-slate-900 text-white border border-slate-700 rounded-lg text-xs hover:border-indigo-500">深色 (預設)</button>
-            <button onclick="setTheme('theme-light')" class="py-2 bg-slate-100 text-slate-900 border border-slate-300 rounded-lg text-xs hover:border-indigo-500">淺色</button>
-            <button onclick="setTheme('theme-gold')" class="py-2 bg-yellow-900/40 border border-yellow-600 rounded-lg text-xs text-yellow-200 hover:border-yellow-400">金黃 (Fate)</button>
+            <button onclick="setTheme('theme-dark')" style="background-color: #0f172a; color: #f1f5f9; border-color: #334155;" class="py-2 border rounded-lg text-xs hover:opacity-80 shadow-sm transition-all font-bold">深色 (預設)</button>
+            <button onclick="setTheme('theme-light')" style="background-color: #ffffff; color: #0f172a; border-color: #cbd5e1;" class="py-2 border rounded-lg text-xs hover:opacity-80 shadow-sm transition-all font-bold">淺色</button>
+            <button onclick="setTheme('theme-gold')" style="background-color: #292524; color: #fef3c7; border-color: #d97706;" class="py-2 border rounded-lg text-xs hover:opacity-80 shadow-sm transition-all font-bold">金黃 (Fate)</button>
           </div>
         </div>
 
-        <!-- 2. 排版格式 -->
         <div>
           <h3 class="text-sm font-bold text-indigo-500 mb-2">📝 複製/匯出格式</h3>
           <select id="output-format" onchange="saveSettings()" class="w-full border border-default rounded-xl px-2 py-2 text-sm focus:outline-none">
@@ -305,30 +326,36 @@
           </select>
         </div>
 
-        <!-- 3. 角色狀態追蹤 -->
         <div>
-          <h3 class="text-sm font-bold text-indigo-500 mb-2">🎭 角色狀態追蹤 (簡易版)</h3>
-          <div class="border border-default p-3 rounded-xl space-y-3 bg-black/10">
-            <div class="flex justify-between items-center">
-              <span class="text-sm font-bold text-rose-500">❤️ HP</span>
-              <div class="flex items-center gap-2">
-                <button onclick="adjustStat('hp', -1)" class="w-8 h-8 bg-slate-500/20 hover:bg-rose-600 rounded-lg text-white font-bold transition">-</button>
-                <span id="stat-hp" class="text-xl font-black w-12 text-center">10</span>
-                <button onclick="adjustStat('hp', 1)" class="w-8 h-8 bg-slate-500/20 hover:bg-emerald-600 rounded-lg text-white font-bold transition">+</button>
-              </div>
-            </div>
-            <div class="flex justify-between items-center">
-              <span class="text-sm font-bold text-indigo-400">🧠 理智</span>
-              <div class="flex items-center gap-2">
-                <button onclick="adjustStat('san', -1)" class="w-8 h-8 bg-slate-500/20 hover:bg-rose-600 rounded-lg text-white font-bold transition">-</button>
-                <span id="stat-san" class="text-xl font-black w-12 text-center">50</span>
-                <button onclick="adjustStat('san', 1)" class="w-8 h-8 bg-slate-500/20 hover:bg-emerald-600 rounded-lg text-white font-bold transition">+</button>
-              </div>
-            </div>
+          <h3 class="text-sm font-bold text-indigo-500 mb-2">🎲 1d100 Boost 模式</h3>
+          <select id="boost-mode-100" onchange="saveSettings()" class="w-full border border-default rounded-xl px-2 py-2 text-sm focus:outline-none">
+            <option value="v1">v1: 降面 1d(100-Boost) + Boost (CF看原始值)</option>
+            <option value="v2">v2: 原始 1d100 + Boost (CF看原始值)</option>
+            <option value="v3">v3: 降面 1d(100-|Boost|) + 正Boost加值 (CF/CS看最終值)</option>
+          </select>
+        </div>
+
+        <!-- 🌟 雙陣營技能數據庫管理 🌟 -->
+        <div>
+          <h3 class="text-sm font-bold text-indigo-500 mb-2 flex justify-between items-center">
+            <span>🃏 技能/符卡數據庫</span>
+            <button onclick="addNewSkill()" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-2 py-1 rounded transition">+ 新增</button>
+          </h3>
+          
+          <!-- 設定頁的陣營切換 -->
+          <div class="grid grid-cols-2 gap-1 bg-black/20 p-1 rounded-lg mb-2">
+            <button id="set-tab-player" onclick="switchSettingsActor('player')" class="py-1 text-xs font-bold rounded-md bg-indigo-600 text-white transition">編輯玩家技能</button>
+            <button id="set-tab-enemy" onclick="switchSettingsActor('enemy')" class="py-1 text-xs font-bold rounded-md opacity-50 hover:opacity-100 transition">編輯敵人技能</button>
+          </div>
+
+          <div class="text-[10px] text-muted mb-1 flex justify-between px-1">
+            <span>名稱</span><span>Boost</span><span>HP</span><span>CD</span><span>刪除</span>
+          </div>
+          <div id="skill-list-container" class="border border-default p-3 rounded-xl space-y-2 bg-black/10 max-h-40 overflow-y-auto">
+            <!-- 技能列表會由 JS 生成 -->
           </div>
         </div>
 
-        <!-- 4. 測試序列 -->
         <div>
           <h3 class="text-sm font-bold text-fuchsia-500 mb-2 flex items-center gap-1">🧪 測試序列 (Debug)</h3>
           <div class="bg-fuchsia-950/20 border border-fuchsia-500/30 rounded-xl p-3 text-xs">
@@ -344,10 +371,8 @@
     </div>
   </div>
 
-  <!-- 全域 Toast 提示容器 -->
   <div id="toast-container" class="fixed bottom-4 right-4 z-[300] flex flex-col gap-2 pointer-events-none"></div>
 
-  <!-- 自訂確認彈窗 -->
   <div id="confirm-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-[290] transition-opacity">
     <div class="border rounded-2xl p-6 shadow-2xl max-w-sm w-full mx-4 text-center transform scale-95 transition-transform duration-200" id="confirm-modal-content">
       <div class="text-3xl mb-3">🧹</div>
@@ -360,7 +385,6 @@
   </div>
 
   <script>
-    // 基礎變數
     const countInput = document.getElementById('dice-count');
     const boostInput = document.getElementById('base-boost');
     const targetValueInput = document.getElementById('target-value');
@@ -376,12 +400,214 @@
     const outputFormatInput = document.getElementById('output-format');
     const autoCopyToggle = document.getElementById('auto-copy-toggle'); 
     
-    let charStats = { hp: 10, san: 50 };
+    // UI 元素
+    const skillSelect = document.getElementById('skill-select');
+    const skillCostDisplay = document.getElementById('skill-cost-display');
+    const skillCdDisplay = document.getElementById('skill-cd-display');
+    const skillListContainer = document.getElementById('skill-list-container');
+    const turnDisplay = document.getElementById('turn-display');
+    const tabPlayer = document.getElementById('tab-player');
+    const tabEnemy = document.getElementById('tab-enemy');
+    const setTabPlayer = document.getElementById('set-tab-player');
+    const setTabEnemy = document.getElementById('set-tab-enemy');
+
+    // === 狀態變數 ===
+    let turnCount = 1;
+    let activeActor = 'player'; // 'player' or 'enemy'
+    let settingsActor = 'player'; // 設定頁面正在編輯誰的技能
+
+    let combatants = {
+      player: { name: '玩家', hp: 10, san: 50 },
+      enemy: { name: '敵人', hp: 20, san: 100 }
+    };
+
+    let skills = {
+      player: [
+        { id: 'p1', name: '普通攻擊', boost: 0, cost: 0, maxCd: 0, currentCd: 0 },
+        { id: 'p2', name: '消力 (防禦)', boost: 20, cost: 0, maxCd: 1, currentCd: 0 },
+        { id: 'p3', name: 'Master Spark', boost: 50, cost: 10, maxCd: 3, currentCd: 0 }
+      ],
+      enemy: [
+        { id: 'e1', name: '觸手橫掃', boost: 10, cost: 0, maxCd: 0, currentCd: 0 },
+        { id: 'e2', name: '精神污染', boost: 30, cost: 5, maxCd: 2, currentCd: 0 }
+      ]
+    };
+
     document.addEventListener('contextmenu', e => e.preventDefault());
     let checkMode = 'ra';
     let history = [];
 
-    // === ⚙️ 設定與選項邏輯 ===
+    // === 🌟 戰鬥與技能系統 ===
+    function loadCombatData() {
+      const savedC = safeGet('fate_combatants', null);
+      if (savedC) combatants = savedC;
+      
+      const savedS = safeGet('fate_skills_v3', null);
+      if (savedS) skills = savedS;
+
+      updateCombatUI();
+    }
+
+    function saveCombatData() {
+      safeSet('fate_combatants', combatants);
+      safeSet('fate_skills_v3', skills);
+    }
+
+    function switchActor(actor) {
+      activeActor = actor;
+      
+      // 更新 UI 顏色
+      if (actor === 'player') {
+        tabPlayer.className = "py-1 text-xs font-bold rounded-md bg-indigo-600 text-white transition";
+        tabEnemy.className = "py-1 text-xs font-bold rounded-md opacity-50 hover:opacity-100 transition";
+      } else {
+        tabEnemy.className = "py-1 text-xs font-bold rounded-md bg-rose-600 text-white transition";
+        tabPlayer.className = "py-1 text-xs font-bold rounded-md opacity-50 hover:opacity-100 transition";
+      }
+      
+      updateCombatUI();
+    }
+
+    function updateCombatUI() {
+      const actor = combatants[activeActor];
+      document.getElementById('stat-hp').innerText = actor.hp;
+      document.getElementById('stat-san').innerText = actor.san;
+      
+      renderSkillSelect();
+      onSkillSelectChange();
+    }
+
+    function switchSettingsActor(actor) {
+      settingsActor = actor;
+      if (actor === 'player') {
+        setTabPlayer.className = "py-1 text-xs font-bold rounded-md bg-indigo-600 text-white transition";
+        setTabEnemy.className = "py-1 text-xs font-bold rounded-md opacity-50 hover:opacity-100 transition";
+      } else {
+        setTabEnemy.className = "py-1 text-xs font-bold rounded-md bg-rose-600 text-white transition";
+        setTabPlayer.className = "py-1 text-xs font-bold rounded-md opacity-50 hover:opacity-100 transition";
+      }
+      renderSkillSettings();
+    }
+
+    function renderSkillSelect() {
+      skillSelect.innerHTML = '<option value="">-- 選擇技能 --</option>';
+      skills[activeActor].forEach(skill => {
+        const opt = document.createElement('option');
+        opt.value = skill.id;
+        if (skill.currentCd > 0) {
+          opt.innerText = `[冷卻中 ${skill.currentCd}] ${skill.name}`;
+          opt.disabled = true;
+        } else {
+          opt.innerText = `${skill.name} (加成:${skill.boost >= 0 ? '+' : ''}${skill.boost})`;
+        }
+        skillSelect.appendChild(opt);
+      });
+    }
+
+    function renderSkillSettings() {
+      skillListContainer.innerHTML = '';
+      skills[settingsActor].forEach(skill => {
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-1 bg-slate-500/10 p-1.5 rounded-lg border border-default';
+        div.innerHTML = `
+          <input type="text" value="${skill.name}" onchange="updateSkill('${skill.id}', 'name', this.value)" class="flex-1 bg-transparent border-0 text-xs font-bold focus:ring-0 p-0" placeholder="名稱">
+          <input type="number" value="${skill.boost}" onchange="updateSkill('${skill.id}', 'boost', this.value)" class="w-12 bg-transparent border-0 text-xs text-center focus:ring-0 p-0 text-emerald-500" placeholder="Boost">
+          <input type="number" value="${skill.cost}" onchange="updateSkill('${skill.id}', 'cost', this.value)" class="w-10 bg-transparent border-0 text-xs text-center focus:ring-0 p-0 text-rose-500" placeholder="HP">
+          <input type="number" value="${skill.maxCd}" onchange="updateSkill('${skill.id}', 'maxCd', this.value)" class="w-10 bg-transparent border-0 text-xs text-center focus:ring-0 p-0 text-amber-500" placeholder="CD">
+          <button onclick="deleteSkill('${skill.id}')" class="text-rose-500 hover:text-rose-400 font-bold px-1">&times;</button>
+        `;
+        skillListContainer.appendChild(div);
+      });
+      if (skills[settingsActor].length === 0) {
+        skillListContainer.innerHTML = '<div class="text-xs text-muted text-center py-2">尚無技能</div>';
+      }
+    }
+
+    function onSkillSelectChange() {
+      const id = skillSelect.value;
+      if (!id) {
+        skillCostDisplay.innerText = '';
+        skillCdDisplay.innerText = '';
+        return;
+      }
+      const skill = skills[activeActor].find(s => s.id === id);
+      if (skill) {
+        skillCostDisplay.innerText = skill.cost > 0 ? `消耗 HP: ${skill.cost}` : '';
+        skillCdDisplay.innerText = skill.maxCd > 0 ? `冷卻: ${skill.maxCd} 回合` : '';
+      }
+    }
+
+    function castSkill() {
+      const id = skillSelect.value;
+      if (!id) return showToast('❌ 請先選擇技能', 'error');
+      const skill = skills[activeActor].find(s => s.id === id);
+      if (!skill) return;
+      if (skill.currentCd > 0) return showToast('❌ 技能冷卻中！', 'error');
+
+      const actor = combatants[activeActor];
+      if (skill.cost > 0) {
+        if (actor.hp < skill.cost) {
+          return showToast(`❌ ${actor.name} HP 不足！(需要 ${skill.cost}，當前 ${actor.hp})`, 'error');
+        }
+        actor.hp -= skill.cost;
+        saveCombatData();
+        updateCombatUI();
+      }
+
+      // 套用 Boost & CD
+      boostInput.value = skill.boost;
+      if (skill.maxCd > 0) {
+        skill.currentCd = skill.maxCd;
+        saveCombatData();
+        renderSkillSelect();
+      }
+      
+      saveSettings();
+      showToast(`✨ ${actor.name} 施放【${skill.name}】！`, 'info');
+      
+      setTimeout(() => { executeRoll('1d100'); }, 200);
+    }
+
+    function endTurn() {
+      turnCount++;
+      turnDisplay.innerText = `Turn ${turnCount}`;
+      
+      // 雙方技能 CD 遞減
+      skills.player.forEach(s => { if (s.currentCd > 0) s.currentCd--; });
+      skills.enemy.forEach(s => { if (s.currentCd > 0) s.currentCd--; });
+      
+      saveCombatData();
+      renderSkillSelect(); 
+      renderSkillSettings();
+      showToast(`⏭️ 進入第 ${turnCount} 回合`, 'info');
+    }
+
+    function addNewSkill() {
+      const newId = settingsActor[0] + Date.now();
+      skills[settingsActor].push({ id: newId, name: '新技能', boost: 0, cost: 0, maxCd: 0, currentCd: 0 });
+      saveCombatData();
+      renderSkillSettings();
+      showToast('🃏 已新增技能', 'success');
+    }
+
+    function updateSkill(id, field, value) {
+      const skill = skills[settingsActor].find(s => s.id === id);
+      if (skill) {
+        skill[field] = field === 'name' ? value : Number(value);
+        saveCombatData();
+        renderSkillSelect();
+      }
+    }
+
+    function deleteSkill(id) {
+      skills[settingsActor] = skills[settingsActor].filter(s => s.id !== id);
+      saveCombatData();
+      renderSkillSettings();
+      renderSkillSelect();
+      showToast('🗑️ 已刪除技能', 'success');
+    }
+
+    // === 其他基礎邏輯 ===
     function openSettings() {
       const modal = document.getElementById('settings-modal');
       modal.classList.remove('hidden'); modal.classList.add('flex');
@@ -399,15 +625,9 @@
       showToast(`🎨 已切換至 ${themeName.replace('theme-', '')} 主題`, 'info');
     }
 
-    function adjustStat(stat, delta) {
-      charStats[stat] += delta;
-      document.getElementById(`stat-${stat}`).innerText = charStats[stat];
-      localStorage.setItem('fate_char_stats', JSON.stringify(charStats));
-      if (delta < 0) showToast(`💥 ${stat.toUpperCase()} 減少 ${-delta} 點！`, 'error');
-      if (delta > 0) showToast(`💚 ${stat.toUpperCase()} 恢復 ${delta} 點！`, 'success');
-    }
+    // 移除舊的單人狀態追蹤，因為現在由戰鬥系統接管
+    // (保留以防設定頁面用到，但實際上設定頁面的角色狀態現在不顯示了，由左側主面板取代)
 
-    // === 🎲 自訂骰池 ===
     function rollCustomDice() {
       let val = customDiceInput.value.trim().toLowerCase();
       if (!val) return showToast('❌ 請輸入自訂骰子 (如 d100)', 'error');
@@ -442,7 +662,6 @@
       }
     }
 
-    // === 其他基礎邏輯 ===
     function showToast(msg, type = 'info') {
       const container = document.getElementById('toast-container');
       const toast = document.createElement('div');
@@ -482,20 +701,18 @@
     function loadSettings() {
       const savedTheme = localStorage.getItem('fate_theme') || 'theme-dark';
       document.documentElement.className = savedTheme;
-      const savedStats = safeGet('fate_char_stats', null);
-      if (savedStats) {
-        charStats = savedStats;
-        document.getElementById('stat-hp').innerText = charStats.hp;
-        document.getElementById('stat-san').innerText = charStats.san;
-      }
+      
       const s = safeGet('fate_dreamweaver_settings', null);
       if (s) {
         countInput.value = s.count || 1; boostInput.value = s.boost || 0; targetValueInput.value = s.target || 50;
         boostMode100Input.value = s.boostMode100 || 'v2'; outputFormatInput.value = s.outputFormat || 'plain';
         setCheckMode(s.mode || 'ra');
       }
+      
       const savedHistory = safeGet('fate_dreamweaver_history', []);
       if (Array.isArray(savedHistory)) history = savedHistory.slice(0, 200); 
+      
+      loadCombatData();
       renderHistory();
     }
 
