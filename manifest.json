@@ -1,0 +1,17 @@
+{
+  "name": "織夢者菲特《Fate》- 安科推演系統",
+  "short_name": "菲特骰",
+  "description": "單檔 HTML 安科/安價骰子引擎——連鎖追擲、雙檢定、離線可用",
+  "lang": "zh-Hant",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
