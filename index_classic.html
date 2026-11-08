@@ -6,7 +6,6 @@
   <title>織夢者菲特《Fate》 - 安科推演系統 (Classic)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* 🎨 主題變數設定 */
     .theme-dark {
       --bg-main: #020617; --bg-panel: #0f172a; --bg-box: rgba(15, 23, 42, 0.6);
       --text-main: #f1f5f9; --text-muted: #94a3b8; --border-main: #1e293b;
@@ -23,14 +22,12 @@
       --input-bg: #44403c; --input-border: #57534e;
     }
 
-    /* 套用主題顏色 */
     body { background-color: var(--bg-main); color: var(--text-main); }
     .main-container { background-color: var(--bg-panel); border-color: var(--border-main); }
     .panel { background-color: var(--bg-box); border-color: var(--border-main); }
     .text-muted { color: var(--text-muted); }
     .border-default { border-color: var(--border-main); }
 
-    /* 🌟 強制覆蓋原生輸入框與下拉選單 🌟 */
     input:not([type="checkbox"]), select, textarea {
       background-color: var(--input-bg) !important;
       border-color: var(--input-border) !important;
@@ -39,12 +36,7 @@
       -webkit-appearance: none;
       -moz-appearance: none;
     }
-    
-    select option {
-      background-color: var(--bg-panel) !important;
-      color: var(--text-main) !important;
-    }
-    
+    select option { background-color: var(--bg-panel) !important; color: var(--text-main) !important; }
     select {
       background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") !important;
       background-repeat: no-repeat !important;
@@ -57,23 +49,19 @@
     }
 
     ::placeholder { color: var(--text-muted) !important; opacity: 0.7; }
-
     #settings-modal-content, #confirm-modal-content {
       background-color: var(--bg-panel) !important;
       border-color: var(--border-main) !important;
       color: var(--text-main) !important;
     }
 
-    /* 覆蓋寫死的 Tailwind 顏色，確保對比度 */
     .theme-light .text-slate-100, .theme-light .text-slate-200 { color: #0f172a !important; }
     .theme-light .text-slate-300, .theme-light .text-slate-400 { color: #334155 !important; }
     .theme-light .text-slate-500 { color: #64748b !important; }
-    
     .theme-gold .text-slate-100, .theme-gold .text-slate-200 { color: #fef3c7 !important; }
     .theme-gold .text-slate-300, .theme-gold .text-slate-400 { color: #d6d3d1 !important; }
     .theme-gold .text-slate-500 { color: #a8a29e !important; }
 
-    /* 輕柔落桌動畫 */
     @keyframes soft-drop {
       0% { transform: translateY(-10px) scale(0.98); opacity: 0.4; }
       60% { transform: translateY(2px) scale(1.01); opacity: 0.9; }
@@ -81,7 +69,6 @@
     }
     .animate-roll { animation: soft-drop 0.25s ease-out; }
 
-    /* 霓虹脈衝動畫 */
     @keyframes glow-green {
       0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); border-color: rgba(16, 185, 129, 1); }
       50% { box-shadow: 0 0 15px 5px rgba(16, 185, 129, 0.4); border-color: rgba(16, 185, 129, 0.8); }
@@ -101,7 +88,6 @@
     .glow-cf { animation: glow-red 1.2s ease-out; }
     .glow-high { animation: glow-purple 1.5s ease-out; }
 
-    /* 美化捲軸 */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.5); border-radius: 4px; }
@@ -117,7 +103,7 @@
 <body class="h-screen flex items-center justify-center p-2 md:p-4 font-sans overflow-hidden transition-colors duration-300">
 
   <div class="w-full max-w-[1600px] h-full max-h-[900px] min-h-[800px] main-container border rounded-3xl shadow-2xl flex flex-col p-4 md:p-6 space-y-4 overflow-hidden relative transition-colors duration-300">
-    
+
     <!-- 頂部標題列 -->
     <div class="flex flex-col md:flex-row md:items-center justify-between border-b border-default pb-3 gap-2 shrink-0">
       <div class="flex items-center gap-3">
@@ -134,18 +120,15 @@
           <span>•</span>
           <span>與基準同向 ➔ 深入 (+1)</span>
         </div>
-        <button onclick="openSettings()" class="p-2 bg-slate-500/10 hover:bg-slate-500/20 rounded-full transition-colors text-xl border border-transparent" title="設定">
-          ⚙️
-        </button>
+        <button onclick="openSettings()" class="p-2 bg-slate-500/10 hover:bg-slate-500/20 rounded-full transition-colors text-xl border border-transparent" title="設定">⚙️</button>
       </div>
     </div>
 
     <!-- 主內容區 -->
     <div class="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6 flex-1 min-h-0">
-      
+
       <!-- 左側控制欄 -->
       <div class="col-span-1 md:col-span-4 panel border rounded-2xl p-4 md:p-5 flex flex-col gap-4 overflow-y-auto">
-        
         <div class="space-y-4">
           <div class="text-xs font-bold text-muted tracking-wider uppercase border-b border-default pb-2 flex justify-between items-center">
             <span>⚙️ 推演參數設定</span>
@@ -177,7 +160,6 @@
               <label class="text-xs font-bold text-amber-500">🎯 檢定模式與目標值</label>
               <span id="mode-desc" class="text-[10px] text-muted font-mono">ra (<= 目標值成功)</span>
             </div>
-            
             <div class="grid grid-cols-2 gap-2">
               <div class="flex rounded-lg overflow-hidden border border-default p-0.5">
                 <button id="btn-mode-ra" onclick="setCheckMode('ra')" class="flex-1 py-1.5 md:py-1 text-xs font-bold rounded-md bg-indigo-600 text-white transition">ra (<=)</button>
@@ -221,12 +203,10 @@
           <label class="text-xs font-bold text-muted cursor-pointer flex-1" for="auto-copy-toggle">自動複製公式</label>
           <input id="auto-copy-toggle" type="checkbox" onchange="saveSettings()" class="w-4 h-4 text-indigo-600 bg-slate-800 border-slate-600 rounded focus:ring-indigo-500 focus:ring-2 cursor-pointer accent-indigo-500">
         </div>
-
       </div>
 
       <!-- 右側展示區 -->
       <div class="col-span-1 md:col-span-8 flex flex-col space-y-4 min-h-0">
-        
         <div class="flex-1 panel border rounded-2xl p-4 md:p-5 flex flex-col relative overflow-hidden shadow-inner min-h-[300px] md:min-h-0">
           <div class="flex flex-col md:flex-row md:justify-between md:items-center border-b border-default pb-2 mb-3 gap-2">
             <span class="text-xs font-bold text-amber-500 tracking-wider uppercase">📊 即時安科推演圖譜</span>
@@ -259,7 +239,6 @@
             <div class="text-muted text-center py-4">尚無推演紀錄</div>
           </div>
         </div>
-
       </div>
 
     </div>
@@ -272,7 +251,7 @@
         <h2 class="text-xl font-bold flex items-center gap-2">⚙️ 系統設定與選項</h2>
         <button onclick="hideSettings()" class="opacity-50 hover:opacity-100 text-2xl font-bold transition">&times;</button>
       </div>
-      
+
       <div class="space-y-6">
         <div>
           <h3 class="text-sm font-bold text-indigo-500 mb-2">🎨 介面主題</h3>
@@ -329,180 +308,124 @@
   </div>
 
   <script>
-    // === DOM Cache ===
-    const countInput = document.getElementById('dice-count');
-    const boostInput = document.getElementById('base-boost');
-    const targetValueInput = document.getElementById('target-value');
-    const boostMode100Input = document.getElementById('boost-mode-100');
-    const customDiceInput = document.getElementById('custom-dice-input');
-    const emptyState = document.getElementById('empty-state');
-    const chainFlowDisplay = document.getElementById('chain-flow-display');
-    const strikeBadges = document.getElementById('strike-badges');
-    const diceContainer = document.getElementById('dice-container');
-    const historyLog = document.getElementById('history-log');
-    const totalSummary = document.getElementById('total-summary');
-    const debugSeqInput = document.getElementById('debug-seq');
-    const outputFormatInput = document.getElementById('output-format');
-    const autoCopyToggle = document.getElementById('auto-copy-toggle');
-    const settingsModal = document.getElementById('settings-modal');
-    const settingsModalContent = document.getElementById('settings-modal-content');
-    const confirmModal = document.getElementById('confirm-modal');
-    const confirmModalContent = document.getElementById('confirm-modal-content');
-    const toastContainer = document.getElementById('toast-container');
-    const btnModeRa = document.getElementById('btn-mode-ra');
-    const btnModeRo = document.getElementById('btn-mode-ro');
-    const modeDesc = document.getElementById('mode-desc');
+    // ============================================================
+    // 📦 DOM Cache
+    // ============================================================
+    const countInput         = document.getElementById('dice-count');
+    const boostInput         = document.getElementById('base-boost');
+    const targetValueInput   = document.getElementById('target-value');
+    const boostMode100Input  = document.getElementById('boost-mode-100');
+    const customDiceInput    = document.getElementById('custom-dice-input');
+    const emptyState         = document.getElementById('empty-state');
+    const chainFlowDisplay   = document.getElementById('chain-flow-display');
+    const strikeBadges       = document.getElementById('strike-badges');
+    const diceContainer      = document.getElementById('dice-container');
+    const historyLog         = document.getElementById('history-log');
+    const totalSummary       = document.getElementById('total-summary');
+    const debugSeqInput      = document.getElementById('debug-seq');
+    const outputFormatInput  = document.getElementById('output-format');
+    const autoCopyToggle     = document.getElementById('auto-copy-toggle');
+    const settingsModal      = document.getElementById('settings-modal');
+    const settingsModalBody  = document.getElementById('settings-modal-content');
+    const confirmModal       = document.getElementById('confirm-modal');
+    const confirmModalBody   = document.getElementById('confirm-modal-content');
+    const toastContainer     = document.getElementById('toast-container');
+    const btnModeRa          = document.getElementById('btn-mode-ra');
+    const btnModeRo          = document.getElementById('btn-mode-ro');
+    const modeDesc           = document.getElementById('mode-desc');
 
-    // === 常數 ===
-    const MAX_DICE = 50;
-    const MAX_SIDES = 10000;
-    const MAX_TARGET = 10000;
-    const MAX_HISTORY = 200;
+    // ============================================================
+    // 🔢 常數
+    // ============================================================
+    const MAX_DICE        = 50;
+    const MAX_SIDES       = 10000;
+    const MAX_TARGET      = 10000;
+    const MAX_HISTORY     = 200;
     const MAX_CHAIN_LEVEL = 50;
 
-    // === 狀態 ===
+    // ============================================================
+    // 🎰 RNG 緩衝區（模組級重用，避免每次擲骰 new Uint32Array）
+    // ============================================================
+    const rngBuffer = new Uint32Array(1);
+
+    // ============================================================
+    // 🧠 狀態
+    // ============================================================
     document.addEventListener('contextmenu', e => e.preventDefault());
     let checkMode = 'ra';
     let history = [];
 
-    // === 工具函式 ===
+    // ============================================================
+    // 🛠️ 工具函式
+    // ============================================================
     function toInt(v, fallback) {
       const n = Math.floor(Number(v));
       return n || fallback;
     }
+
     function parseDebugSeq() {
-      const raw = debugSeqInput && debugSeqInput.value.trim();
+      if (!debugSeqInput) return { seq: [], isDebug: false };
+      const raw = debugSeqInput.value.trim();
       if (!raw) return { seq: [], isDebug: false };
       return {
         seq: raw.split(',').map(s => Number(s.trim())).filter(n => !isNaN(n)),
         isDebug: true
       };
     }
+
+    // 回傳 { hasChain, endsInS0, counted, s0Step, firstStep }
     function getS0Info(run) {
       if (!run || !run.steps || run.steps.length === 0) return null;
       if (run.steps[0].levelStr === 'custom') return null;
-      const hasChain = run.steps.length > 1;
-      const lastStep = run.steps[run.steps.length - 1];
-      const endsInS0 = lastStep.levelStr === 's0';
-      const counted = !hasChain || endsInS0;
-      const s0Step = counted ? (hasChain ? lastStep : run.steps[0]) : null;
+      const hasChain  = run.steps.length > 1;
+      const lastStep  = run.steps[run.steps.length - 1];
+      const endsInS0  = lastStep.levelStr === 's0';
+      const counted   = !hasChain || endsInS0;
+      const s0Step    = counted ? (hasChain ? lastStep : run.steps[0]) : null;
       return { hasChain, endsInS0, counted, s0Step, firstStep: run.steps[0] };
     }
 
-    // === 基礎邏輯 ===
-    function openSettings() {
-      settingsModal.classList.remove('hidden');
-      settingsModal.classList.add('flex');
-      setTimeout(() => settingsModalContent.classList.replace('scale-95', 'scale-100'), 10);
-    }
-    function hideSettings() {
-      settingsModalContent.classList.replace('scale-100', 'scale-95');
-      setTimeout(() => {
-        settingsModal.classList.add('hidden');
-        settingsModal.classList.remove('flex');
-      }, 200);
-    }
-    function hideConfirm() {
-      confirmModalContent.classList.replace('scale-100', 'scale-95');
-      setTimeout(() => {
-        confirmModal.classList.add('hidden');
-        confirmModal.classList.remove('flex');
-      }, 200);
-    }
-
+    // ============================================================
+    // 🎨 主題
+    // ============================================================
     function setTheme(themeName) {
       document.documentElement.className = themeName;
       localStorage.setItem('fate_theme', themeName);
       showToast(`🎨 已切換至 ${themeName.replace('theme-', '')} 主題`, 'info');
     }
 
-    // 🌟 密碼學安全隨機數 (Crypto RNG)
-    function getRnd(max, debugSeq, state) {
-      if (debugSeq && debugSeq.length > 0 && state.index < debugSeq.length) {
-        const val = debugSeq[state.index++];
-        return Math.max(1, Math.min(max, val));
-      }
-      const array = new Uint32Array(1);
-      window.crypto.getRandomValues(array);
-      return (array[0] % max) + 1;
+    // ============================================================
+    // 📦 安全存取
+    // ============================================================
+    function safeGet(key, fallback) {
+      try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }
+      catch (e) { return fallback; }
+    }
+    function safeSet(key, value) {
+      try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
     }
 
-    function rollCustomDice() {
-      const val = customDiceInput.value.trim().toLowerCase();
-      if (!val) return showToast('❌ 請輸入自訂骰子 (如 1d100, ra50 1d100)', 'error');
-
-      const regex = /^(?:(ra|ro)\s*(\d+)\s*)?(\d*)d(\d+)(?:\s*([+-]\s*\d+))?$/i;
-      const match = val.match(regex);
-      if (!match) return showToast('❌ 格式錯誤，請輸入如 1d100, 8d50, ra50 1d100 或 ro25 1d75', 'error');
-
-      const mode = match[1] ? match[1].toLowerCase() : null;
-      const targetVal = match[2] ? parseInt(match[2]) : null;
-      const count = match[3] ? parseInt(match[3]) : 1;
-      const sides = parseInt(match[4]);
-      const modifier = match[5] ? parseInt(match[5].replace(/\s+/g, '')) : 0;
-
-      if (count < 1 || count > MAX_DICE) return showToast(`❌ 骰子數量必須介於 1 到 ${MAX_DICE} 顆`, 'error');
-      if (sides < 2 || sides > MAX_SIDES) return showToast(`❌ 骰面必須介於 2 到 ${MAX_SIDES} 面`, 'error');
-      if (targetVal !== null && (targetVal < 1 || targetVal > MAX_TARGET)) return showToast(`❌ 目標值範圍需為 1 ~ ${MAX_TARGET}`, 'error');
-
-      const { seq: debugSeq, isDebug } = parseDebugSeq();
-      const debugState = { index: 0 };
-
-      let total = 0;
-      const rolls = [];
-      for (let i = 0; i < count; i++) {
-        const r = getRnd(sides, debugSeq, debugState);
-        rolls.push(r);
-        total += r;
-      }
-      total += modifier;
-
-      const modStr = modifier !== 0 ? ` ${modifier > 0 ? '+' : ''}${modifier}` : '';
-      const rollsStr = rolls.length > 1 ? `[${rolls.join(', ')}]${modStr} = ` : '';
-      const diceExpr = `${count}d${sides}${modStr}`;
-      const formula = `${diceExpr} = ${rollsStr}${total}`;
-
-      let checkDetail = '';
-      let resultMsg = `🎲 自訂擲骰：${formula}`;
-      if (mode && targetVal !== null) {
-        const isSuccess = (mode === 'ra') ? (total <= targetVal) : (total >= targetVal);
-        checkDetail = `[${mode.toUpperCase()} ${mode === 'ra' ? '<=' : '>='} ${targetVal}] ➔ ${isSuccess ? '✅ 成功' : '❌ 失敗'}`;
-        resultMsg = `🎲 自訂檢定：${formula} | ${checkDetail}`;
-      }
-
-      const mockRun = {
-        steps: [{ levelStr: 'custom', type: diceExpr, raw: total, final: total, extraD2: null, outcome: '普通', msg: resultMsg, checkDetail }],
-        finalStack: 0, baseOutcome: null
-      };
-      emptyState.classList.add('hidden');
-      chainFlowDisplay.classList.remove('hidden');
-      totalSummary.classList.add('hidden');
-      renderFlow([mockRun], 1);
-
-      const debugText = isDebug ? '[🧪測試] ' : '';
-      const summaryStr = mode && targetVal !== null
-        ? `${debugText}自訂 ${mode.toUpperCase()}${targetVal} (${diceExpr}) ➔ 結果: ${total} | ${checkDetail}`
-        : `${debugText}自訂擲骰 (${diceExpr}) ➔ 結果: ${total}`;
-
-      addHistory(summaryStr, formula);
-      showToast('🎲 自訂擲骰完成！', 'success');
-
-      if (autoCopyToggle.checked) {
-        navigator.clipboard.writeText(formula).then(() => showToast(`📋 已自動複製：${formula}`, 'success'));
-      }
+    // ============================================================
+    // 🪟 彈窗
+    // ============================================================
+    function openSettings() {
+      settingsModal.classList.remove('hidden');
+      settingsModal.classList.add('flex');
+      setTimeout(() => settingsModalBody.classList.replace('scale-95', 'scale-100'), 10);
     }
-
-    function showToast(msg, type = 'info') {
-      const toast = document.createElement('div');
-      let bgClass = 'bg-slate-700 text-slate-100';
-      if (type === 'success') bgClass = 'bg-emerald-600 text-white';
-      if (type === 'error') bgClass = 'bg-rose-600 text-white';
-      if (type === 'info') bgClass = 'bg-indigo-600 text-white';
-      toast.className = `px-4 py-3 rounded-xl text-sm font-bold shadow-2xl transition-all duration-300 transform translate-y-4 opacity-0 pointer-events-auto flex items-center gap-2 border border-white/10 ${bgClass}`;
-      toast.innerHTML = msg;
-      toastContainer.appendChild(toast);
-      requestAnimationFrame(() => toast.classList.remove('translate-y-4', 'opacity-0'));
-      setTimeout(() => { toast.classList.add('translate-y-4', 'opacity-0'); setTimeout(() => toast.remove(), 300); }, 2500);
+    function hideSettings() {
+      settingsModalBody.classList.replace('scale-100', 'scale-95');
+      setTimeout(() => {
+        settingsModal.classList.add('hidden');
+        settingsModal.classList.remove('flex');
+      }, 200);
+    }
+    function hideConfirm() {
+      confirmModalBody.classList.replace('scale-100', 'scale-95');
+      setTimeout(() => {
+        confirmModal.classList.add('hidden');
+        confirmModal.classList.remove('flex');
+      }, 200);
     }
 
     function askClearHistory() {
@@ -510,7 +433,7 @@
       const yesBtn = document.getElementById('confirm-yes-btn');
       confirmModal.classList.remove('hidden');
       confirmModal.classList.add('flex');
-      setTimeout(() => confirmModalContent.classList.add('scale-100'), 10);
+      setTimeout(() => confirmModalBody.classList.add('scale-100'), 10);
       const newYesBtn = yesBtn.cloneNode(true);
       yesBtn.parentNode.replaceChild(newYesBtn, yesBtn);
       newYesBtn.onclick = () => {
@@ -522,39 +445,58 @@
       };
     }
 
-    function safeGet(key, fallback) { try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; } catch (e) { return fallback; } }
-    function safeSet(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {} }
+    // ============================================================
+    // 🍞 Toast
+    // ============================================================
+    function showToast(msg, type = 'info') {
+      const toast = document.createElement('div');
+      let bgClass = 'bg-slate-700 text-slate-100';
+      if (type === 'success') bgClass = 'bg-emerald-600 text-white';
+      if (type === 'error')   bgClass = 'bg-rose-600 text-white';
+      if (type === 'info')    bgClass = 'bg-indigo-600 text-white';
+      toast.className = `px-4 py-3 rounded-xl text-sm font-bold shadow-2xl transition-all duration-300 transform translate-y-4 opacity-0 pointer-events-auto flex items-center gap-2 border border-white/10 ${bgClass}`;
+      toast.textContent = msg;
+      toastContainer.appendChild(toast);
+      requestAnimationFrame(() => toast.classList.remove('translate-y-4', 'opacity-0'));
+      setTimeout(() => {
+        toast.classList.add('translate-y-4', 'opacity-0');
+        setTimeout(() => toast.remove(), 300);
+      }, 2500);
+    }
 
+    // ============================================================
+    // ⚙️ 設定讀寫
+    // ============================================================
     function loadSettings() {
       const savedTheme = localStorage.getItem('fate_theme') || 'theme-dark';
       document.documentElement.className = savedTheme;
-      
+
       const s = safeGet('fate_dreamweaver_settings', null);
       if (s) {
-        countInput.value = s.count || 1;
-        boostInput.value = s.boost || 0;
-        targetValueInput.value = s.target || 50;
+        countInput.value        = s.count || 1;
+        boostInput.value        = s.boost || 0;
+        targetValueInput.value  = s.target || 50;
         boostMode100Input.value = s.boostMode100 || 'v2';
         outputFormatInput.value = s.outputFormat || 'plain';
-        autoCopyToggle.checked = !!s.autoCopy;
+        autoCopyToggle.checked  = !!s.autoCopy;
         setCheckMode(s.mode || 'ra');
       }
-      
+
       const savedHistory = safeGet('fate_dreamweaver_history', []);
       if (Array.isArray(savedHistory)) history = savedHistory.slice(0, MAX_HISTORY);
-      
+
       renderHistory();
     }
 
     function saveSettings() {
       safeSet('fate_dreamweaver_settings', {
-        count: toInt(countInput.value, 1),
-        boost: toInt(boostInput.value, 0),
-        target: toInt(targetValueInput.value, 50),
+        count:        toInt(countInput.value, 1),
+        boost:        toInt(boostInput.value, 0),
+        target:       toInt(targetValueInput.value, 50),
         boostMode100: boostMode100Input.value,
-        mode: checkMode,
+        mode:         checkMode,
         outputFormat: outputFormatInput.value,
-        autoCopy: autoCopyToggle.checked
+        autoCopy:     autoCopyToggle.checked
       });
     }
     function saveHistory() { safeSet('fate_dreamweaver_history', history); }
@@ -573,6 +515,9 @@
       saveSettings();
     }
 
+    // ============================================================
+    // 🎛️ 參數調整
+    // ============================================================
     function adjustCount(delta) {
       const val = toInt(countInput.value, 1);
       countInput.value = Math.max(1, Math.min(MAX_DICE, val + delta));
@@ -589,10 +534,25 @@
       diceContainer.classList.add('animate-roll');
     }
 
+    // ============================================================
+    // 🎲 RNG（密碼學安全，重用緩衝區）
+    // ============================================================
+    function getRnd(max, debugSeq, state) {
+      if (debugSeq && debugSeq.length > 0 && state.index < debugSeq.length) {
+        const val = debugSeq[state.index++];
+        return Math.max(1, Math.min(max, val));
+      }
+      window.crypto.getRandomValues(rngBuffer);
+      return (rngBuffer[0] % max) + 1;
+    }
+
+    // ============================================================
+    // 🔗 連鎖引擎
+    // ============================================================
     function rollChainEngine(startType, boost, targetVal, mode, debugSeq, state, boostMode100) {
       const steps = [];
       let currentLevel = 0, initialChainOutcome = null, currentStack = 0;
-      function getDieType(lvl) { return lvl === 0 ? startType : '1d10'; }
+      const getDieType = (lvl) => (lvl === 0 ? startType : '1d10');
       let continueLoop = true, loopSafety = 0;
 
       while (continueLoop && loopSafety < MAX_CHAIN_LEVEL) {
@@ -617,7 +577,7 @@
             final100 = (boost >= 0) ? (raw100 + boost) : raw100;
             isCF = (final100 <= 5); isCS = (final100 >= 96);
           }
-          
+
           const isSuccess = (mode === 'ra') ? (final100 <= targetVal) : (final100 >= targetVal);
           const checkDetail = `[${mode.toUpperCase()} ${mode === 'ra' ? '<=' : '>='} ${targetVal}] ➔ ${isSuccess ? '✅ 成功' : '❌ 失敗'}`;
           const step = { levelStr, type: '1d100', raw: raw100, final: final100, extraD2: null, outcome: null, msg: '', checkDetail };
@@ -638,10 +598,12 @@
             step.msg = `1d100 結果: ${raw100} | ${checkDetail}`;
             steps.push(step); continueLoop = false;
           }
+
         } else if (dieType === '1d10') {
           const raw10 = getRnd(10, debugSeq, state);
           const final10 = raw10 + boost;
           const step = { levelStr, type: '1d10', raw: raw10, final: final10, extraD2: null, outcome: null, msg: '', checkDetail: '' };
+
           if (raw10 === 10) {
             const d2 = getRnd(2, debugSeq, state);
             step.extraD2 = d2;
@@ -665,8 +627,9 @@
             step.msg = `1d10 普通結果 ➔ 原始: ${raw10}`;
             steps.push(step); continueLoop = false;
           }
+
         } else {
-          const sides = parseInt(dieType.replace('d', ''));
+          const sides = parseInt(dieType.replace('d', ''), 10);
           const raw = getRnd(sides, debugSeq, state);
           const final = raw + boost;
           const isSuccess = (mode === 'ra') ? (final <= targetVal) : (final >= targetVal);
@@ -678,39 +641,48 @@
       return { steps, finalStack: currentStack, baseOutcome: initialChainOutcome };
     }
 
+    // ============================================================
+    // 🎨 渲染（全部改用陣列拼接，避免 O(n²)）
+    // ============================================================
     function renderBadges(totalSuccessStacks, totalFailStacks, isDebug) {
-      let strikeHtml = '';
-      if (totalSuccessStacks > 0) strikeHtml += `<span class="px-2 py-1 bg-emerald-950/50 border border-emerald-500/60 text-emerald-400 rounded-full text-[11px]">✨ 淨計: ${totalSuccessStacks}重大成功</span>`;
-      if (totalFailStacks > 0) strikeHtml += `<span class="px-2 py-1 bg-rose-950/50 border border-rose-500/60 text-rose-400 rounded-full text-[11px]">💥 淨計: ${totalFailStacks}重大失敗</span>`;
-      if (totalSuccessStacks === 0 && totalFailStacks === 0) strikeHtml += `<span class="px-2 py-1 bg-slate-500/10 border border-slate-500/30 text-muted rounded-full text-[11px]">⚪ 淨計: 0 Stacks</span>`;
-      if (isDebug) strikeHtml += `<span class="px-2 py-1 bg-fuchsia-950/50 border border-fuchsia-500/60 text-fuchsia-400 rounded-full text-[11px]">🧪 測試模式</span>`;
-      strikeBadges.innerHTML = strikeHtml;
+      const parts = [];
+      if (totalSuccessStacks > 0) parts.push(`<span class="px-2 py-1 bg-emerald-950/50 border border-emerald-500/60 text-emerald-400 rounded-full text-[11px]">✨ 淨計: ${totalSuccessStacks}重大成功</span>`);
+      if (totalFailStacks > 0)    parts.push(`<span class="px-2 py-1 bg-rose-950/50 border border-rose-500/60 text-rose-400 rounded-full text-[11px]">💥 淨計: ${totalFailStacks}重大失敗</span>`);
+      if (totalSuccessStacks === 0 && totalFailStacks === 0) parts.push(`<span class="px-2 py-1 bg-slate-500/10 border border-slate-500/30 text-muted rounded-full text-[11px]">⚪ 淨計: 0 Stacks</span>`);
+      if (isDebug) parts.push(`<span class="px-2 py-1 bg-fuchsia-950/50 border border-fuchsia-500/60 text-fuchsia-400 rounded-full text-[11px]">🧪 測試模式</span>`);
+      strikeBadges.innerHTML = parts.join('');
     }
 
     function renderFlow(allRuns, count) {
-      let flowHtml = '';
+      const parts = [];
       allRuns.forEach((run, idx) => {
-        if (count > 1) flowHtml += `<div class="font-bold text-amber-500 text-xs border-l-2 border-amber-500 pl-2 mt-2"># 第 ${idx + 1} 次安科推演：</div>`;
+        if (count > 1) parts.push(`<div class="font-bold text-amber-500 text-xs border-l-2 border-amber-500 pl-2 mt-2"># 第 ${idx + 1} 次安科推演：</div>`);
         run.steps.forEach((s, sIdx) => {
-          let stepBg = 'bg-slate-500/10', stepBorder = 'border-slate-500/20', glowClass = '';
+          let stepBg = 'bg-slate-500/10';
+          let stepBorder = 'border-slate-500/20';
+          let glowClass = '';
           if (s.outcome === '大成功') { stepBg = 'bg-emerald-950/40'; stepBorder = 'border-emerald-500/40'; glowClass = 'glow-cs'; }
           else if (s.outcome === '大失敗') { stepBg = 'bg-rose-950/40'; stepBorder = 'border-rose-500/40'; glowClass = 'glow-cf'; }
 
-          const levelNum = s.levelStr !== 'custom' ? parseInt(s.levelStr.slice(1), 10) : -1;
-          if (levelNum >= 3) glowClass = 'glow-high';
-          
+          if (s.levelStr !== 'custom') {
+            const levelNum = parseInt(s.levelStr.slice(1), 10);
+            if (levelNum >= 3) glowClass = 'glow-high';
+          }
+
           const isLast = (sIdx === run.steps.length - 1);
           let stackBadge = '';
           if (isLast && s.levelStr !== 'custom') {
             if (run.finalStack > 0 && run.baseOutcome) {
-              if (run.baseOutcome === '大成功') stackBadge = `<span class="px-2 py-1 bg-emerald-500/20 text-emerald-500 border border-emerald-500/50 rounded-lg font-black text-[10px] md:text-xs">✨ 結算：${run.finalStack}重大成功</span>`;
-              else stackBadge = `<span class="px-2 py-1 bg-rose-500/20 text-rose-500 border border-rose-500/50 rounded-lg font-black text-[10px] md:text-xs">💥 結算：${run.finalStack}重大失敗</span>`;
+              if (run.baseOutcome === '大成功')
+                stackBadge = `<span class="px-2 py-1 bg-emerald-500/20 text-emerald-500 border border-emerald-500/50 rounded-lg font-black text-[10px] md:text-xs">✨ 結算：${run.finalStack}重大成功</span>`;
+              else
+                stackBadge = `<span class="px-2 py-1 bg-rose-500/20 text-rose-500 border border-rose-500/50 rounded-lg font-black text-[10px] md:text-xs">💥 結算：${run.finalStack}重大失敗</span>`;
             } else {
               stackBadge = `<span class="px-2 py-1 bg-slate-500/10 text-muted border border-slate-500/30 rounded-lg text-[10px] md:text-[11px] font-bold">⚪ 結算：0 Stacks</span>`;
             }
           }
 
-          flowHtml += `
+          parts.push(`
             <div class="${stepBg} ${stepBorder} ${glowClass} border rounded-xl p-3 flex flex-col md:flex-row md:items-center justify-between text-xs transition-all gap-2">
               <div class="flex flex-wrap items-center gap-2">
                 <span class="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 font-mono rounded text-[10px] font-bold">${s.levelStr}</span>
@@ -723,15 +695,17 @@
                 <span class="text-xs md:text-sm font-black text-amber-500 font-mono">最終: ${s.final}</span>
               </div>
             </div>
-          `;
+          `);
         });
       });
-      chainFlowDisplay.innerHTML = flowHtml;
-      setTimeout(() => { diceContainer.scrollTop = diceContainer.scrollHeight; }, 50);
+      chainFlowDisplay.innerHTML = parts.join('');
+      requestAnimationFrame(() => { diceContainer.scrollTop = diceContainer.scrollHeight; });
     }
 
     function renderTotalSum(allRuns, boost) {
-      let totalSum = 0, nonTriggerSum = 0, formulaParts = [], hasTrigger = false;
+      let totalSum = 0, nonTriggerSum = 0, hasTrigger = false;
+      const formulaParts = [];
+
       allRuns.forEach(run => {
         const info = getS0Info(run);
         if (!info) return;
@@ -747,7 +721,9 @@
         if (!info.hasChain) nonTriggerSum += f;
         const delta = f - info.s0Step.raw;
         const partStr = delta !== 0 ? `(${info.s0Step.raw}${delta > 0 ? '+' : ''}${delta})` : `${info.s0Step.raw}`;
-        formulaParts.push(info.hasChain ? `<span class="text-emerald-400 font-bold" title="退回s0採計">${partStr}</span>` : partStr);
+        formulaParts.push(info.hasChain
+          ? `<span class="text-emerald-400 font-bold" title="退回s0採計">${partStr}</span>`
+          : partStr);
       });
 
       if (formulaParts.length === 0) { totalSummary.classList.add('hidden'); return 0; }
@@ -767,8 +743,12 @@
       navigator.clipboard.writeText(val.toString()).then(() => showToast(`📋 已複製總和：${val} 喵！`, 'success'));
     }
 
+    // ============================================================
+    // 🎲 主執行
+    // ============================================================
     function executeRoll(type) {
       playAnimation();
+
       let count = Math.max(1, Math.min(MAX_DICE, toInt(countInput.value, 1)));
       countInput.value = count;
       const boost = toInt(boostInput.value, 0);
@@ -793,6 +773,7 @@
           if (run.baseOutcome === '大失敗') totalFailStacks += run.finalStack;
         }
       }
+
       renderBadges(totalSuccessStacks, totalFailStacks, isDebug);
       renderFlow(allRuns, count);
       const totalSum = renderTotalSum(allRuns, boost);
@@ -813,9 +794,9 @@
         detailArr.push(runStr);
       });
       const detailText = detailArr.join(' | ');
-      const boostText = boost !== 0 ? ` (B:${boost >= 0 ? '+' : ''}${boost})` : '';
-      const sumText = totalSummary.classList.contains('hidden') ? '' : ` ｜ 總和: ${totalSum}`;
-      const debugText = isDebug ? '[🧪測試] ' : '';
+      const boostText  = boost !== 0 ? ` (B:${boost >= 0 ? '+' : ''}${boost})` : '';
+      const sumText    = totalSummary.classList.contains('hidden') ? '' : ` ｜ 總和: ${totalSum}`;
+      const debugText  = isDebug ? '[🧪測試] ' : '';
       const summaryText = `${debugText}${count}x ${type}${boostText} [${checkMode.toUpperCase()}:${targetVal}] ➔ 淨計: ${totalSuccessStacks}成功 / ${totalFailStacks}失敗${sumText}`;
 
       addHistory(summaryText, detailText);
@@ -836,6 +817,80 @@
       }
     }
 
+    // ============================================================
+    // 🎲 自訂骰子
+    // ============================================================
+    function rollCustomDice() {
+      const val = customDiceInput.value.trim().toLowerCase();
+      if (!val) return showToast('❌ 請輸入自訂骰子 (如 1d100, ra50 1d100)', 'error');
+
+      const regex = /^(?:(ra|ro)\s*(\d+)\s*)?(\d*)d(\d+)(?:\s*([+-]\s*\d+))?$/i;
+      const match = val.match(regex);
+      if (!match) return showToast('❌ 格式錯誤，請輸入如 1d100, 8d50, ra50 1d100 或 ro25 1d75', 'error');
+
+      const mode      = match[1] ? match[1].toLowerCase() : null;
+      const targetVal = match[2] ? parseInt(match[2], 10) : null;
+      const count     = match[3] ? parseInt(match[3], 10) : 1;
+      const sides     = parseInt(match[4], 10);
+      const modifier  = match[5] ? parseInt(match[5].replace(/\s+/g, ''), 10) : 0;
+
+      if (count < 1 || count > MAX_DICE) return showToast(`❌ 骰子數量必須介於 1 到 ${MAX_DICE} 顆`, 'error');
+      if (sides < 2 || sides > MAX_SIDES) return showToast(`❌ 骰面必須介於 2 到 ${MAX_SIDES} 面`, 'error');
+      if (targetVal !== null && (targetVal < 1 || targetVal > MAX_TARGET)) {
+        return showToast(`❌ 目標值範圍需為 1 ~ ${MAX_TARGET}`, 'error');
+      }
+
+      const { seq: debugSeq, isDebug } = parseDebugSeq();
+      const debugState = { index: 0 };
+
+      let total = 0;
+      const rolls = [];
+      for (let i = 0; i < count; i++) {
+        const r = getRnd(sides, debugSeq, debugState);
+        rolls.push(r);
+        total += r;
+      }
+      total += modifier;
+
+      const modStr    = modifier !== 0 ? ` ${modifier > 0 ? '+' : ''}${modifier}` : '';
+      const rollsStr  = rolls.length > 1 ? `[${rolls.join(', ')}]${modStr} = ` : '';
+      const diceExpr  = `${count}d${sides}${modStr}`;
+      const formula   = `${diceExpr} = ${rollsStr}${total}`;
+
+      let checkDetail = '';
+      let resultMsg   = `🎲 自訂擲骰：${formula}`;
+      if (mode && targetVal !== null) {
+        const isSuccess = (mode === 'ra') ? (total <= targetVal) : (total >= targetVal);
+        checkDetail = `[${mode.toUpperCase()} ${mode === 'ra' ? '<=' : '>='} ${targetVal}] ➔ ${isSuccess ? '✅ 成功' : '❌ 失敗'}`;
+        resultMsg = `🎲 自訂檢定：${formula} | ${checkDetail}`;
+      }
+
+      const mockRun = {
+        steps: [{ levelStr: 'custom', type: diceExpr, raw: total, final: total, extraD2: null, outcome: '普通', msg: resultMsg, checkDetail }],
+        finalStack: 0,
+        baseOutcome: null
+      };
+      emptyState.classList.add('hidden');
+      chainFlowDisplay.classList.remove('hidden');
+      totalSummary.classList.add('hidden');
+      renderFlow([mockRun], 1);
+
+      const debugText = isDebug ? '[🧪測試] ' : '';
+      const summaryStr = (mode && targetVal !== null)
+        ? `${debugText}自訂 ${mode.toUpperCase()}${targetVal} (${diceExpr}) ➔ 結果: ${total} | ${checkDetail}`
+        : `${debugText}自訂擲骰 (${diceExpr}) ➔ 結果: ${total}`;
+
+      addHistory(summaryStr, formula);
+      showToast('🎲 自訂擲骰完成！', 'success');
+
+      if (autoCopyToggle.checked) {
+        navigator.clipboard.writeText(formula).then(() => showToast(`📋 已自動複製：${formula}`, 'success'));
+      }
+    }
+
+    // ============================================================
+    // 📜 歷史
+    // ============================================================
     function addHistory(summary, detail) {
       const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       history.unshift({ time: now, summary, detail });
@@ -845,8 +900,7 @@
     }
 
     function formatOutputText(text) {
-      if (outputFormatInput.value === 'markdown') return `**${text}**`;
-      return text;
+      return outputFormatInput.value === 'markdown' ? `**${text}**` : text;
     }
 
     function renderHistory() {
@@ -880,15 +934,19 @@
 
     function exportHistoryToCSV() {
       if (!Array.isArray(history) || history.length === 0) return showToast('❌ 目前沒有紀錄可以匯出喵！', 'error');
-      let csvContent = "\uFEFF時間,摘要,詳細骰子軌跡\n";
-      const reversedHistory = [...history].reverse();
-      reversedHistory.forEach(item => {
+
+      const lines = ["\uFEFF時間,摘要,詳細骰子軌跡"];
+      const reversed = [...history].reverse();
+      reversed.forEach(item => {
         const sText = item.summary || item.text || '';
         const dText = item.detail || '';
         const safeSummary = `"${sText.replace(/"/g, '""')}"`;
-        const safeDetail = `"${dText.replace(/"/g, '""')}"`;
-        csvContent += `${item.time},${safeSummary},${safeDetail}\n`;
+        const safeDetail  = `"${dText.replace(/"/g, '""')}"`;
+        lines.push(`${item.time},${safeSummary},${safeDetail}`);
       });
+      // 保留原本的結尾換行，輸出位元組完全一致
+      const csvContent = lines.join('\n') + '\n';
+
       const defaultFileName = `Fate_Classic_Log_${new Date().toISOString().slice(0,10)}.csv`;
       if (window.pywebview && window.pywebview.api) {
         window.pywebview.api.save_csv(csvContent, defaultFileName).then((response) => {
@@ -907,6 +965,9 @@
       }
     }
 
+    // ============================================================
+    // ⌨️ 快捷鍵
+    // ============================================================
     document.addEventListener('keydown', function(e) {
       const tag = e.target.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'BUTTON' || e.target.isContentEditable) return;
@@ -918,6 +979,9 @@
       else if (e.key === '2') executeRoll('1d100');
     });
 
+    // ============================================================
+    // 🚀 啟動
+    // ============================================================
     window.addEventListener('DOMContentLoaded', loadSettings);
   </script>
 </body>
