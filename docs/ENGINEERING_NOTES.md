@@ -90,4 +90,5 @@
 - localStorage key:`fate_theme` / `fate_dreamweaver_settings` / `fate_dreamweaver_history`——動結構要寫遷移(舊資料在玩家瀏覽器裡)
 - 新增 UI 元素時,檢查 keydown 的擋除清單(INPUT/TEXTAREA/SELECT/BUTTON/contentEditable)
 - `main.py` 的 `resource_path()` 依賴 `_MEIPASS`,PyInstaller 打包指令的 `--add-data "index_classic.html;."` 不可拿掉
+- Android APK 打包專案在 `C:\Users\user\.zcode\workspace\draft-2beac78f-4219-4cd9-b92e-486264f76810\fate-dreamweaver\_apkbuild`**(不在 repo 內;node_modules 與 build 產物太大故未納入 git)。重打包:`cd _apkbuild/android` 後設 `JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.11.10-hotspot`、`ANDROID_HOME=C:\Android\Sdk`,再 `gradlew assembleDebug`;SDK 已裝在 C:\Android\Sdk
 - 桌面版 CSV 存檔走 `window.pywebview.api.save_csv`,網頁版走 blob 下載——兩條路都要測
