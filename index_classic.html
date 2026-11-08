@@ -1232,29 +1232,84 @@
       return usable.reduce((best, s) => power(s) > power(best) ? s : best);
     }
 
+    // 受傷表(B 案,原作 88:77F 起全域):受擊方擲 1d10 查檔;表即角色防禦畫像,本版用固定預設表,角色位移修正(±N)留作擴充
+    const INJURY_TABLE = [
+      { min: 1, max: 1, label: '迴避', dmg: 0 },
+      { min: 2, max: 3, label: '小傷', dmg: 1 },
+      { min: 4, max: 5, label: '中傷', dmg: 2 },
+      { min: 6, max: 7, label: '大傷', dmg: 3 },
+      { min: 8, max: 9, label: '特大傷', dmg: 4 },
+      { min: 10, max: 10, label: '極端', dmg: null } // 第 10 行 → 1d2:1 受擊方大成功(完全防禦+反擊2)、2 戰鬥不能
+    ];
+    function injuryLookup(roll) { return INJURY_TABLE.find(r => roll >= r.min && roll <= r.max); }
+
     function battleTurn(self, foe, round, side, debugSeq, state) {
       const skill = pickBattleSkill(self);
       if (skill.cost) self.hp -= skill.cost;
       if (skill.ct > 0) skill.currentCd = skill.ct;
-      const roll = getRnd(100, debugSeq, state);
-      const isCS = roll >= 96, isCF = roll <= 5;
-      const base = Math.floor((self.atk + (skill.atkMod || 0)) * (skill.mult || 1));
+      const dicePartsBase = [];
+      // 直接傷害技(必中,原作「造成必中的【2+1d5】傷害」):跳過對拼與受傷表,直接結算骰式傷害
+      if (skill.alwaysHit) {
+        let dTotal = 0, dParts = [];
+        if (skill.dice) { const d = rollDiceExpr(skill.dice, debugSeq, state); dTotal = d.total; dParts = d.parts; }
+        const dmg = dTotal;
+        foe.hp -= dmg;
+        return { round, side, actor: self.name, target: foe.name, skillName: skill.name,
+          clash: `⚡直接傷害(必中,不經對拼)`, dmg, diceParts: dParts, counterNote: '',
+          foeHp: Math.max(0, foe.hp) };
+      }
+      // 對拼(原作核心:雙方 Atk+1d100 比大小;攻方技能 Atk± 計入,無 CS/CF——88:797F)
+      const rollA = getRnd(100, debugSeq, state);
+      const rollB = getRnd(100, debugSeq, state);
+      const atkVal = self.atk + (skill.atkMod || 0) + rollA;
+      const defVal = foe.atk + rollB;
+      const diff = atkVal - defVal;
+      // 差值>100 即決(A-1,88:85F/325F 全域):直接判勝/敗,不進傷害結算
+      if (Math.abs(diff) > 100) {
+        const win = diff > 0;
+        if (win) foe.hp = 0; else self.hp = 0;
+        return { round, side, actor: self.name, target: foe.name, skillName: skill.name,
+          clash: `⚔️對拼 ${self.atk + (skill.atkMod || 0)}+${rollA}=${atkVal} vs ${foe.atk}+${rollB}=${defVal} ➔ 差值 ${diff > 0 ? '+' : ''}${diff} ⚡即決(${win ? '攻方' : '守方'}碾壓)`,
+          dmg: win ? '即決' : 0, diceParts: [], counterNote: '',
+          foeHp: Math.max(0, foe.hp), instantWin: win };
+      }
+      if (diff <= 0) {
+        return { round, side, actor: self.name, target: foe.name, skillName: skill.name,
+          clash: `⚔️對拼 ${self.atk + (skill.atkMod || 0)}+${rollA}=${atkVal} vs ${foe.atk}+${rollB}=${defVal} ➔ 差值 ${diff} ❌對拼落空`,
+          dmg: 0, diceParts: [], counterNote: '', foeHp: Math.max(0, foe.hp) };
+      }
+      // 對拼勝 → 受擊方擲受傷表 1d10
+      const injRoll = getRnd(10, debugSeq, state);
+      const row = injuryLookup(injRoll);
+      if (row.dmg === null) {
+        // 第 10 行極端 → 1d2:1 受擊方大成功(完全防禦+反擊 2)、2 戰鬥不能(直接敗)
+        const coin = getRnd(2, debugSeq, state);
+        if (coin === 2) { foe.hp = 0;
+          return { round, side, actor: self.name, target: foe.name, skillName: skill.name,
+            clash: `⚔️對拼 ${self.atk + (skill.atkMod || 0)}+${rollA}=${atkVal} vs ${foe.atk}+${rollB}=${defVal} ➔ 差值 ${diff} 命中 ➔ 受傷表 1d10=10 極端 ➔ 1d2=${coin} ☠️戰鬥不能`,
+            dmg: '戰鬥不能', diceParts: [], counterNote: '', foeHp: 0 };
+        }
+        self.hp -= 2;
+        return { round, side, actor: self.name, target: foe.name, skillName: skill.name,
+          clash: `⚔️對拼 ${self.atk + (skill.atkMod || 0)}+${rollA}=${atkVal} vs ${foe.atk}+${rollB}=${defVal} ➔ 差值 ${diff} 命中 ➔ 受傷表 1d10=10 極端 ➔ 1d2=${coin} 🛡️受擊方大成功(完全防禦+反擊 2)`,
+          dmg: 0, diceParts: [], counterNote: '', foeHp: Math.max(0, foe.hp), selfHpAfter: Math.max(0, self.hp) };
+      }
+      // 正常檔位:傷害 = 表檔位 × 倍率 + 骰式
       let diceTotal = 0, diceParts = [];
       if (skill.dice) { const d = rollDiceExpr(skill.dice, debugSeq, state); diceTotal = d.total; diceParts = d.parts; }
-      let dmg = (isCF && !skill.alwaysHit) ? 0 : base + diceTotal; // 必中技(A 案):CF 不歸零(CS 仍×2)——證據:烈幻入 Flower star「必中」/天文密葬法「無法回避」
-      if (isCS) dmg *= 2;
+      let dmg = row.dmg * (skill.mult || 1) + diceTotal;
       let counterNote = '';
       const counterSkill = (foe.skills || []).find(s => (s.counter || 0) > 0 && (s.currentCd || 0) === 0);
-      if (counterSkill && !isCF && dmg > 0) {
+      if (counterSkill && dmg > 0) {
         const cr = getRnd(100, debugSeq, state);
         if (cr >= counterSkill.counter) { dmg = Math.floor(dmg / 2); counterNote = `🛡️【${counterSkill.name}】破解判定 ${cr}≥${counterSkill.counter} ➔ 傷害減半`; }
         else counterNote = `🛡️【${counterSkill.name}】破解判定 ${cr}<${counterSkill.counter} ➔ 失敗`;
       }
       foe.hp -= dmg;
-      const check = isCS ? '✨大成功 傷害×2' : isCF ? (skill.alwaysHit ? '💥大失敗(必中:傷害照算)' : '💥大失敗 失手') : '⚔️命中';
       return { round, side, actor: self.name, target: foe.name, skillName: skill.name,
-        roll, check, dmg, diceParts, counterNote,
-        foeHp: Math.max(0, foe.hp), isCS, isCF };
+        clash: `⚔️對拼 ${self.atk + (skill.atkMod || 0)}+${rollA}=${atkVal} vs ${foe.atk}+${rollB}=${defVal} ➔ 差值 ${diff} 命中 ➔ 受傷表 1d10=${injRoll} ${row.label}(${row.dmg})${(skill.mult || 1) > 1 ? `×${skill.mult}` : ''}`,
+        dmg, diceParts, counterNote,
+        foeHp: Math.max(0, foe.hp) };
     }
 
     function runBattle(debugSeq, state) {
@@ -1264,12 +1319,14 @@
       (B.skills || []).forEach(s => s.currentCd = 0);
       const steps = [];
       let winner = null, rounds = 0;
-      while (rounds < 50) { // loopSafety 兜底:50 回合未分勝負判平局
+      while (rounds < 50) { // loopSafety 兜底:50 回合未分勝負判平局(原作靠即決收束,理論上不觸發)
         rounds++;
         steps.push(battleTurn(A, B, rounds, 'player', debugSeq, state));
         if (B.hp <= 0) { winner = A; break; }
+        if (A.hp <= 0) { winner = B; break; } // 守方反殺:即決敗/受傷表第10行反擊戰鬥不能
         steps.push(battleTurn(B, A, rounds, 'enemy', debugSeq, state));
         if (A.hp <= 0) { winner = B; break; }
+        if (B.hp <= 0) { winner = A; break; }
         (A.skills || []).forEach(s => { if (s.currentCd > 0) s.currentCd--; });
         (B.skills || []).forEach(s => { if (s.currentCd > 0) s.currentCd--; });
       }
@@ -1291,7 +1348,7 @@
       const outcome = result.draw ? '⚖️ 平局' : `🏆 勝者:${result.winnerName}(殘 HP ${result.winnerHp})`;
       const summary = `${isDebug ? '[🧪測試] ' : ''}⚔️ ${vs} ➔ ${outcome}(R${result.rounds})`;
       const detail = result.steps.map(t =>
-        `R${t.round}${t.side === 'player' ? '▶' : '◀'}${t.actor}【${t.skillName}】1d100=${t.roll} ${t.check} 傷害${t.dmg}${t.counterNote ? ' 破解' : ''}`
+        `R${t.round}${t.side === 'player' ? '▶' : '◀'}${t.actor}【${t.skillName}】${t.clash} ➔ 傷害${t.dmg}`
       ).join(' | ');
       addHistory(summary, detail);
       renderCompact();
@@ -1307,9 +1364,9 @@
       if (isDebug) lines.push('<div class="text-fuchsia-400 font-bold">🧪 測試模式(debug 序列驅動)</div>');
       result.steps.forEach(t => {
         const arrow = t.side === 'player' ? '▶' : '◀';
-        const border = t.isCS ? 'border-emerald-500' : t.isCF ? 'border-rose-500' : 'border-slate-500/40';
+        const border = t.instantWin ? 'border-amber-500' : t.dmg === '戰鬥不能' ? 'border-rose-500' : (t.dmg > 0 ? 'border-slate-400' : 'border-slate-500/40');
         const diceStr = t.diceParts.length ? ` [骰:${t.diceParts.join(',')}]` : '';
-        lines.push(`<div class="border-l-2 ${border} pl-2 py-0.5"><span class="text-amber-500 font-bold">R${t.round}${arrow}</span> ${t.actor}【${t.skillName}】<span class="text-muted">1d100=</span><span class="font-bold">${t.roll}</span> ${t.check} ➔ 傷害 <span class="font-black text-rose-400">${t.dmg}</span>${diceStr}${t.counterNote ? '<br><span class="text-sky-400">' + t.counterNote + '</span>' : ''} <span class="text-muted">(${t.target} HP→${t.foeHp})</span></div>`);
+        lines.push(`<div class="border-l-2 ${border} pl-2 py-0.5"><span class="text-amber-500 font-bold">R${t.round}${arrow}</span> ${t.actor}【${t.skillName}】${t.clash} ➔ 傷害 <span class="font-black text-rose-400">${t.dmg}</span>${diceStr}${t.counterNote ? '<br><span class="text-sky-400">' + t.counterNote + '</span>' : ''} <span class="text-muted">(${t.target} HP→${t.foeHp}${t.selfHpAfter !== undefined ? ',自己 HP→' + t.selfHpAfter : ''})</span></div>`);
       });
       lines.push(result.draw
         ? `<div class="text-center font-bold text-amber-500 pt-1">⚖️ ${result.rounds} 回合未分勝負 ➔ 平局(玩家 HP ${result.finalA} / 敵人 HP ${result.finalB})</div>`
