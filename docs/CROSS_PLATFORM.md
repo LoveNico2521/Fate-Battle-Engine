@@ -1,6 +1,15 @@
 # 🌐 跨平台指南
 
-以 Windows 瀏覽器版為基準,其他平台的使用與打包方式。引擎本體只有一個 `index_classic.html`。
+以 Windows 瀏覽器版為基準,其他平台的使用與打包方式。引擎本體只有一個 `index_classic.html`,**無任何 CDN/網路依賴,單檔完全離線可用**(Tailwind 已靜態編譯內嵌)。
+
+## ⚡ 手機離線安裝(PWA,Android/iOS 通用)
+
+1. 手機瀏覽器開啟:https://lovenico2521.github.io/Fate-Dreamweaver-Engine/index_classic.html
+2. **Android Chrome**:選單 → 「安裝應用程式 / 加入主畫面」
+   **iOS Safari**:分享 → 「加入主畫面」
+3. 完成——從主畫面圖示啟動即是全螢幕 App,Service Worker 已快取全部資源,**之後完全離線可用**
+
+> 只需第一次造訪時有網路;之後圖示啟動、擲骰、紀錄、CSV 匯出全部離線運作。
 
 ## 平台矩陣
 
@@ -23,7 +32,7 @@
 2. 手機瀏覽器開 `http://<電腦區網IP>:8765/index_classic.html`
 3. 手機版面已自動適配:整頁捲動、輸入框 16px(防 iOS 自動放大)、無雙擊縮放延遲
 
-也可以把 HTML 檔直接傳到手機,用檔案 App / 瀏覽器開啟。
+也可以把 HTML 檔直接傳到手機,用檔案 App / 瀏覽器開啟——**單檔無外部依賴,離線照樣完整渲染**(iOS 建議用上方 PWA 方式,檔案 App 的 QuickLook 預覽對 localStorage 支援較差)。
 
 ## Android APK(Capacitor)
 
@@ -89,3 +98,4 @@ class ViewController: UIViewController {
 | crypto 無法使用 | 非安全情境無 `getRandomValues` | 退回 `Math.random`(擲骰不中斷) |
 | localStorage 禁用 | 隱私模式 / 部分 webview | 全部存取包 try-catch,關閉紀錄功能但不崩潰 |
 | CSV 下載 | iOS Safari 的 download 屬性 | 開啟檔案對話框存到「檔案」App;桌面版建議用 pywebview 原生存檔 |
+| Service Worker | 僅 https 環境可註冊 | https 自動註冊;file:// 與區網 http 自動略過(單檔本身已離線可用) |

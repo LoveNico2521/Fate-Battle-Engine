@@ -19,9 +19,10 @@
 
 | 要用哪種 | 做法 |
 |---|---|
-| **網頁版(推薦)** | 下載 [`index_classic.html`](index_classic.html),雙擊用瀏覽器開啟(Chrome / Edge / Firefox / Safari 皆可) |
+| **網頁版(推薦)** | 下載 [`index_classic.html`](index_classic.html),雙擊用瀏覽器開啟(Chrome / Edge / Firefox / Safari 皆可)——**單檔無任何網路依賴,完全離線可用** |
+| **手機離線安裝(PWA)** | 開 [線上版](https://lovenico2521.github.io/Fate-Dreamweaver-Engine/index_classic.html) → 加入主畫面 → 之後離線當 App 用 |
 | 桌面視窗版(可選) | `pip install pywebview` 後執行 `python main.py` |
-| 手機 / Android APK / iOS App | 見 [跨平台指南](docs/CROSS_PLATFORM.md)(手機版面已自動適配) |
+| Android APK / iOS App | 見 [跨平台指南](docs/CROSS_PLATFORM.md)(Capacitor / Xcode 打包路徑) |
 
 > **先看這個**:紀錄存在瀏覽器 localStorage(上限 200 筆)——清瀏覽器資料會連紀錄一起消失。要留的內容,用右下角「匯出 CSV」帶走。
 
