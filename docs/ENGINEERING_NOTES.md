@@ -68,24 +68,38 @@
 
 ## 6. 迴歸測試(改代碼必跑)
 
-`tools/battery.js`:**31 個情境,全部用 debug 序列強制確定性**,涵蓋 CS/CF 連鎖、三種 Boost(含負值與鉗制)、反向退回、0 Stacks、通用骰、自訂骰語法與錯誤、自動複製格式、Markdown 複製、輸入鉗制(CSV 情境已移除——會觸發真實下載)。
+`tools/battery.js`:**battle 分支 36 個情境(引擎 31 + 戰鬥機 5),全部用 debug 序列強制確定性**,涵蓋 CS/CF 連鎖、三種 Boost(含負值與鉗制)、反向退回、0 Stacks、通用骰、自訂骰語法與錯誤、自動複製格式、Markdown 複製、輸入鉗制、戰鬥機(直勝/逆轉/破解減半/骰式傷害/50 回合平局)(CSV 情境已移除——會觸發真實下載)。
+
+**基線(電池 hash)**:main 分支 31 情境 = `463080c0`;battle 分支 36 情境 = `1ff293c0`(兩輪一致已驗證)。**驗證引擎零變更的方法**:跑 main 版電池(31 情境)於當前代碼,hash 應仍為 `463080c0`,且 s01~s32 逐項 per 與新電池完全一致。
 
 跑法:
 
-1. 專案目錄起 `python -m http.server 8765`
+1. 專案目錄起 `python -m http.server <port>`(**注意:8765 可能被其他 session 的伺服器佔用**——兩個進程同聽一埠時請求會落到錯誤根目錄(index 200 但 tools/ 404),換埠並 `curl` 確認 battery.js 是 200 再開跑)
 2. 瀏覽器開 `index_classic.html`,在頁面 context 執行:`fetch('/tools/battery.js', {cache:'no-store'})` → `eval` 內容
-3. 取回 `{hash, per}`:hash 是全結果 JSON 的 FNV-1a;**改動前後 hash 必須完全相同**
+3. 取回 `{hash, per}`:hash 是全結果 JSON 的 FNV-1a;**不改行為的修改 hash 必須完全相同**;新增功能(如戰鬥情境)hash 必變,此時以「原情境 per 逐項一致 + 舊電池完整 hash 不變」為零變更證據
 
 已知陷阱:
 
-- 電池開頭會正規化 localStorage / history / stale DOM(首輪 = 次輪)
+- 電池開頭會正規化 localStorage / history / stale DOM(首輪 = 次輪);**戰鬥情境另有 resetBattle() 重置 fate_battle_v1**
 - toast/clipboard/blob 攔截只在測試 evaluate 內生效,結束時還原
 - **fetch 一律加 `{cache: 'no-store'}`**——否則瀏覽器啟發式快取可能送舊版測試腳本
 - 同網址 goto 可能觸發 bfcache 軟導航,保留上一輪 DOM 狀態——每輪用唯一 query 參數
 - `content-visibility: auto` 的元素在視口外時 innerText 會跳過其內容——檢查紀錄用 textContent
 - s08 是哨兵情境:依賴 isCS 先於 isCF 的判定順序 + loopSafety 兜底,動了引擎順序它第一個爆
+- **戰鬥情境的 debug 序列必須覆蓋整場戰鬥的全部骰**——骰式技(如 2+3d2)每回合多吃骰、大招 CT 週期回歸,50 回合總消費可達 150+ 骰;b05 用 300 個序列值,序列不足會在尾段回歸真隨機導致兩輪 hash 不同
 
-## 7. 給下一雙手的提醒
+## 7. ⚔️ 自動戰鬥機(battle 分支專屬)
+
+**規格來源**:gululu《烈海王幻想入》的戰鬥系統(主人提供角色卡截圖 + 平台「戰鬥重演」實作考察),簡化為引擎可跑的核心迴圈。
+
+- **資料**:`battle = {player, enemy}`,每方 `{name, atk, hp, skills[]}`;技能 `{id, name, ct(冷卻), atkMod(Atk±), mult(傷害×倍率), dice(骰式如 '2+1d5'), cost(HP消耗), counter(破解門檻)}`。存於 localStorage `fate_battle_v1`(獨立 key,與經典版零衝突);無資料時載入烈幻入預設角色(烈海王 Atk216/Hp17 vs 紅美鈴 Atk225/Hp18)
+- **戰鬥流程**(`runBattle`):每回合雙方各一擊——AI 選技(可用技中威力估值最高,CT 中/HP 不足退回次選,普攻恆兜底)→ 命中骰 1d100(**1~5 CF 失手、96~100 CS 傷害×2,沿用引擎不變式**)→ 傷害 = `(atk+atkMod)×mult + dice骰` → 守方破解判定(有 counter 技時擲 1d100,≥門檻傷害減半)→ 扣 HP → CT 遞減。HP≤0 定勝負;**50 回合 loopSafety 兜底判平局**
+- **確定性**:全骰走 `getRnd(debugSeq, state)` 同一 state——debug 序列可重現整場戰鬥(電池基礎)
+- **UI**:`#panel-battle` 桌面在右欄頂部常駐;行動版第 6 格 mtab(`body.mtab-battle` 靠上對齊,矮內容不置中漂浮);技能編輯器在設定彈窗(雙 tab 玩家/敵人)
+- **重演**:開戰後按鈕變「🔄 戰鬥重演」= 同配置重擲(新隨機);參考 gululu 戰鬥重演(結構化戰鬥資料+讀者重算)而來
+- **明確不做**:自動傷害外的勝敗敘事、貼吧式樓層、主檢定 Boost 三模式不套用於命中骰(命中骰為裸 1d100+CS/CF)
+
+## 8. 給下一雙手的提醒
 
 - localStorage key:`fate_theme` / `fate_dreamweaver_settings` / `fate_dreamweaver_history`——動結構要寫遷移(舊資料在玩家瀏覽器裡)
 - 新增 UI 元素時,檢查 keydown 的擋除清單(INPUT/TEXTAREA/SELECT/BUTTON/contentEditable)

@@ -86,6 +86,22 @@
   executeRoll('d6');
   S['s32_clamp'] = { inputs: [countInput.value, boostInput.value, targetValueInput.value].join('|'), flow: $('chain-flow-display').innerText.slice(0, 120) };
 
+  // ⚔️ 戰鬥情境:debug 序列驅動確定性重現;每情境前重置為預設角色(兩輪起點一致)
+  const resetBattle = () => { battle = JSON.parse(JSON.stringify(BATTLE_DEFAULT)); renderBattleCards(); };
+  resetBattle();
+  const B = (debug, mutate) => {
+    resetBattle();
+    if (mutate) mutate();
+    debugSeqInput.value = debug || '';
+    startBattle();
+    return { battle: $('battle-log').innerText, hist0: (($('history-log').firstElementChild || { innerText: '' }).innerText), toasts: toasts.splice(0) };
+  };
+  S['b01_straight'] = B('86'); // R1 超人烈海王 86 命中 3464 傷害 ➔ 勝
+  S['b02_cf_upset'] = B('2,86'); // 玩家 CF 失手 ➔ 敵星隕地轉掉命中 3700 ➔ 敵勝
+  S['b03_counter'] = B('86,60', () => { battle.enemy.skills.push({ id: 'ex', name: '紅海皇', ct: 0, atkMod: 0, mult: 1, dice: '', cost: 0, counter: 50 }); renderBattleCards(); }); // 破解 60≥50 ➔ 傷害減半
+  S['b04_dice'] = B('86,3', () => { battle.player.skills = [{ id: 'x1', name: '普通攻擊', ct: 0, atkMod: 0, mult: 1, dice: '', cost: 0, counter: 0 }, { id: 'x2', name: 'Flower star', ct: 4, atkMod: 0, mult: 1, dice: '2+1d5', cost: 0, counter: 0 }]; renderBattleCards(); }); // 骰式 2+1d5 計入傷害
+  S['b05_draw'] = B(Array(300).fill('2').join(',')); // 全 CF 失手 50 回合 ➔ 平局(序列 300:大招 CT 週期回歸+骰式技反覆觸發,50 回合總消費可達 150+ 骰,300 確定覆蓋全程)
+
   // 還原掛鉤
   window.showToast = origToast;
   navigator.clipboard.writeText = origWrite;
