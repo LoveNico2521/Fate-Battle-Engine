@@ -198,7 +198,7 @@
           </button>
           <button onclick="executeRoll('1d100')" class="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl shadow-lg transition-all flex flex-col items-center justify-center gap-1 border border-emerald-400/30">
             <span class="text-base tracking-wide">🎯 投下 1d100 劇情判定 (ra/ro)</span>
-            <span class="text-[10px] opacity-80">1~5 ➔ 追擲 1d10 | 96~100 ➔ 大失敗</span>
+            <span class="text-[10px] opacity-80">1~5 ➔ 大失敗 (CF) | 96~100 ➔ 大成功 (CS)</span>
           </button>
         </div>
 
@@ -370,15 +370,15 @@
       let val = customDiceInput.value.trim().toLowerCase();
       if (!val) return showToast('❌ 請輸入自訂骰子 (如 1d100, ra50 1d100)', 'error');
 
-      // 支援 ra/ro 檢定前綴 (如 ra50 1d100, ro25 1d75) 與標準 8d50, 3d6+5
-      const regex = /^(?:(ra|ro)\s*(\d+)\s*)?(\d*)d(\d+)([+-]\d+)?$/i;
+      // 支援運算符與數字間可包含任意空格 (例: 1d100 + 5, ra 50 1d100 - 10)
+      const regex = /^(?:(ra|ro)\s*(\d+)\s*)?(\d*)d(\d+)(?:\s*([+-]\s*\d+))?$/i;
       const match = val.match(regex);
       if (match) {
         const mode = match[1] ? match[1].toLowerCase() : null;
         const targetVal = match[2] ? parseInt(match[2]) : null;
         const count = match[3] ? parseInt(match[3]) : 1;
         const sides = parseInt(match[4]);
-        const modifier = match[5] ? parseInt(match[5]) : 0;
+        const modifier = match[5] ? parseInt(match[5].replace(/\s+/g, '')) : 0;
 
         if (count > 20) return showToast('❌ 骰子數量上限為 20 顆', 'error');
         if (sides > 10000) return showToast('❌ 骰子面數上限為 10000', 'error');
@@ -386,7 +386,7 @@
           return showToast('❌ 目標值範圍需為 1 ~ 10000', 'error');
         }
 
-        // 自訂骰子不加載 base-boost 加值 (獨立計算)
+        // 自訂骰子獨立運算，不受基礎加值 (base-boost) 影響
         let total = 0, rolls = [];
         for (let i = 0; i < count; i++) {
           let r = Math.floor(Math.random() * sides) + 1;
@@ -431,6 +431,10 @@
 
         addHistory(summaryStr, formula);
         showToast('🎲 自訂擲骰完成！', 'success');
+
+        if (autoCopyToggle.checked) {
+          navigator.clipboard.writeText(formula).then(() => showToast(`📋 已自動複製：${formula}`, 'success'));
+        }
       } else {
         showToast('❌ 格式錯誤，請輸入如 1d100, 8d50, ra50 1d100 或 ro25 1d75', 'error');
       }
@@ -622,7 +626,6 @@
           let glowClass = ''; 
           if (s.outcome === '大成功') { stepBg = 'bg-emerald-950/40'; stepBorder = 'border-emerald-500/40'; glowClass = 'glow-cs'; }
           else if (s.outcome === '大失敗') { stepBg = 'bg-rose-950/40'; stepBorder = 'border-rose-500/40'; glowClass = 'glow-cf'; }
-          else if (s.outcome === 'DF-Trigger') { stepBg = 'bg-amber-950/40'; stepBorder = 'border-amber-500/40'; }
           const levelNum = parseInt(s.levelStr.replace('s', ''));
           if (levelNum >= 3) glowClass = 'glow-high';
           
@@ -768,9 +771,12 @@
           }
           return '';
         }).filter(Boolean);
-        const prefix = count + 'd' + (type.includes('d') ? type.split('d')[1] : type);
-        const formulaString = `${prefix}=${parts.join('+')}=${totalSum}`;
-        navigator.clipboard.writeText(formulaString).then(() => showToast(`📋 已自動複製：${formulaString}`, 'success'));
+
+        if (parts.length > 0) {
+          const prefix = count + 'd' + (type.includes('d') ? type.split('d')[1] : type);
+          const formulaString = `${prefix}=${parts.join('+')}=${totalSum}`;
+          navigator.clipboard.writeText(formulaString).then(() => showToast(`📋 已自動複製：${formulaString}`, 'success'));
+        }
       }
     }
 
@@ -844,6 +850,13 @@
     document.addEventListener('keydown', function(e) {
       const tag = e.target.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'BUTTON' || e.target.isContentEditable) return;
+      
+      const settingsModal = document.getElementById('settings-modal');
+      const confirmModal = document.getElementById('confirm-modal');
+      const isModalOpen = (settingsModal && !settingsModal.classList.contains('hidden')) || 
+                          (confirmModal && !confirmModal.classList.contains('hidden'));
+      if (isModalOpen) return;
+
       if (e.code === 'Space' || e.key === 'Enter') { e.preventDefault(); executeRoll('1d100'); }
       else if (e.key === '1') executeRoll('1d10');
       else if (e.key === '2') executeRoll('1d100');
