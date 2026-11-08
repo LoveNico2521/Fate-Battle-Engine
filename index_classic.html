@@ -1444,14 +1444,25 @@
       (B.skills || []).forEach(s => s.currentCd = 0);
       (A.skills || []).forEach(s => s.usedThisBattle = 0);
       (B.skills || []).forEach(s => s.usedThisBattle = 0);
-      A.hpMax = BATTLE_DEFAULT.player.hp; B.hpMax = BATTLE_DEFAULT.enemy.hp; // 回復上限取角色卡原廠值(mutate 測試降 HP 時 heal/regen 仍有空間)
+      // 多段血條(主人 2026-11-09 裁決:每段獨立 HP)——bars 支援雙語義:
+      //   純數字 N = N 段均勻(每段上限=BATTLE_DEFAULT 原廠 hp);逗號串「20,10,5,5,1」= 每段獨立 HP 上限
+      [A, B].forEach((c, ci) => {
+        const factoryHp = [BATTLE_DEFAULT.player.hp, BATTLE_DEFAULT.enemy.hp][ci];
+        const barStr = String(c.bars || 1);
+        c.barHps = barStr.includes(',')
+          ? barStr.split(',').map(x => Math.max(1, Math.floor(Number(x)) || 1))
+          : Array.from({ length: Math.max(1, Math.floor(Number(barStr)) || 1) }, () => factoryHp);
+        c.barIdx = 0;
+        c.hpMax = c.barHps[0]; // heal/regen 的 clamp 上限跟隨當前段
+        c.hp = c.hpMax;
+      });
       A.buffAtk = 0; A.buffTurns = 0; B.buffAtk = 0; B.buffTurns = 0;
       A.stunTurns = 0; B.stunTurns = 0;
       A.regenVal = A.regen || 0; B.regenVal = B.regen || 0;
       const steps = [];
       let winner = null, rounds = 0;
-      const phaseBreak = (c, cName) => { // 多段血條(74:8130F):段數>1 時 HP 歸 0 ➔ 段數-1、滿血續戰
-        if ((c.bars || 1) > 1) { c.bars--; c.hp = c.hpMax; return true; }
+      const phaseBreak = c => { // 多段血條(74:8130F):段擊破 ➔ 推進到下一段(獨立 HP 上限)
+        if (c.barIdx < c.barHps.length - 1) { c.barIdx++; c.hpMax = c.barHps[c.barIdx]; c.hp = c.hpMax; return true; }
         return false;
       };
       while (rounds < 50) { // loopSafety 兜底:50 回合未分勝負判平局(原作靠免擲即決收束)
@@ -1467,11 +1478,11 @@
           st.foeHp = Math.max(0, B.hp);
         }
         if (A.hp <= 0) {
-          if (phaseBreak(A, A.name)) steps.push({ round: rounds, side: 'player', actor: A.name, skillName: '—', clash: `💀血條擊破!${A.name} 進入下一段(剩 ${A.bars} 段,滿血)`, dmg: 0, diceParts: [], counterNote: '', foeHp: Math.max(0, B.hp) });
+          if (phaseBreak(A, A.name)) steps.push({ round: rounds, side: 'player', actor: A.name, skillName: '—', clash: `💀血條擊破!${A.name} 進入下一段(HP 上限 ${A.hpMax},剩 ${A.barHps.length - A.barIdx} 段)`, dmg: 0, diceParts: [], counterNote: '', foeHp: Math.max(0, B.hp) });
           else { winner = B; break; }
         }
         if (B.hp <= 0) {
-          if (phaseBreak(B, B.name)) steps.push({ round: rounds, side: 'player', actor: B.name, skillName: '—', clash: `💀血條擊破!${B.name} 進入下一段(剩 ${B.bars} 段,滿血)`, dmg: 0, diceParts: [], counterNote: '', foeHp: Math.max(0, A.hp) });
+          if (phaseBreak(B, B.name)) steps.push({ round: rounds, side: 'player', actor: B.name, skillName: '—', clash: `💀血條擊破!${B.name} 進入下一段(HP 上限 ${B.hpMax},剩 ${B.barHps.length - B.barIdx} 段)`, dmg: 0, diceParts: [], counterNote: '', foeHp: Math.max(0, A.hp) });
           else { winner = A; break; }
         }
         (A.skills || []).forEach(s => { if (s.currentCd > 0) s.currentCd--; });
@@ -1666,7 +1677,7 @@
               <input type="text" value="${c.name}" onchange="forgeActor('${side}', 'name', this.value)" class="col-span-2 border border-default rounded-lg px-2 py-2 bg-transparent font-black focus:outline-none" />
               <label class="flex flex-col items-center gap-0.5 text-[11px]"><span class="text-muted">Atk</span><input type="number" value="${c.atk}" min="1" onchange="forgeActor('${side}', 'atk', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center font-bold" /></label>
               <label class="flex flex-col items-center gap-0.5 text-[11px]"><span class="text-muted">Hp</span><input type="number" value="${c.hp}" min="1" onchange="forgeActor('${side}', 'hp', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center font-bold" /></label>
-              <label class="flex flex-col items-center gap-0.5 text-[11px]"><span class="text-muted">血條段</span><input type="number" value="${c.bars || 1}" min="1" max="9" onchange="forgeActor('${side}', 'bars', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center font-bold" /></label>
+              <label class="flex flex-col items-center gap-0.5 text-[11px]"><span class="text-muted">血條段(可「20,10,5,5,1」)</span><input type="text" value="${c.bars || 1}" onchange="forgeActor('${side}', 'bars', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center font-bold" /></label>
               <label class="flex flex-col items-center gap-0.5 text-[11px]"><span class="text-muted">支援位</span><input type="number" value="${c.supportDmg || 0}" min="0" onchange="forgeActor('${side}', 'supportDmg', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center font-bold" /></label>
             </div>
             <div class="grid grid-cols-3 gap-2 text-[11px]">
