@@ -21,6 +21,7 @@
 |---|---|
 | **網頁版(推薦)** | 下載 [`index_classic.html`](index_classic.html),雙擊用瀏覽器開啟(Chrome / Edge / Firefox / Safari 皆可) |
 | 桌面視窗版(可選) | `pip install pywebview` 後執行 `python main.py` |
+| 手機 / Android APK / iOS App | 見 [跨平台指南](docs/CROSS_PLATFORM.md)(手機版面已自動適配) |
 
 > **先看這個**:紀錄存在瀏覽器 localStorage(上限 200 筆)——清瀏覽器資料會連紀錄一起消失。要留的內容,用右下角「匯出 CSV」帶走。
 

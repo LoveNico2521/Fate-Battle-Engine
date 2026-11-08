@@ -2,7 +2,11 @@
 <html lang="zh-Hant" class="theme-dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#020617">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>織夢者菲特《Fate》 - 安科推演系統 (Classic)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
@@ -112,6 +116,37 @@
     details > summary { list-style: none; }
     details > summary::-webkit-details-marker { display: none; }
     .virtual-scroll-item { content-visibility: auto; contain-intrinsic-size: 60px; }
+
+    /* 🌐 跨平台相容 (2026-11-09) */
+    /* 按鈕與輸入:觸控裝置取消雙擊縮放延遲 */
+    button, input, select, label { touch-action: manipulation; }
+    /* iOS Safari:輸入框字級 <16px 會自動放大頁面,粗指標裝置統一 16px */
+    @media (pointer: coarse) {
+      input, select, textarea { font-size: 16px !important; }
+    }
+    /* 手機直式:解除桌面版的高度鉗制,改為整頁自然捲動
+       (桌面 >767px 完全不受影響) */
+    @media (max-width: 767px) {
+      body {
+        overflow-y: auto !important;
+        height: auto !important;
+        min-height: 100vh;
+        -webkit-overflow-scrolling: touch;
+      }
+      @supports (height: 100dvh) {
+        body { min-height: 100dvh; } /* 行動瀏覽器網址列高度修正 */
+      }
+      .main-container {
+        height: auto !important;
+        max-height: none !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+      }
+      .main-container > .grid > .col-span-1 { overflow: visible !important; }
+      #dice-container { overflow: visible !important; }
+      .h-40 { height: auto !important; min-height: 10rem; }
+      #total-summary { flex-wrap: wrap; }
+    }
   </style>
 </head>
 <body class="h-screen flex items-center justify-center p-2 md:p-4 font-sans overflow-hidden transition-colors duration-300">
@@ -384,6 +419,25 @@
       return Math.floor(Math.random() * max) + 1;
     }
 
+    // 🌐 跨平台剪貼簿:Clipboard API 不可用時(iOS 部分情境、http 區網、舊 webview)退回 execCommand
+    function copyText(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        return navigator.clipboard.writeText(text).catch(() => Promise.resolve(copyTextFallback(text)));
+      }
+      return Promise.resolve(copyTextFallback(text));
+    }
+    function copyTextFallback(text) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.cssText = 'position:fixed;top:-999px;left:-999px;opacity:0;';
+      document.body.appendChild(ta);
+      ta.focus(); ta.select();
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta);
+      return ok;
+    }
+
     function rollCustomDice() {
       let val = customDiceInput.value.trim().toLowerCase();
       if (!val) return showToast('❌ 請輸入自訂骰子 (如 1d100, ra50 1d100)', 'error');
@@ -458,7 +512,7 @@
         showToast('🎲 自訂擲骰完成！', 'success');
 
         if (autoCopyToggle.checked) {
-          navigator.clipboard.writeText(formula).then(() => showToast(`📋 已自動複製:${formula}`, 'success')).catch(() => {});
+          copyText(formula).then(() => showToast(`📋 已自動複製:${formula}`, 'success'));
         }
       } else {
         showToast('❌ 格式錯誤，請輸入如 1d100, 8d50, ra50 1d100 或 ro25 1d75', 'error');
@@ -721,7 +775,7 @@
     }
 
     function copyTotalSum(val) {
-      navigator.clipboard.writeText(val.toString()).then(() => showToast(`📋 已複製總和:${val} 喵!`, 'success')).catch(() => {}); // 防護:剪貼簿不可用時靜默失敗
+      copyText(val.toString()).then(() => showToast(`📋 已複製總和:${val} 喵!`, 'success'));
     }
 
     // 核心執行邏輯，同步解放上限為 50
@@ -800,7 +854,7 @@
         if (parts.length > 0) {
           const prefix = count + 'd' + (type.includes('d') ? type.split('d')[1] : type);
           const formulaString = `${prefix}=${parts.join('+')}=${totalSum}`;
-          navigator.clipboard.writeText(formulaString).then(() => showToast(`📋 已自動複製:${formulaString}`, 'success')).catch(() => {});
+          copyText(formulaString).then(() => showToast(`📋 已自動複製:${formulaString}`, 'success'));
         }
       }
     }
@@ -843,7 +897,7 @@
       let textToCopy = item.summary;
       if (item.detail) textToCopy += `\n詳細軌跡：${item.detail}`;
       textToCopy = formatOutputText(textToCopy);
-      navigator.clipboard.writeText(textToCopy).then(() => showToast('📋 已複製到剪貼簿喵!', 'success')).catch(() => {});
+      copyText(textToCopy).then(() => showToast('📋 已複製到剪貼簿喵!', 'success'));
     }
 
     function exportHistoryToCSV() {
