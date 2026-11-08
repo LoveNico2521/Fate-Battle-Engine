@@ -343,6 +343,8 @@
     const debugSeqInput = document.getElementById('debug-seq');
     const outputFormatInput = document.getElementById('output-format');
     const autoCopyToggle = document.getElementById('auto-copy-toggle'); 
+    const settingsModalEl = document.getElementById('settings-modal');   // 效能:快取彈窗參照,快捷鍵路徑不再每次查詢 DOM
+    const confirmModalEl = document.getElementById('confirm-modal');
     
     document.addEventListener('contextmenu', e => e.preventDefault());
     let checkMode = 'ra';
@@ -362,19 +364,24 @@
 
     function setTheme(themeName) {
       document.documentElement.className = themeName;
-      localStorage.setItem('fate_theme', themeName);
+      try { localStorage.setItem('fate_theme', themeName); } catch (e) {} // 防護:storage 被禁用時不中斷
       showToast(`🎨 已切換至 ${themeName.replace('theme-', '')} 主題`, 'info');
     }
 
     // 🌟 升級為密碼學安全隨機數 (Crypto RNG)
+    // 效能:緩衝區重用,避免每次擲骰重新配置 Uint32Array
+    // 防護:執行環境無 crypto 時(少數 webview)退回 Math.random,不中斷擲骰
+    const _rndBuf = new Uint32Array(1);
     function getRnd(max, debugSeq, state) {
       if (debugSeq && debugSeq.length > 0 && state.index < debugSeq.length) {
         let val = debugSeq[state.index++]; 
         return Math.max(1, Math.min(max, val));
       }
-      const array = new Uint32Array(1);
-      window.crypto.getRandomValues(array);
-      return (array[0] % max) + 1;
+      if (window.crypto && typeof window.crypto.getRandomValues === 'function') {
+        window.crypto.getRandomValues(_rndBuf);
+        return (_rndBuf[0] % max) + 1;
+      }
+      return Math.floor(Math.random() * max) + 1;
     }
 
     function rollCustomDice() {
@@ -451,7 +458,7 @@
         showToast('🎲 自訂擲骰完成！', 'success');
 
         if (autoCopyToggle.checked) {
-          navigator.clipboard.writeText(formula).then(() => showToast(`📋 已自動複製：${formula}`, 'success'));
+          navigator.clipboard.writeText(formula).then(() => showToast(`📋 已自動複製:${formula}`, 'success')).catch(() => {});
         }
       } else {
         showToast('❌ 格式錯誤，請輸入如 1d100, 8d50, ra50 1d100 或 ro25 1d75', 'error');
@@ -495,7 +502,8 @@
     function safeSet(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {} }
 
     function loadSettings() {
-      const savedTheme = localStorage.getItem('fate_theme') || 'theme-dark';
+      let savedTheme = 'theme-dark';
+      try { savedTheme = localStorage.getItem('fate_theme') || 'theme-dark'; } catch (e) {} // 防護:storage 被禁用時用預設主題
       document.documentElement.className = savedTheme;
       
       const s = safeGet('fate_dreamweaver_settings', null);
@@ -630,9 +638,9 @@
     }
 
     function renderFlow(allRuns, count) {
-      let flowHtml = '';
+      const parts = []; // 效能:陣列收集 + 一次性 join,取代逐段字串串接
       allRuns.forEach((run, idx) => {
-        if (count > 1) flowHtml += `<div class="font-bold text-amber-500 text-xs border-l-2 border-amber-500 pl-2 mt-2"># 第 ${idx + 1} 次安科推演：</div>`;
+        if (count > 1) parts.push(`<div class="font-bold text-amber-500 text-xs border-l-2 border-amber-500 pl-2 mt-2"># 第 ${idx + 1} 次安科推演：</div>`);
         run.steps.forEach((s, sIdx) => {
           let stepBg = 'bg-slate-500/10'; let stepBorder = 'border-slate-500/20';
           let glowClass = ''; 
@@ -653,7 +661,7 @@
             }
           }
 
-          flowHtml += `
+          parts.push(`
             <div class="${stepBg} ${stepBorder} ${glowClass} border rounded-xl p-3 flex flex-col md:flex-row md:items-center justify-between text-xs transition-all gap-2">
               <div class="flex flex-wrap items-center gap-2">
                 <span class="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 font-mono rounded text-[10px] font-bold">${s.levelStr}</span>
@@ -666,10 +674,10 @@
                 <span class="text-xs md:text-sm font-black text-amber-500 font-mono">最終: ${s.final}</span>
               </div>
             </div>
-          `;
+          `);
         });
       });
-      chainFlowDisplay.innerHTML = flowHtml;
+      chainFlowDisplay.innerHTML = parts.join('');
       setTimeout(() => { diceContainer.scrollTop = diceContainer.scrollHeight; }, 50);
     }
 
@@ -713,7 +721,7 @@
     }
 
     function copyTotalSum(val) {
-      navigator.clipboard.writeText(val.toString()).then(() => showToast(`📋 已複製總和：${val} 喵！`, 'success'));
+      navigator.clipboard.writeText(val.toString()).then(() => showToast(`📋 已複製總和:${val} 喵!`, 'success')).catch(() => {}); // 防護:剪貼簿不可用時靜默失敗
     }
 
     // 核心執行邏輯，同步解放上限為 50
@@ -792,7 +800,7 @@
         if (parts.length > 0) {
           const prefix = count + 'd' + (type.includes('d') ? type.split('d')[1] : type);
           const formulaString = `${prefix}=${parts.join('+')}=${totalSum}`;
-          navigator.clipboard.writeText(formulaString).then(() => showToast(`📋 已自動複製：${formulaString}`, 'success'));
+          navigator.clipboard.writeText(formulaString).then(() => showToast(`📋 已自動複製:${formulaString}`, 'success')).catch(() => {});
         }
       }
     }
@@ -835,25 +843,26 @@
       let textToCopy = item.summary;
       if (item.detail) textToCopy += `\n詳細軌跡：${item.detail}`;
       textToCopy = formatOutputText(textToCopy);
-      navigator.clipboard.writeText(textToCopy).then(() => showToast('📋 已複製到剪貼簿喵！', 'success'));
+      navigator.clipboard.writeText(textToCopy).then(() => showToast('📋 已複製到剪貼簿喵!', 'success')).catch(() => {});
     }
 
     function exportHistoryToCSV() {
       if (!Array.isArray(history) || history.length === 0) return showToast('❌ 目前沒有紀錄可以匯出喵！', 'error');
       let csvContent = "\uFEFF時間,摘要,詳細骰子軌跡\n";
       const reversedHistory = [...history].reverse();
-      reversedHistory.forEach(item => {
+      // 效能:以 map + join 取代逐列字串串接
+      csvContent += reversedHistory.map(item => {
         const sText = item.summary || item.text || '';
         const dText = item.detail || '';
         const safeSummary = `"${sText.replace(/"/g, '""')}"`;
         const safeDetail = `"${dText.replace(/"/g, '""')}"`;
-        csvContent += `${item.time},${safeSummary},${safeDetail}\n`;
-      });
+        return `${item.time},${safeSummary},${safeDetail}\n`;
+      }).join('');
       const defaultFileName = `Fate_Classic_Log_${new Date().toISOString().slice(0,10)}.csv`;
       if (window.pywebview && window.pywebview.api) {
         window.pywebview.api.save_csv(csvContent, defaultFileName).then((response) => {
-          if (response && response.success) showToast('✅ 檔案已儲存喵！', 'success');
-        });
+          if (response && response.success) showToast('✅ 檔案已儲存喵!', 'success');
+        }).catch(() => {}); // 防護:桌面 API 異常時不拋未處理拒絕
       } else {
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
@@ -868,10 +877,8 @@
       const tag = e.target.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'BUTTON' || e.target.isContentEditable) return;
       
-      const settingsModal = document.getElementById('settings-modal');
-      const confirmModal = document.getElementById('confirm-modal');
-      const isModalOpen = (settingsModal && !settingsModal.classList.contains('hidden')) || 
-                          (confirmModal && !confirmModal.classList.contains('hidden'));
+      const isModalOpen = (settingsModalEl && !settingsModalEl.classList.contains('hidden')) || 
+                          (confirmModalEl && !confirmModalEl.classList.contains('hidden'));
       if (isModalOpen) return;
 
       if (e.code === 'Space' || e.key === 'Enter') { e.preventDefault(); executeRoll('1d100'); }
