@@ -366,6 +366,17 @@
       showToast(`🎨 已切換至 ${themeName.replace('theme-', '')} 主題`, 'info');
     }
 
+    // 🌟 升級為密碼學安全隨機數 (Crypto RNG)
+    function getRnd(max, debugSeq, state) {
+      if (debugSeq && debugSeq.length > 0 && state.index < debugSeq.length) {
+        let val = debugSeq[state.index++]; 
+        return Math.max(1, Math.min(max, val));
+      }
+      const array = new Uint32Array(1);
+      window.crypto.getRandomValues(array);
+      return (array[0] % max) + 1;
+    }
+
     function rollCustomDice() {
       let val = customDiceInput.value.trim().toLowerCase();
       if (!val) return showToast('❌ 請輸入自訂骰子 (如 1d100, ra50 1d100)', 'error');
@@ -380,16 +391,22 @@
         const sides = parseInt(match[4]);
         const modifier = match[5] ? parseInt(match[5].replace(/\s+/g, '')) : 0;
 
-        if (count > 20) return showToast('❌ 骰子數量上限為 20 顆', 'error');
-        if (sides > 10000) return showToast('❌ 骰子面數上限為 10000', 'error');
-        if (targetVal !== null && (targetVal < 1 || targetVal > 10000)) {
-          return showToast('❌ 目標值範圍需為 1 ~ 10000', 'error');
+        // 嚴格邊界防呆
+        if (count < 1 || count > 20) return showToast('❌ 骰子數量必須介於 1 到 20 顆', 'error');
+        if (sides < 2 || sides > 10000) return showToast('❌ 骰面必須介於 2 到 10000 面', 'error');
+        if (targetVal !== null && (targetVal < 1 || targetVal > 10000)) return showToast('❌ 目標值範圍需為 1 ~ 10000', 'error');
+
+        let debugSeq = [], isDebug = false;
+        if (debugSeqInput && debugSeqInput.value.trim() !== '') {
+          isDebug = true; 
+          debugSeq = debugSeqInput.value.split(',').map(s => Number(s.trim())).filter(n => !isNaN(n));
         }
+        const debugState = { index: 0 };
 
         // 自訂骰子獨立運算，不受基礎加值 (base-boost) 影響
         let total = 0, rolls = [];
         for (let i = 0; i < count; i++) {
-          let r = Math.floor(Math.random() * sides) + 1;
+          let r = getRnd(sides, debugSeq, debugState);
           rolls.push(r); total += r;
         }
         total += modifier;
@@ -425,9 +442,10 @@
         emptyState.classList.add('hidden'); chainFlowDisplay.classList.remove('hidden'); totalSummary.classList.add('hidden');
         renderFlow([mockRun], 1);
 
+        const debugText = isDebug ? '[🧪測試] ' : '';
         const summaryStr = mode && targetVal !== null 
-          ? `自訂 ${mode.toUpperCase()}${targetVal} (${diceExpr}) ➔ 結果: ${total} | ${checkDetail}`
-          : `自訂擲骰 (${diceExpr}) ➔ 結果: ${total}`;
+          ? `${debugText}自訂 ${mode.toUpperCase()}${targetVal} (${diceExpr}) ➔ 結果: ${total} | ${checkDetail}`
+          : `${debugText}自訂擲骰 (${diceExpr}) ➔ 結果: ${total}`;
 
         addHistory(summaryStr, formula);
         showToast('🎲 自訂擲骰完成！', 'success');
@@ -495,7 +513,7 @@
 
     function saveSettings() {
       safeSet('fate_dreamweaver_settings', {
-        count: Number(countInput.value) || 1, boost: Number(boostInput.value) || 0, target: Number(targetValueInput.value) || 50,
+        count: Math.floor(Number(countInput.value)) || 1, boost: Math.floor(Number(boostInput.value)) || 0, target: Math.floor(Number(targetValueInput.value)) || 50,
         boostMode100: boostMode100Input.value, mode: checkMode, outputFormat: outputFormatInput.value
       });
     }
@@ -518,16 +536,9 @@
       saveSettings();
     }
 
-    function adjustCount(delta) { let val = Number(countInput.value) || 1; countInput.value = Math.max(1, Math.min(20, val + delta)); saveSettings(); }
-    function adjustBoost(delta) { let val = Number(boostInput.value) || 0; boostInput.value = val + delta; saveSettings(); }
+    function adjustCount(delta) { let val = Math.floor(Number(countInput.value)) || 1; countInput.value = Math.max(1, Math.min(20, val + delta)); saveSettings(); }
+    function adjustBoost(delta) { let val = Math.floor(Number(boostInput.value)) || 0; boostInput.value = val + delta; saveSettings(); }
     function playAnimation() { diceContainer.classList.remove('animate-roll'); void diceContainer.offsetWidth; diceContainer.classList.add('animate-roll'); }
-
-    function getRnd(max, debugSeq, state) {
-      if (debugSeq && debugSeq.length > 0 && state.index < debugSeq.length) {
-        let val = debugSeq[state.index++]; return Math.max(1, Math.min(max, val));
-      }
-      return Math.floor(Math.random() * max) + 1;
-    }
 
     function rollChainEngine(startType, boost, targetVal, mode, debugSeq, state, boostMode100) {
       let steps = [], currentLevel = 0, initialChainOutcome = null, currentStack = 0;            
@@ -626,6 +637,7 @@
           let glowClass = ''; 
           if (s.outcome === '大成功') { stepBg = 'bg-emerald-950/40'; stepBorder = 'border-emerald-500/40'; glowClass = 'glow-cs'; }
           else if (s.outcome === '大失敗') { stepBg = 'bg-rose-950/40'; stepBorder = 'border-rose-500/40'; glowClass = 'glow-cf'; }
+          
           const levelNum = parseInt(s.levelStr.replace('s', ''));
           if (levelNum >= 3) glowClass = 'glow-high';
           
@@ -705,9 +717,12 @@
 
     function executeRoll(type) {
       playAnimation(); 
-      let count = Math.max(1, Math.min(20, Number(countInput.value) || 1)); countInput.value = count;
-      const boost = Number(boostInput.value) || 0; const boostMode100 = boostMode100Input.value;
-      let targetVal = Math.max(1, Math.min(100, Number(targetValueInput.value) || 50)); targetValueInput.value = targetVal;
+      let count = Math.max(1, Math.min(20, Math.floor(Number(countInput.value)) || 1)); 
+      countInput.value = count;
+      const boost = Math.floor(Number(boostInput.value)) || 0; 
+      const boostMode100 = boostMode100Input.value;
+      let targetVal = Math.max(1, Math.min(100, Math.floor(Number(targetValueInput.value)) || 50)); 
+      targetValueInput.value = targetVal;
       saveSettings(); 
 
       let debugSeq = [], isDebug = false;
