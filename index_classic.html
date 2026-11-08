@@ -2,19 +2,11 @@
 <html lang="zh-Hant" class="theme-dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#020617">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="織夢者菲特">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="format-detection" content="telephone=no, email=no, address=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>織夢者菲特《Fate》 - 安科推演系統 (Classic)</title>
-  <script src="https://cdn.tailwindcss.com" onerror="window.__tailwindFailed = true"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* ============================================================
-       🎨 主題變數
-       ============================================================ */
+    /* 🎨 主題變數設定 */
     .theme-dark {
       --bg-main: #020617; --bg-panel: #0f172a; --bg-box: rgba(15, 23, 42, 0.6);
       --text-main: #f1f5f9; --text-muted: #94a3b8; --border-main: #1e293b;
@@ -31,76 +23,14 @@
       --input-bg: #44403c; --input-border: #57534e;
     }
 
-    /* ============================================================
-       🌍 跨平台基礎
-       ============================================================ */
-    html, body {
-      height: 100vh;
-      height: 100dvh;                /* iOS/Android 現代瀏覽器 */
-      height: -webkit-fill-available; /* iOS Safari 舊版 fallback */
-    }
-
-    body {
-      background-color: var(--bg-main);
-      color: var(--text-main);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
-                   "PingFang TC", "PingFang SC", "Hiragino Sans",
-                   "Noto Sans CJK TC", "Noto Sans CJK SC",
-                   "Microsoft JhengHei", "Microsoft YaHei",
-                   "Source Han Sans", "WenQuanYi Micro Hei",
-                   sans-serif;
-      -webkit-text-size-adjust: 100%;
-      text-size-adjust: 100%;
-      overscroll-behavior: contain;
-      touch-action: manipulation;
-    }
-
-    /* iOS Safari URL bar 收合修正 */
-    @supports (height: 100dvh) {
-      body.h-screen, .h-screen { height: 100dvh; }
-    }
-
-    /* 瀏海 / Home 條 */
-    @supports (padding: env(safe-area-inset-top)) {
-      body {
-        padding-top: max(0.5rem, env(safe-area-inset-top));
-        padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
-        padding-left: max(0.5rem, env(safe-area-inset-left));
-        padding-right: max(0.5rem, env(safe-area-inset-right));
-      }
-      @media (min-width: 768px) {
-        body {
-          padding-top: max(1rem, env(safe-area-inset-top));
-          padding-bottom: max(1rem, env(safe-area-inset-bottom));
-          padding-left: max(1rem, env(safe-area-inset-left));
-          padding-right: max(1rem, env(safe-area-inset-right));
-        }
-      }
-    }
-
-    /* 觸控回饋（移除 iOS 灰色 highlight） */
-    * {
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    /* 防止 iOS input 聚焦時整頁縮放（僅移動端） */
-    @media (max-width: 768px) {
-      input[type="number"], input[type="text"], select, textarea {
-        font-size: 16px !important;
-      }
-    }
-
-    /* ============================================================
-       🎨 主題套用
-       ============================================================ */
+    /* 套用主題顏色 */
+    body { background-color: var(--bg-main); color: var(--text-main); }
     .main-container { background-color: var(--bg-panel); border-color: var(--border-main); }
     .panel { background-color: var(--bg-box); border-color: var(--border-main); }
     .text-muted { color: var(--text-muted); }
     .border-default { border-color: var(--border-main); }
 
-    /* ============================================================
-       🌟 原生輸入框覆蓋
-       ============================================================ */
+    /* 🌟 強制覆蓋原生輸入框與下拉選單 🌟 */
     input:not([type="checkbox"]), select, textarea {
       background-color: var(--input-bg) !important;
       border-color: var(--input-border) !important;
@@ -109,7 +39,12 @@
       -webkit-appearance: none;
       -moz-appearance: none;
     }
-    select option { background-color: var(--bg-panel) !important; color: var(--text-main) !important; }
+    
+    select option {
+      background-color: var(--bg-panel) !important;
+      color: var(--text-main) !important;
+    }
+    
     select {
       background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") !important;
       background-repeat: no-repeat !important;
@@ -122,181 +57,67 @@
     }
 
     ::placeholder { color: var(--text-muted) !important; opacity: 0.7; }
+
     #settings-modal-content, #confirm-modal-content {
       background-color: var(--bg-panel) !important;
       border-color: var(--border-main) !important;
       color: var(--text-main) !important;
     }
 
+    /* 覆蓋寫死的 Tailwind 顏色，確保對比度 */
     .theme-light .text-slate-100, .theme-light .text-slate-200 { color: #0f172a !important; }
     .theme-light .text-slate-300, .theme-light .text-slate-400 { color: #334155 !important; }
     .theme-light .text-slate-500 { color: #64748b !important; }
+    
     .theme-gold .text-slate-100, .theme-gold .text-slate-200 { color: #fef3c7 !important; }
     .theme-gold .text-slate-300, .theme-gold .text-slate-400 { color: #d6d3d1 !important; }
     .theme-gold .text-slate-500 { color: #a8a29e !important; }
 
-    /* ============================================================
-       ✨ 動畫
-       ============================================================ */
+    /* 輕柔落桌動畫 */
     @keyframes soft-drop {
-      0%   { transform: translateY(-10px) scale(0.98); opacity: 0.4; }
-      60%  { transform: translateY(2px) scale(1.01);   opacity: 0.9; }
-      100% { transform: translateY(0) scale(1);        opacity: 1; }
+      0% { transform: translateY(-10px) scale(0.98); opacity: 0.4; }
+      60% { transform: translateY(2px) scale(1.01); opacity: 0.9; }
+      100% { transform: translateY(0) scale(1); opacity: 1; }
     }
     .animate-roll { animation: soft-drop 0.25s ease-out; }
 
+    /* 霓虹脈衝動畫 */
     @keyframes glow-green {
-      0%   { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);   border-color: rgba(16, 185, 129, 1); }
-      50%  { box-shadow: 0 0 15px 5px rgba(16, 185, 129, 0.4); border-color: rgba(16, 185, 129, 0.8); }
-      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);     border-color: rgba(16, 185, 129, 0.4); }
+      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); border-color: rgba(16, 185, 129, 1); }
+      50% { box-shadow: 0 0 15px 5px rgba(16, 185, 129, 0.4); border-color: rgba(16, 185, 129, 0.8); }
+      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); border-color: rgba(16, 185, 129, 0.4); }
     }
     @keyframes glow-red {
-      0%   { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7);    border-color: rgba(244, 63, 94, 1); }
-      50%  { box-shadow: 0 0 15px 5px rgba(244, 63, 94, 0.4); border-color: rgba(244, 63, 94, 0.8); }
-      100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0);      border-color: rgba(244, 63, 94, 0.4); }
+      0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7); border-color: rgba(244, 63, 94, 1); }
+      50% { box-shadow: 0 0 15px 5px rgba(244, 63, 94, 0.4); border-color: rgba(244, 63, 94, 0.8); }
+      100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); border-color: rgba(244, 63, 94, 0.4); }
     }
     @keyframes glow-purple {
-      0%   { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.7);     border-color: rgba(168, 85, 247, 1); }
-      50%  { box-shadow: 0 0 20px 8px rgba(168, 85, 247, 0.4); border-color: rgba(168, 85, 247, 0.8); }
-      100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0);       border-color: rgba(168, 85, 247, 0.4); }
+      0% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.7); border-color: rgba(168, 85, 247, 1); }
+      50% { box-shadow: 0 0 20px 8px rgba(168, 85, 247, 0.4); border-color: rgba(168, 85, 247, 0.8); }
+      100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0); border-color: rgba(168, 85, 247, 0.4); }
     }
-    .glow-cs   { animation: glow-green 1.2s ease-out; }
-    .glow-cf   { animation: glow-red   1.2s ease-out; }
+    .glow-cs { animation: glow-green 1.2s ease-out; }
+    .glow-cf { animation: glow-red 1.2s ease-out; }
     .glow-high { animation: glow-purple 1.5s ease-out; }
 
-    /* ============================================================
-       📜 滾動條（WebKit + Firefox）
-       ============================================================ */
+    /* 美化捲軸 */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.5); border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, 0.8); }
 
-    @supports (scrollbar-width: thin) {
-      #history-log, #dice-container, .panel {
-        scrollbar-width: thin;
-        scrollbar-color: rgba(100, 116, 139, 0.5) transparent;
-      }
-    }
-
-    /* ============================================================
-       🛡️ 使用者選取
-       ============================================================ */
     body { user-select: none; -webkit-user-select: none; }
     input, textarea, select { user-select: auto; -webkit-user-select: auto; }
     details > summary { list-style: none; }
     details > summary::-webkit-details-marker { display: none; }
     .virtual-scroll-item { content-visibility: auto; contain-intrinsic-size: 60px; }
-
-    /* ============================================================
-       ⚠️ Tailwind 離線 fallback（只在 CDN 失敗時生效）
-       ============================================================ */
-    html.no-tailwind .flex { display: flex; }
-    html.no-tailwind .inline-flex { display: inline-flex; }
-    html.no-tailwind .flex-col { flex-direction: column; }
-    html.no-tailwind .flex-row { flex-direction: row; }
-    html.no-tailwind .flex-wrap { flex-wrap: wrap; }
-    html.no-tailwind .flex-1 { flex: 1 1 0%; }
-    html.no-tailwind .items-center { align-items: center; }
-    html.no-tailwind .items-start { align-items: flex-start; }
-    html.no-tailwind .justify-center { justify-content: center; }
-    html.no-tailwind .justify-between { justify-content: space-between; }
-    html.no-tailwind .justify-end { justify-content: flex-end; }
-
-    html.no-tailwind .grid { display: grid; }
-    html.no-tailwind .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
-    html.no-tailwind .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    html.no-tailwind .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    html.no-tailwind .grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-    html.no-tailwind .col-span-1 { grid-column: span 1 / span 1; }
-
-    html.no-tailwind .hidden { display: none; }
-    html.no-tailwind .block { display: block; }
-    html.no-tailwind .relative { position: relative; }
-    html.no-tailwind .absolute { position: absolute; }
-    html.no-tailwind .fixed { position: fixed; }
-    html.no-tailwind .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
-    html.no-tailwind .overflow-hidden { overflow: hidden; }
-    html.no-tailwind .overflow-y-auto { overflow-y: auto; }
-
-    html.no-tailwind .w-full { width: 100%; }
-    html.no-tailwind .h-full { height: 100%; }
-    html.no-tailwind .h-screen { height: 100vh; height: 100dvh; }
-    html.no-tailwind .min-h-0 { min-height: 0; }
-
-    html.no-tailwind .gap-1 { gap: 0.25rem; }
-    html.no-tailwind .gap-2 { gap: 0.5rem; }
-    html.no-tailwind .gap-3 { gap: 0.75rem; }
-    html.no-tailwind .gap-4 { gap: 1rem; }
-
-    html.no-tailwind .p-1 { padding: 0.25rem; }
-    html.no-tailwind .p-2 { padding: 0.5rem; }
-    html.no-tailwind .p-3 { padding: 0.75rem; }
-    html.no-tailwind .p-4 { padding: 1rem; }
-    html.no-tailwind .px-2 { padding-left: 0.5rem; padding-right: 0.5rem; }
-    html.no-tailwind .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
-    html.no-tailwind .py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
-    html.no-tailwind .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
-
-    html.no-tailwind .text-xs { font-size: 0.75rem; line-height: 1rem; }
-    html.no-tailwind .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
-    html.no-tailwind .text-base { font-size: 1rem; line-height: 1.5rem; }
-    html.no-tailwind .text-lg { font-size: 1.125rem; line-height: 1.75rem; }
-    html.no-tailwind .text-xl { font-size: 1.25rem; line-height: 1.75rem; }
-    html.no-tailwind .text-2xl { font-size: 1.5rem; line-height: 2rem; }
-    html.no-tailwind .font-bold { font-weight: 700; }
-    html.no-tailwind .font-black { font-weight: 900; }
-
-    html.no-tailwind .rounded-lg { border-radius: 0.5rem; }
-    html.no-tailwind .rounded-xl { border-radius: 0.75rem; }
-    html.no-tailwind .rounded-2xl { border-radius: 1rem; }
-    html.no-tailwind .rounded-3xl { border-radius: 1.5rem; }
-    html.no-tailwind .rounded-full { border-radius: 9999px; }
-
-    html.no-tailwind .border { border-width: 1px; border-style: solid; border-color: var(--border-main); }
-    html.no-tailwind .border-b { border-bottom-width: 1px; border-bottom-style: solid; }
-
-    html.no-tailwind .bg-slate-500\/10 { background-color: rgba(100, 116, 139, 0.1); }
-    html.no-tailwind .bg-black\/10 { background-color: rgba(0, 0, 0, 0.1); }
-    html.no-tailwind .bg-indigo-600 { background-color: #4f46e5; }
-    html.no-tailwind .bg-emerald-600 { background-color: #059669; }
-    html.no-tailwind .bg-purple-600 { background-color: #9333ea; }
-    html.no-tailwind .bg-rose-600 { background-color: #e11d48; }
-    html.no-tailwind .text-white { color: #ffffff; }
-    html.no-tailwind .text-amber-500 { color: #f59e0b; }
-    html.no-tailwind .text-emerald-500 { color: #10b981; }
-
-    html.no-tailwind .transition { transition-property: color, background-color, border-color, opacity; transition-duration: 150ms; }
-    html.no-tailwind .cursor-pointer { cursor: pointer; }
-
-    /* Tailwind 失敗時隱藏需要它的元素（但保留基本操作） */
-    html.no-tailwind .shadow-2xl,
-    html.no-tailwind .shadow-lg { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-
-    /* 離線 banner 的樣式（不依賴 Tailwind） */
-    #offline-banner {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      z-index: 400;
-      background: #d97706;
-      color: #ffffff;
-      font-size: 12px;
-      text-align: center;
-      padding: 8px 12px;
-      font-weight: bold;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-    }
   </style>
 </head>
 <body class="h-screen flex items-center justify-center p-2 md:p-4 font-sans overflow-hidden transition-colors duration-300">
 
-  <!-- ⚠️ 離線警告 banner（Tailwind 失敗時才顯示） -->
-  <div id="offline-banner" style="display:none">
-    ⚠️ 離線模式：樣式不完整（請連接網路以載入完整 UI）
-  </div>
-
   <div class="w-full max-w-[1600px] h-full max-h-[900px] min-h-[800px] main-container border rounded-3xl shadow-2xl flex flex-col p-4 md:p-6 space-y-4 overflow-hidden relative transition-colors duration-300">
-
+    
     <!-- 頂部標題列 -->
     <div class="flex flex-col md:flex-row md:items-center justify-between border-b border-default pb-3 gap-2 shrink-0">
       <div class="flex items-center gap-3">
@@ -313,14 +134,18 @@
           <span>•</span>
           <span>與基準同向 ➔ 深入 (+1)</span>
         </div>
-        <button onclick="openSettings()" class="p-2 bg-slate-500/10 hover:bg-slate-500/20 rounded-full transition-colors text-xl border border-transparent" title="設定">⚙️</button>
+        <button onclick="openSettings()" class="p-2 bg-slate-500/10 hover:bg-slate-500/20 rounded-full transition-colors text-xl border border-transparent" title="設定">
+          ⚙️
+        </button>
       </div>
     </div>
 
     <!-- 主內容區 -->
     <div class="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6 flex-1 min-h-0">
-
+      
+      <!-- 左側控制欄 -->
       <div class="col-span-1 md:col-span-4 panel border rounded-2xl p-4 md:p-5 flex flex-col gap-4 overflow-y-auto">
+        
         <div class="space-y-4">
           <div class="text-xs font-bold text-muted tracking-wider uppercase border-b border-default pb-2 flex justify-between items-center">
             <span>⚙️ 推演參數設定</span>
@@ -332,7 +157,7 @@
               <label class="block text-xs font-medium text-muted">投下次數</label>
               <div class="flex items-center border border-default rounded-xl overflow-hidden bg-black/10">
                 <button onclick="adjustCount(-1)" class="px-3 py-2 md:py-1.5 hover:bg-slate-500/20 font-bold transition">-</button>
-                <input id="dice-count" type="number" min="1" max="50" value="1" class="w-full bg-transparent text-center text-sm md:text-xs font-bold text-amber-500 focus:outline-none border-0" />
+                <input id="dice-count" type="number" min="1" max="20" value="1" class="w-full bg-transparent text-center text-sm md:text-xs font-bold text-amber-500 focus:outline-none border-0" />
                 <button onclick="adjustCount(1)" class="px-3 py-2 md:py-1.5 hover:bg-slate-500/20 font-bold transition">+</button>
               </div>
             </div>
@@ -352,6 +177,7 @@
               <label class="text-xs font-bold text-amber-500">🎯 檢定模式與目標值</label>
               <span id="mode-desc" class="text-[10px] text-muted font-mono">ra (<= 目標值成功)</span>
             </div>
+            
             <div class="grid grid-cols-2 gap-2">
               <div class="flex rounded-lg overflow-hidden border border-default p-0.5">
                 <button id="btn-mode-ra" onclick="setCheckMode('ra')" class="flex-1 py-1.5 md:py-1 text-xs font-bold rounded-md bg-indigo-600 text-white transition">ra (<=)</button>
@@ -368,11 +194,11 @@
         <div class="space-y-3 pt-1">
           <button onclick="executeRoll('1d10')" class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl shadow-lg transition-all flex flex-col items-center justify-center gap-1 border border-indigo-400/30">
             <span class="text-base tracking-wide">🎲 投下 1d10 安科連鎖</span>
-            <span class="text-[10px] opacity-80">1d2=1: 大成功 | 1d2=2: 大失敗</span>
+            <span class="text-[10px] opacity-80">1d2=1: 大成功 | 1d2=2: 大暴走</span>
           </button>
           <button onclick="executeRoll('1d100')" class="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl shadow-lg transition-all flex flex-col items-center justify-center gap-1 border border-emerald-400/30">
             <span class="text-base tracking-wide">🎯 投下 1d100 劇情判定 (ra/ro)</span>
-            <span class="text-[10px] opacity-80">1~5 ➔ 大失敗 (CF) | 96~100 ➔ 大成功 (CS)</span>
+            <span class="text-[10px] opacity-80">1~5 ➔ 追擲 1d10 | 96~100 ➔ 大暴走</span>
           </button>
         </div>
 
@@ -386,7 +212,7 @@
             <button onclick="executeRoll('d20')" class="py-2 md:py-1.5 bg-slate-500/10 hover:bg-slate-500/20 rounded-xl text-xs font-bold transition">d20</button>
           </div>
           <div class="flex gap-2 mt-2">
-            <input id="custom-dice-input" type="text" placeholder="如 8d50, ra50 1d100" class="flex-1 border border-default rounded-lg px-2 py-1.5 text-xs focus:outline-none" />
+            <input id="custom-dice-input" type="text" placeholder="自訂 (如 d100, d1000)" class="flex-1 border border-default rounded-lg px-2 py-1.5 text-xs focus:outline-none" />
             <button onclick="rollCustomDice()" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 rounded-lg text-xs font-bold text-white transition">投下</button>
           </div>
         </div>
@@ -395,9 +221,12 @@
           <label class="text-xs font-bold text-muted cursor-pointer flex-1" for="auto-copy-toggle">自動複製公式</label>
           <input id="auto-copy-toggle" type="checkbox" onchange="saveSettings()" class="w-4 h-4 text-indigo-600 bg-slate-800 border-slate-600 rounded focus:ring-indigo-500 focus:ring-2 cursor-pointer accent-indigo-500">
         </div>
+
       </div>
 
+      <!-- 右側展示區 -->
       <div class="col-span-1 md:col-span-8 flex flex-col space-y-4 min-h-0">
+        
         <div class="flex-1 panel border rounded-2xl p-4 md:p-5 flex flex-col relative overflow-hidden shadow-inner min-h-[300px] md:min-h-0">
           <div class="flex flex-col md:flex-row md:justify-between md:items-center border-b border-default pb-2 mb-3 gap-2">
             <span class="text-xs font-bold text-amber-500 tracking-wider uppercase">📊 即時安科推演圖譜</span>
@@ -430,6 +259,7 @@
             <div class="text-muted text-center py-4">尚無推演紀錄</div>
           </div>
         </div>
+
       </div>
 
     </div>
@@ -442,14 +272,14 @@
         <h2 class="text-xl font-bold flex items-center gap-2">⚙️ 系統設定與選項</h2>
         <button onclick="hideSettings()" class="opacity-50 hover:opacity-100 text-2xl font-bold transition">&times;</button>
       </div>
-
+      
       <div class="space-y-6">
         <div>
           <h3 class="text-sm font-bold text-indigo-500 mb-2">🎨 介面主題</h3>
           <div class="grid grid-cols-3 gap-2">
-            <button onclick="setTheme('theme-dark')"  style="background-color: #0f172a; color: #f1f5f9; border-color: #334155;" class="py-2 border rounded-lg text-xs hover:opacity-80 shadow-sm transition-all font-bold">深色 (預設)</button>
+            <button onclick="setTheme('theme-dark')" style="background-color: #0f172a; color: #f1f5f9; border-color: #334155;" class="py-2 border rounded-lg text-xs hover:opacity-80 shadow-sm transition-all font-bold">深色 (預設)</button>
             <button onclick="setTheme('theme-light')" style="background-color: #ffffff; color: #0f172a; border-color: #cbd5e1;" class="py-2 border rounded-lg text-xs hover:opacity-80 shadow-sm transition-all font-bold">淺色</button>
-            <button onclick="setTheme('theme-gold')"  style="background-color: #292524; color: #fef3c7; border-color: #d97706;" class="py-2 border rounded-lg text-xs hover:opacity-80 shadow-sm transition-all font-bold">金黃 (Fate)</button>
+            <button onclick="setTheme('theme-gold')" style="background-color: #292524; color: #fef3c7; border-color: #d97706;" class="py-2 border rounded-lg text-xs hover:opacity-80 shadow-sm transition-all font-bold">金黃 (Fate)</button>
           </div>
         </div>
 
@@ -499,401 +329,192 @@
   </div>
 
   <script>
-    // ============================================================
-    // 📦 DOM Cache
-    // ============================================================
-    const countInput         = document.getElementById('dice-count');
-    const boostInput         = document.getElementById('base-boost');
-    const targetValueInput   = document.getElementById('target-value');
-    const boostMode100Input  = document.getElementById('boost-mode-100');
-    const customDiceInput    = document.getElementById('custom-dice-input');
-    const emptyState         = document.getElementById('empty-state');
-    const chainFlowDisplay   = document.getElementById('chain-flow-display');
-    const strikeBadges       = document.getElementById('strike-badges');
-    const diceContainer      = document.getElementById('dice-container');
-    const historyLog         = document.getElementById('history-log');
-    const totalSummary       = document.getElementById('total-summary');
-    const debugSeqInput      = document.getElementById('debug-seq');
-    const outputFormatInput  = document.getElementById('output-format');
-    const autoCopyToggle     = document.getElementById('auto-copy-toggle');
-    const settingsModal      = document.getElementById('settings-modal');
-    const settingsModalBody  = document.getElementById('settings-modal-content');
-    const confirmModal       = document.getElementById('confirm-modal');
-    const confirmModalBody   = document.getElementById('confirm-modal-content');
-    const toastContainer     = document.getElementById('toast-container');
-    const btnModeRa          = document.getElementById('btn-mode-ra');
-    const btnModeRo          = document.getElementById('btn-mode-ro');
-    const modeDesc           = document.getElementById('mode-desc');
-    const offlineBanner      = document.getElementById('offline-banner');
-
-    // ============================================================
-    // 🔢 常數
-    // ============================================================
-    const MAX_DICE        = 50;
-    const MAX_SIDES       = 10000;
-    const MAX_TARGET      = 10000;
-    const MAX_HISTORY     = 200;
-    const MAX_CHAIN_LEVEL = 50;
-
-    // ============================================================
-    // 🌍 跨平台能力偵測（一次性）
-    // ============================================================
-    const rngBuffer = new Uint32Array(1);
-    let cryptoAvailable = false;
-    try {
-      window.crypto.getRandomValues(rngBuffer);
-      cryptoAvailable = true;
-    } catch (e) {
-      cryptoAvailable = false;
-    }
-
-    function checkTailwind() {
-      const probe = document.createElement('div');
-      probe.className = 'hidden';
-      probe.style.position = 'absolute';
-      probe.style.top = '-9999px';
-      document.body.appendChild(probe);
-      let ok = false;
-      try {
-        ok = getComputedStyle(probe).display === 'none';
-      } catch (e) { ok = false; }
-      probe.remove();
-      return ok;
-    }
-
-    // ============================================================
-    // 🛠️ 跨平台工具函式
-    // ============================================================
-    async function copyToClipboard(text) {
-      if (navigator.clipboard && window.isSecureContext) {
-        try {
-          await navigator.clipboard.writeText(text);
-          return true;
-        } catch (e) { /* fall through */ }
-      }
-      try {
-        const ta = document.createElement('textarea');
-        ta.value = text;
-        ta.setAttribute('readonly', '');
-        ta.style.position = 'fixed';
-        ta.style.top = '-9999px';
-        ta.style.left = '-9999px';
-        ta.style.opacity = '0';
-        document.body.appendChild(ta);
-        ta.select();
-        ta.setSelectionRange(0, text.length);
-        const ok = document.execCommand('copy');
-        document.body.removeChild(ta);
-        return ok;
-      } catch (e) {
-        return false;
-      }
-    }
-
-    function getTimeString() {
-      try {
-        return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      } catch (e) {
-        const d = new Date();
-        return String(d.getHours()).padStart(2, '0') + ':' +
-               String(d.getMinutes()).padStart(2, '0');
-      }
-    }
-
-    function downloadFile(content, filename, mime) {
-      const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-
-      if (window.pywebview && window.pywebview.api) {
-        return window.pywebview.api.save_csv(content, filename).then((response) => {
-          if (response && response.success) showToast('✅ 檔案已儲存喵！', 'success');
-          return true;
-        });
-      }
-
-      if (isiOS) {
-        // iOS Safari 對 <a download> 支援有限 → 開新視窗顯示
-        const win = window.open('', '_blank');
-        if (win) {
-          try {
-            win.document.open();
-            win.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CSV 內容</title></head><body style="margin:0;padding:16px;background:#0f172a;color:#f1f5f9;font-family:monospace;"></body></html>');
-            win.document.close();
-            const pre = win.document.createElement('pre');
-            pre.style.cssText = 'white-space:pre-wrap;word-break:break-all;font-family:monospace;font-size:12px;';
-            pre.textContent = content;
-            win.document.body.appendChild(pre);
-            showToast('📄 已開啟新視窗，請長按全選複製', 'info');
-            return Promise.resolve(true);
-          } catch (e) { /* fall through */ }
-        }
-        // 開新視窗失敗 → 退回剪貼簿
-        return copyToClipboard(content).then(ok => {
-          if (ok) showToast('📋 已複製 CSV 內容到剪貼簿', 'success');
-          else showToast('❌ 無法匯出，請手動複製', 'error');
-          return ok;
-        });
-      }
-
-      // 標準下載
-      try {
-        const blob = new Blob([content], { type: mime });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-        showToast('✅ 檔案已下載喵！', 'success');
-        return Promise.resolve(true);
-      } catch (e) {
-        return Promise.resolve(false);
-      }
-    }
-
-    // ============================================================
-    // 🧠 狀態
-    // ============================================================
+    const countInput = document.getElementById('dice-count');
+    const boostInput = document.getElementById('base-boost');
+    const targetValueInput = document.getElementById('target-value');
+    const boostMode100Input = document.getElementById('boost-mode-100');
+    const customDiceInput = document.getElementById('custom-dice-input');
+    const emptyState = document.getElementById('empty-state');
+    const chainFlowDisplay = document.getElementById('chain-flow-display');
+    const strikeBadges = document.getElementById('strike-badges');
+    const diceContainer = document.getElementById('dice-container');
+    const historyLog = document.getElementById('history-log');
+    const totalSummary = document.getElementById('total-summary');
+    const debugSeqInput = document.getElementById('debug-seq');
+    const outputFormatInput = document.getElementById('output-format');
+    const autoCopyToggle = document.getElementById('auto-copy-toggle'); 
+    
     document.addEventListener('contextmenu', e => e.preventDefault());
     let checkMode = 'ra';
     let history = [];
 
-    // ============================================================
-    // 🧰 基礎工具
-    // ============================================================
-    function toInt(v, fallback) {
-      const n = Math.floor(Number(v));
-      return n || fallback;
+    // === 基礎邏輯 ===
+    function openSettings() {
+      const modal = document.getElementById('settings-modal');
+      modal.classList.remove('hidden'); modal.classList.add('flex');
+      setTimeout(() => document.getElementById('settings-modal-content').classList.replace('scale-95', 'scale-100'), 10);
+    }
+    function hideSettings() {
+      const modal = document.getElementById('settings-modal');
+      document.getElementById('settings-modal-content').classList.replace('scale-100', 'scale-95');
+      setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 200);
     }
 
-    function parseDebugSeq() {
-      if (!debugSeqInput) return { seq: [], isDebug: false };
-      const raw = debugSeqInput.value.trim();
-      if (!raw) return { seq: [], isDebug: false };
-      return {
-        seq: raw.split(',').map(s => Number(s.trim())).filter(n => !isNaN(n)),
-        isDebug: true
-      };
-    }
-
-    function getS0Info(run) {
-      if (!run || !run.steps || run.steps.length === 0) return null;
-      if (run.steps[0].levelStr === 'custom') return null;
-      const hasChain  = run.steps.length > 1;
-      const lastStep  = run.steps[run.steps.length - 1];
-      const endsInS0  = lastStep.levelStr === 's0';
-      const counted   = !hasChain || endsInS0;
-      const s0Step    = counted ? (hasChain ? lastStep : run.steps[0]) : null;
-      return { hasChain, endsInS0, counted, s0Step, firstStep: run.steps[0] };
-    }
-
-    // ============================================================
-    // 🎨 主題
-    // ============================================================
     function setTheme(themeName) {
       document.documentElement.className = themeName;
       localStorage.setItem('fate_theme', themeName);
-      const metaTheme = document.querySelector('meta[name="theme-color"]');
-      if (metaTheme) {
-        const colors = { 'theme-dark': '#020617', 'theme-light': '#f1f5f9', 'theme-gold': '#1c1917' };
-        metaTheme.setAttribute('content', colors[themeName] || '#020617');
-      }
       showToast(`🎨 已切換至 ${themeName.replace('theme-', '')} 主題`, 'info');
     }
 
-    // ============================================================
-    // 📦 安全存取
-    // ============================================================
-    function safeGet(key, fallback) {
-      try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }
-      catch (e) { return fallback; }
-    }
-    function safeSet(key, value) {
-      try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
+    function rollCustomDice() {
+      let val = customDiceInput.value.trim().toLowerCase();
+      if (!val) return showToast('❌ 請輸入自訂骰子 (如 d100)', 'error');
+      const regex = /^(\d*)d(\d+)([+-]\d+)?$/;
+      const match = val.match(regex);
+      if (match) {
+        const count = match[1] ? parseInt(match[1]) : 1;
+        const sides = parseInt(match[2]);
+        const modifier = match[3] ? parseInt(match[3]) : 0;
+        if (count > 20) return showToast('❌ 骰子數量上限為 20 顆', 'error');
+        if (sides > 10000) return showToast('❌ 骰子面數上限為 10000', 'error');
+        
+        let total = 0, rolls = [];
+        for (let i = 0; i < count; i++) {
+          let r = Math.floor(Math.random() * sides) + 1;
+          rolls.push(r); total += r;
+        }
+        total += modifier;
+        const modStr = modifier !== 0 ? ` ${modifier > 0 ? '+' : ''}${modifier}` : '';
+        const formula = `${count}d${sides}${modStr} = [${rolls.join(', ')}]${modStr} = ${total}`;
+        
+        const mockRun = {
+          steps: [{ levelStr: 'custom', type: `${count}d${sides}`, raw: total, final: total, extraD2: null, outcome: '普通', msg: `🎲 自訂擲骰：${formula}`, checkDetail: '' }],
+          finalStack: 0, baseOutcome: null
+        };
+        emptyState.classList.add('hidden'); chainFlowDisplay.classList.remove('hidden'); totalSummary.classList.add('hidden');
+        renderFlow([mockRun], 1);
+        addHistory(`自訂擲骰: ${formula}`, '');
+        showToast('🎲 自訂擲骰完成！', 'success');
+      } else {
+        showToast('❌ 格式錯誤，請輸入如 d100 或 3d6+5', 'error');
+      }
     }
 
-    // ============================================================
-    // 🪟 彈窗
-    // ============================================================
-    function openSettings() {
-      settingsModal.classList.remove('hidden');
-      settingsModal.classList.add('flex');
-      setTimeout(() => settingsModalBody.classList.replace('scale-95', 'scale-100'), 10);
-    }
-    function hideSettings() {
-      settingsModalBody.classList.replace('scale-100', 'scale-95');
-      setTimeout(() => {
-        settingsModal.classList.add('hidden');
-        settingsModal.classList.remove('flex');
-      }, 200);
-    }
-    function hideConfirm() {
-      confirmModalBody.classList.replace('scale-100', 'scale-95');
-      setTimeout(() => {
-        confirmModal.classList.add('hidden');
-        confirmModal.classList.remove('flex');
-      }, 200);
+    function showToast(msg, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      let bgClass = 'bg-slate-700 text-slate-100';
+      if (type === 'success') bgClass = 'bg-emerald-600 text-white';
+      if (type === 'error') bgClass = 'bg-rose-600 text-white';
+      if (type === 'info') bgClass = 'bg-indigo-600 text-white';
+      toast.className = `px-4 py-3 rounded-xl text-sm font-bold shadow-2xl transition-all duration-300 transform translate-y-4 opacity-0 pointer-events-auto flex items-center gap-2 border border-white/10 ${bgClass}`;
+      toast.innerHTML = msg;
+      container.appendChild(toast);
+      requestAnimationFrame(() => toast.classList.remove('translate-y-4', 'opacity-0'));
+      setTimeout(() => { toast.classList.add('translate-y-4', 'opacity-0'); setTimeout(() => toast.remove(), 300); }, 2500);
     }
 
     function askClearHistory() {
       if (history.length === 0) return;
+      const modal = document.getElementById('confirm-modal');
+      const content = document.getElementById('confirm-modal-content');
       const yesBtn = document.getElementById('confirm-yes-btn');
-      confirmModal.classList.remove('hidden');
-      confirmModal.classList.add('flex');
-      setTimeout(() => confirmModalBody.classList.add('scale-100'), 10);
+      modal.classList.remove('hidden'); modal.classList.add('flex');
+      setTimeout(() => content.classList.add('scale-100'), 10);
       const newYesBtn = yesBtn.cloneNode(true);
       yesBtn.parentNode.replaceChild(newYesBtn, yesBtn);
       newYesBtn.onclick = () => {
-        history = [];
-        saveHistory();
-        renderHistory();
-        hideConfirm();
-        showToast('🗑️ 歷史紀錄已清除喵！', 'success');
+        history = []; saveHistory(); renderHistory(); hideConfirm(); showToast('🗑️ 歷史紀錄已清除喵！', 'success');
       };
     }
-
-    // ============================================================
-    // 🍞 Toast
-    // ============================================================
-    function showToast(msg, type = 'info') {
-      const toast = document.createElement('div');
-      let bgClass = 'bg-slate-700 text-slate-100';
-      if (type === 'success') bgClass = 'bg-emerald-600 text-white';
-      if (type === 'error')   bgClass = 'bg-rose-600 text-white';
-      if (type === 'info')    bgClass = 'bg-indigo-600 text-white';
-      toast.className = `px-4 py-3 rounded-xl text-sm font-bold shadow-2xl transition-all duration-300 transform translate-y-4 opacity-0 pointer-events-auto flex items-center gap-2 border border-white/10 ${bgClass}`;
-      toast.textContent = msg;
-      toastContainer.appendChild(toast);
-      requestAnimationFrame(() => toast.classList.remove('translate-y-4', 'opacity-0'));
-      setTimeout(() => {
-        toast.classList.add('translate-y-4', 'opacity-0');
-        setTimeout(() => toast.remove(), 300);
-      }, 2500);
+    function hideConfirm() {
+      const modal = document.getElementById('confirm-modal');
+      document.getElementById('confirm-modal-content').classList.replace('scale-100', 'scale-95');
+      setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 200);
     }
 
-    // ============================================================
-    // ⚙️ 設定讀寫
-    // ============================================================
+    function safeGet(key, fallback) { try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; } catch (e) { return fallback; } }
+    function safeSet(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {} }
+
     function loadSettings() {
       const savedTheme = localStorage.getItem('fate_theme') || 'theme-dark';
       document.documentElement.className = savedTheme;
-      const metaTheme = document.querySelector('meta[name="theme-color"]');
-      if (metaTheme) {
-        const colors = { 'theme-dark': '#020617', 'theme-light': '#f1f5f9', 'theme-gold': '#1c1917' };
-        metaTheme.setAttribute('content', colors[savedTheme] || '#020617');
-      }
-
+      
       const s = safeGet('fate_dreamweaver_settings', null);
       if (s) {
-        countInput.value        = s.count || 1;
-        boostInput.value        = s.boost || 0;
-        targetValueInput.value  = s.target || 50;
-        boostMode100Input.value = s.boostMode100 || 'v2';
-        outputFormatInput.value = s.outputFormat || 'plain';
-        autoCopyToggle.checked  = !!s.autoCopy;
+        countInput.value = s.count || 1; boostInput.value = s.boost || 0; targetValueInput.value = s.target || 50;
+        boostMode100Input.value = s.boostMode100 || 'v2'; outputFormatInput.value = s.outputFormat || 'plain';
         setCheckMode(s.mode || 'ra');
       }
-
+      
       const savedHistory = safeGet('fate_dreamweaver_history', []);
-      if (Array.isArray(savedHistory)) history = savedHistory.slice(0, MAX_HISTORY);
-
+      if (Array.isArray(savedHistory)) history = savedHistory.slice(0, 200); 
+      
       renderHistory();
     }
 
     function saveSettings() {
       safeSet('fate_dreamweaver_settings', {
-        count:        toInt(countInput.value, 1),
-        boost:        toInt(boostInput.value, 0),
-        target:       toInt(targetValueInput.value, 50),
-        boostMode100: boostMode100Input.value,
-        mode:         checkMode,
-        outputFormat: outputFormatInput.value,
-        autoCopy:     autoCopyToggle.checked
+        count: Number(countInput.value) || 1, boost: Number(boostInput.value) || 0, target: Number(targetValueInput.value) || 50,
+        boostMode100: boostMode100Input.value, mode: checkMode, outputFormat: outputFormatInput.value
       });
     }
     function saveHistory() { safeSet('fate_dreamweaver_history', history); }
 
     function setCheckMode(mode) {
       checkMode = mode;
+      const btnRa = document.getElementById('btn-mode-ra');
+      const btnRo = document.getElementById('btn-mode-ro');
+      const modeDesc = document.getElementById('mode-desc');
       if (mode === 'ra') {
-        btnModeRa.className = "flex-1 py-1.5 md:py-1 text-xs font-bold rounded-md bg-indigo-600 text-white transition";
-        btnModeRo.className = "flex-1 py-1.5 md:py-1 text-xs font-bold rounded-md opacity-50 hover:opacity-100 transition";
+        btnRa.className = "flex-1 py-1.5 md:py-1 text-xs font-bold rounded-md bg-indigo-600 text-white transition";
+        btnRo.className = "flex-1 py-1.5 md:py-1 text-xs font-bold rounded-md opacity-50 hover:opacity-100 transition";
         modeDesc.innerText = "ra (<= 目標值成功)";
       } else {
-        btnModeRo.className = "flex-1 py-1.5 md:py-1 text-xs font-bold rounded-md bg-emerald-600 text-white transition";
-        btnModeRa.className = "flex-1 py-1.5 md:py-1 text-xs font-bold rounded-md opacity-50 hover:opacity-100 transition";
+        btnRo.className = "flex-1 py-1.5 md:py-1 text-xs font-bold rounded-md bg-emerald-600 text-white transition";
+        btnRa.className = "flex-1 py-1.5 md:py-1 text-xs font-bold rounded-md opacity-50 hover:opacity-100 transition";
         modeDesc.innerText = "ro (>= 目標值成功)";
       }
       saveSettings();
     }
 
-    function adjustCount(delta) {
-      const val = toInt(countInput.value, 1);
-      countInput.value = Math.max(1, Math.min(MAX_DICE, val + delta));
-      saveSettings();
-    }
-    function adjustBoost(delta) {
-      const val = toInt(boostInput.value, 0);
-      boostInput.value = val + delta;
-      saveSettings();
-    }
-    function playAnimation() {
-      diceContainer.classList.remove('animate-roll');
-      void diceContainer.offsetWidth;
-      diceContainer.classList.add('animate-roll');
-    }
+    function adjustCount(delta) { let val = Number(countInput.value) || 1; countInput.value = Math.max(1, Math.min(20, val + delta)); saveSettings(); }
+    function adjustBoost(delta) { let val = Number(boostInput.value) || 0; boostInput.value = val + delta; saveSettings(); }
+    function playAnimation() { diceContainer.classList.remove('animate-roll'); void diceContainer.offsetWidth; diceContainer.classList.add('animate-roll'); }
 
-    // ============================================================
-    // 🎲 RNG（含 fallback）
-    // ============================================================
     function getRnd(max, debugSeq, state) {
       if (debugSeq && debugSeq.length > 0 && state.index < debugSeq.length) {
-        const val = debugSeq[state.index++];
-        return Math.max(1, Math.min(max, val));
-      }
-      if (cryptoAvailable) {
-        window.crypto.getRandomValues(rngBuffer);
-        return (rngBuffer[0] % max) + 1;
+        let val = debugSeq[state.index++]; return Math.max(1, Math.min(max, val));
       }
       return Math.floor(Math.random() * max) + 1;
     }
 
-    // ============================================================
-    // 🔗 連鎖引擎（業務邏輯完全不變）
-    // ============================================================
     function rollChainEngine(startType, boost, targetVal, mode, debugSeq, state, boostMode100) {
-      const steps = [];
-      let currentLevel = 0, initialChainOutcome = null, currentStack = 0;
-      const getDieType = (lvl) => (lvl === 0 ? startType : '1d10');
+      let steps = [], currentLevel = 0, initialChainOutcome = null, currentStack = 0;            
+      function getDieType(lvl) { return lvl === 0 ? startType : '1d10'; }
       let continueLoop = true, loopSafety = 0;
 
-      while (continueLoop && loopSafety < MAX_CHAIN_LEVEL) {
+      while (continueLoop && loopSafety < 50) {
         loopSafety++;
-        const dieType = getDieType(currentLevel);
-        const levelStr = `s${currentLevel}`;
+        let dieType = getDieType(currentLevel); let levelStr = `s${currentLevel}`;
 
         if (dieType === '1d100') {
           let sides = 100, raw100, final100, isCF = false, isCS = false;
           if (boostMode100 === 'v1') {
-            sides = Math.max(1, 100 - boost);
-            raw100 = getRnd(sides, debugSeq, state);
-            final100 = raw100 + boost;
+            sides = Math.max(1, 100 - boost); raw100 = getRnd(sides, debugSeq, state); final100 = raw100 + boost;
             isCF = (raw100 <= 5); isCS = (final100 >= 96);
           } else if (boostMode100 === 'v2') {
-            raw100 = getRnd(100, debugSeq, state);
-            final100 = raw100 + boost;
+            raw100 = getRnd(100, debugSeq, state); final100 = raw100 + boost;
             isCF = (raw100 <= 5); isCS = (final100 >= 96);
           } else {
-            sides = Math.max(1, 100 - Math.abs(boost));
-            raw100 = getRnd(sides, debugSeq, state);
+            sides = Math.max(1, 100 - Math.abs(boost)); raw100 = getRnd(sides, debugSeq, state);
             final100 = (boost >= 0) ? (raw100 + boost) : raw100;
             isCF = (final100 <= 5); isCS = (final100 >= 96);
           }
-
-          const isSuccess = (mode === 'ra') ? (final100 <= targetVal) : (final100 >= targetVal);
-          const checkDetail = `[${mode.toUpperCase()} ${mode === 'ra' ? '<=' : '>='} ${targetVal}] ➔ ${isSuccess ? '✅ 成功' : '❌ 失敗'}`;
-          const step = { levelStr, type: '1d100', raw: raw100, final: final100, extraD2: null, outcome: null, msg: '', checkDetail };
+          
+          let isSuccess = (mode === 'ra') ? (final100 <= targetVal) : (final100 >= targetVal);
+          let checkDetail = `[${mode.toUpperCase()} ${mode === 'ra' ? '<=' : '>='} ${targetVal}] ➔ ${isSuccess ? '✅ 成功' : '❌ 失敗'}`;
+          let step = { levelStr, type: '1d100', raw: raw100, final: final100, extraD2: null, outcome: null, msg: '', checkDetail };
 
           if (isCS) {
             const currentOutcome = '大成功';
@@ -902,7 +523,7 @@
             step.msg = `✨ 1d100 = ${raw100} (CS: 最終值>=96) ➔ 進入 s${currentLevel} (1d10)！ | ${checkDetail}`;
             steps.push(step); continueLoop = true;
           } else if (isCF) {
-            const currentOutcome = '大失敗';
+            const currentOutcome = '大暴走';
             if (!initialChainOutcome) initialChainOutcome = currentOutcome;
             currentStack++; step.outcome = currentOutcome; currentLevel++;
             step.msg = `💥 1d100 = ${raw100} (CF: ${boostMode100 === 'v3' ? '最終值<=5' : '原始值<=5'}) ➔ 進入 s${currentLevel} (1d10)！ | ${checkDetail}`;
@@ -911,16 +532,12 @@
             step.msg = `1d100 結果: ${raw100} | ${checkDetail}`;
             steps.push(step); continueLoop = false;
           }
-
         } else if (dieType === '1d10') {
-          const raw10 = getRnd(10, debugSeq, state);
-          const final10 = raw10 + boost;
-          const step = { levelStr, type: '1d10', raw: raw10, final: final10, extraD2: null, outcome: null, msg: '', checkDetail: '' };
-
+          const raw10 = getRnd(10, debugSeq, state); const final10 = raw10 + boost;
+          let step = { levelStr, type: '1d10', raw: raw10, final: final10, extraD2: null, outcome: null, msg: '', checkDetail: '' };
           if (raw10 === 10) {
-            const d2 = getRnd(2, debugSeq, state);
-            step.extraD2 = d2;
-            const currentOutcome = (d2 === 1) ? '大成功' : '大失敗';
+            const d2 = getRnd(2, debugSeq, state); step.extraD2 = d2;
+            const currentOutcome = (d2 === 1) ? '大成功' : '大暴走';
             step.outcome = currentOutcome;
             if (!initialChainOutcome) initialChainOutcome = currentOutcome;
             if (currentOutcome === initialChainOutcome) {
@@ -940,13 +557,10 @@
             step.msg = `1d10 普通結果 ➔ 原始: ${raw10}`;
             steps.push(step); continueLoop = false;
           }
-
         } else {
-          const sides = parseInt(dieType.replace('d', ''), 10);
-          const raw = getRnd(sides, debugSeq, state);
-          const final = raw + boost;
-          const isSuccess = (mode === 'ra') ? (final <= targetVal) : (final >= targetVal);
-          const checkDetail = `[${mode.toUpperCase()} ${mode === 'ra' ? '<=' : '>='} ${targetVal}] ➔ ${isSuccess ? '✅ 成功' : '❌ 失敗'}`;
+          const sides = parseInt(dieType.replace('d', '')); const raw = getRnd(sides, debugSeq, state); const final = raw + boost;
+          let isSuccess = (mode === 'ra') ? (final <= targetVal) : (final >= targetVal);
+          let checkDetail = `[${mode.toUpperCase()} ${mode === 'ra' ? '<=' : '>='} ${targetVal}] ➔ ${isSuccess ? '✅ 成功' : '❌ 失敗'}`;
           steps.push({ levelStr, type: dieType, raw, final, extraD2: null, outcome: null, msg: `擲出 ${dieType} ➔ 原始: ${raw} | ${checkDetail}`, checkDetail });
           continueLoop = false;
         }
@@ -954,48 +568,40 @@
       return { steps, finalStack: currentStack, baseOutcome: initialChainOutcome };
     }
 
-    // ============================================================
-    // 🎨 渲染
-    // ============================================================
     function renderBadges(totalSuccessStacks, totalFailStacks, isDebug) {
-      const parts = [];
-      if (totalSuccessStacks > 0) parts.push(`<span class="px-2 py-1 bg-emerald-950/50 border border-emerald-500/60 text-emerald-400 rounded-full text-[11px]">✨ 淨計: ${totalSuccessStacks}重大成功</span>`);
-      if (totalFailStacks > 0)    parts.push(`<span class="px-2 py-1 bg-rose-950/50 border border-rose-500/60 text-rose-400 rounded-full text-[11px]">💥 淨計: ${totalFailStacks}重大失敗</span>`);
-      if (totalSuccessStacks === 0 && totalFailStacks === 0) parts.push(`<span class="px-2 py-1 bg-slate-500/10 border border-slate-500/30 text-muted rounded-full text-[11px]">⚪ 淨計: 0 Stacks</span>`);
-      if (isDebug) parts.push(`<span class="px-2 py-1 bg-fuchsia-950/50 border border-fuchsia-500/60 text-fuchsia-400 rounded-full text-[11px]">🧪 測試模式</span>`);
-      strikeBadges.innerHTML = parts.join('');
+      let strikeHtml = '';
+      if (totalSuccessStacks > 0) strikeHtml += `<span class="px-2 py-1 bg-emerald-950/50 border border-emerald-500/60 text-emerald-400 rounded-full text-[11px]">✨ 淨計: ${totalSuccessStacks}重大成功</span>`;
+      if (totalFailStacks > 0) strikeHtml += `<span class="px-2 py-1 bg-rose-950/50 border border-rose-500/60 text-rose-400 rounded-full text-[11px]">💥 淨計: ${totalFailStacks}重大暴走</span>`;
+      if (totalSuccessStacks === 0 && totalFailStacks === 0) strikeHtml += `<span class="px-2 py-1 bg-slate-500/10 border border-slate-500/30 text-muted rounded-full text-[11px]">⚪ 淨計: 0 Stacks</span>`;
+      if (isDebug) strikeHtml += `<span class="px-2 py-1 bg-fuchsia-950/50 border border-fuchsia-500/60 text-fuchsia-400 rounded-full text-[11px]">🧪 測試模式</span>`;
+      strikeBadges.innerHTML = strikeHtml;
     }
 
     function renderFlow(allRuns, count) {
-      const parts = [];
+      let flowHtml = '';
       allRuns.forEach((run, idx) => {
-        if (count > 1) parts.push(`<div class="font-bold text-amber-500 text-xs border-l-2 border-amber-500 pl-2 mt-2"># 第 ${idx + 1} 次安科推演：</div>`);
+        if (count > 1) flowHtml += `<div class="font-bold text-amber-500 text-xs border-l-2 border-amber-500 pl-2 mt-2"># 第 ${idx + 1} 次安科推演：</div>`;
         run.steps.forEach((s, sIdx) => {
-          let stepBg = 'bg-slate-500/10';
-          let stepBorder = 'border-slate-500/20';
-          let glowClass = '';
+          let stepBg = 'bg-slate-500/10'; let stepBorder = 'border-slate-500/20';
+          let glowClass = ''; 
           if (s.outcome === '大成功') { stepBg = 'bg-emerald-950/40'; stepBorder = 'border-emerald-500/40'; glowClass = 'glow-cs'; }
-          else if (s.outcome === '大失敗') { stepBg = 'bg-rose-950/40'; stepBorder = 'border-rose-500/40'; glowClass = 'glow-cf'; }
-
-          if (s.levelStr !== 'custom') {
-            const levelNum = parseInt(s.levelStr.slice(1), 10);
-            if (levelNum >= 3) glowClass = 'glow-high';
-          }
-
+          else if (s.outcome === '大暴走' || s.outcome === '大失敗') { stepBg = 'bg-rose-950/40'; stepBorder = 'border-rose-500/40'; glowClass = 'glow-cf'; }
+          else if (s.outcome === 'DF-Trigger') { stepBg = 'bg-amber-950/40'; stepBorder = 'border-amber-500/40'; }
+          const levelNum = parseInt(s.levelStr.replace('s', ''));
+          if (levelNum >= 3) glowClass = 'glow-high';
+          
           const isLast = (sIdx === run.steps.length - 1);
           let stackBadge = '';
           if (isLast && s.levelStr !== 'custom') {
             if (run.finalStack > 0 && run.baseOutcome) {
-              if (run.baseOutcome === '大成功')
-                stackBadge = `<span class="px-2 py-1 bg-emerald-500/20 text-emerald-500 border border-emerald-500/50 rounded-lg font-black text-[10px] md:text-xs">✨ 結算：${run.finalStack}重大成功</span>`;
-              else
-                stackBadge = `<span class="px-2 py-1 bg-rose-500/20 text-rose-500 border border-rose-500/50 rounded-lg font-black text-[10px] md:text-xs">💥 結算：${run.finalStack}重大失敗</span>`;
+              if (run.baseOutcome === '大成功') stackBadge = `<span class="px-2 py-1 bg-emerald-500/20 text-emerald-500 border border-emerald-500/50 rounded-lg font-black text-[10px] md:text-xs">✨ 結算：${run.finalStack}重大成功</span>`;
+              else stackBadge = `<span class="px-2 py-1 bg-rose-500/20 text-rose-500 border border-rose-500/50 rounded-lg font-black text-[10px] md:text-xs">💥 結算：${run.finalStack}重大暴走</span>`;
             } else {
               stackBadge = `<span class="px-2 py-1 bg-slate-500/10 text-muted border border-slate-500/30 rounded-lg text-[10px] md:text-[11px] font-bold">⚪ 結算：0 Stacks</span>`;
             }
           }
 
-          parts.push(`
+          flowHtml += `
             <div class="${stepBg} ${stepBorder} ${glowClass} border rounded-xl p-3 flex flex-col md:flex-row md:items-center justify-between text-xs transition-all gap-2">
               <div class="flex flex-wrap items-center gap-2">
                 <span class="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 font-mono rounded text-[10px] font-bold">${s.levelStr}</span>
@@ -1008,35 +614,40 @@
                 <span class="text-xs md:text-sm font-black text-amber-500 font-mono">最終: ${s.final}</span>
               </div>
             </div>
-          `);
+          `;
         });
       });
-      chainFlowDisplay.innerHTML = parts.join('');
-      requestAnimationFrame(() => { diceContainer.scrollTop = diceContainer.scrollHeight; });
+      chainFlowDisplay.innerHTML = flowHtml;
+      setTimeout(() => { diceContainer.scrollTop = diceContainer.scrollHeight; }, 50);
     }
 
     function renderTotalSum(allRuns, boost) {
-      let totalSum = 0, nonTriggerSum = 0, hasTrigger = false;
-      const formulaParts = [];
-
+      let totalSum = 0, nonTriggerSum = 0, formulaParts = [], hasTrigger = false;
       allRuns.forEach(run => {
-        const info = getS0Info(run);
-        if (!info) return;
-        if (info.hasChain) hasTrigger = true;
+        if (run.steps[0].levelStr === 'custom') return;
+        
+        const lastStep = run.steps[run.steps.length - 1];
+        const endsInS0 = (lastStep.levelStr === 's0');
+        const hasChain = run.steps.length > 1;
 
-        if (!info.counted) {
-          formulaParts.push(`<span class="text-amber-500/50 line-through font-mono" title="觸發連鎖且未退回s0，不計入總和">(${info.firstStep.final})</span>`);
-          return;
+        if (hasChain) hasTrigger = true;
+
+        if (!hasChain) {
+          const s0Step = run.steps[0];
+          totalSum += s0Step.final;
+          nonTriggerSum += s0Step.final;
+          const delta = s0Step.final - s0Step.raw;
+          let partStr = delta !== 0 ? `(${s0Step.raw}${delta > 0 ? '+' : ''}${delta})` : `${s0Step.raw}`;
+          formulaParts.push(partStr);
+        } else if (endsInS0) {
+          const s0Step = lastStep;
+          totalSum += s0Step.final;
+          const delta = s0Step.final - s0Step.raw;
+          let partStr = delta !== 0 ? `(${s0Step.raw}${delta > 0 ? '+' : ''}${delta})` : `${s0Step.raw}`;
+          formulaParts.push(`<span class="text-emerald-400 font-bold" title="退回s0採計">${partStr}</span>`);
+        } else {
+          formulaParts.push(`<span class="text-amber-500/50 line-through font-mono" title="觸發連鎖且未退回s0，不計入總和">(${run.steps[0].final})</span>`);
         }
-
-        const f = info.s0Step.final;
-        totalSum += f;
-        if (!info.hasChain) nonTriggerSum += f;
-        const delta = f - info.s0Step.raw;
-        const partStr = delta !== 0 ? `(${info.s0Step.raw}${delta > 0 ? '+' : ''}${delta})` : `${info.s0Step.raw}`;
-        formulaParts.push(info.hasChain
-          ? `<span class="text-emerald-400 font-bold" title="退回s0採計">${partStr}</span>`
-          : partStr);
       });
 
       if (formulaParts.length === 0) { totalSummary.classList.add('hidden'); return 0; }
@@ -1044,64 +655,50 @@
       if (formulaParts.length > 1 || boost !== 0 || hasTrigger) {
         let sumHtml = `🧮 本輪總和：<span class="font-mono text-muted mx-2">${formulaParts.join(' + ')}</span> = <span class="text-amber-500 text-lg md:text-xl ml-1 cursor-pointer hover:opacity-80 transition-opacity" title="點擊複製總和" onclick="copyTotalSum(${totalSum})">${totalSum}</span>`;
         if (hasTrigger) sumHtml += `<span class="ml-2 md:ml-3 text-xs text-muted font-normal">（不含觸發連鎖骰：${nonTriggerSum}）</span>`;
-        totalSummary.innerHTML = sumHtml;
-        totalSummary.classList.remove('hidden');
-      } else {
-        totalSummary.classList.add('hidden');
-      }
+        totalSummary.innerHTML = sumHtml; totalSummary.classList.remove('hidden');
+      } else { totalSummary.classList.add('hidden'); }
       return totalSum;
     }
 
     function copyTotalSum(val) {
-      copyToClipboard(val.toString()).then(ok => {
-        if (ok) showToast(`📋 已複製總和：${val} 喵！`, 'success');
-        else showToast('❌ 複製失敗', 'error');
-      });
+      navigator.clipboard.writeText(val.toString()).then(() => showToast(`📋 已複製總和：${val} 喵！`, 'success'));
     }
 
-    // ============================================================
-    // 🎲 主執行
-    // ============================================================
     function executeRoll(type) {
-      playAnimation();
+      playAnimation(); 
+      let count = Math.max(1, Math.min(20, Number(countInput.value) || 1)); countInput.value = count;
+      const boost = Number(boostInput.value) || 0; const boostMode100 = boostMode100Input.value;
+      let targetVal = Math.max(1, Math.min(100, Number(targetValueInput.value) || 50)); targetValueInput.value = targetVal;
+      saveSettings(); 
 
-      let count = Math.max(1, Math.min(MAX_DICE, toInt(countInput.value, 1)));
-      countInput.value = count;
-      const boost = toInt(boostInput.value, 0);
-      const boostMode100 = boostMode100Input.value;
-      let targetVal = Math.max(1, Math.min(100, toInt(targetValueInput.value, 50)));
-      targetValueInput.value = targetVal;
-      saveSettings();
-
-      const { seq: debugSeq, isDebug } = parseDebugSeq();
+      let debugSeq = [], isDebug = false;
+      if (debugSeqInput && debugSeqInput.value.trim() !== '') {
+        isDebug = true; debugSeq = debugSeqInput.value.split(',').map(s => Number(s.trim())).filter(n => !isNaN(n));
+      }
       const debugState = { index: 0 };
-      emptyState.classList.add('hidden');
-      chainFlowDisplay.classList.remove('hidden');
-      totalSummary.classList.add('hidden');
+      emptyState.classList.add('hidden'); chainFlowDisplay.classList.remove('hidden'); totalSummary.classList.add('hidden'); 
 
-      const allRuns = [];
-      let totalSuccessStacks = 0, totalFailStacks = 0;
+      let allRuns = [], totalSuccessStacks = 0, totalFailStacks = 0;
       for (let i = 0; i < count; i++) {
         const run = rollChainEngine(type, boost, targetVal, checkMode, debugSeq, debugState, boostMode100);
         allRuns.push(run);
         if (run.finalStack > 0 && run.baseOutcome) {
           if (run.baseOutcome === '大成功') totalSuccessStacks += run.finalStack;
-          if (run.baseOutcome === '大失敗') totalFailStacks += run.finalStack;
+          if (run.baseOutcome === '大暴走' || run.baseOutcome === '大失敗') totalFailStacks += run.finalStack;
         }
       }
-
       renderBadges(totalSuccessStacks, totalFailStacks, isDebug);
       renderFlow(allRuns, count);
       const totalSum = renderTotalSum(allRuns, boost);
 
-      const detailArr = [];
+      let detailArr = [];
       allRuns.forEach((run, idx) => {
         if (run.steps[0].levelStr === 'custom') return;
-        const stepStrArr = run.steps.map(s => {
+        let stepStrArr = run.steps.map(s => {
           let str = `${s.levelStr}:${s.type}=${s.raw}`;
           if (s.extraD2) str += `(1d2=${s.extraD2})`;
           if (s.outcome === '大成功') str += '✨';
-          if (s.outcome === '大失敗') str += '💥';
+          if (s.outcome === '大暴走' || s.outcome === '大失敗') str += '💥';
           return str;
         });
         let runStr = stepStrArr.join('→');
@@ -1110,118 +707,47 @@
         detailArr.push(runStr);
       });
       const detailText = detailArr.join(' | ');
-      const boostText  = boost !== 0 ? ` (B:${boost >= 0 ? '+' : ''}${boost})` : '';
-      const sumText    = totalSummary.classList.contains('hidden') ? '' : ` ｜ 總和: ${totalSum}`;
-      const debugText  = isDebug ? '[🧪測試] ' : '';
-      const summaryText = `${debugText}${count}x ${type}${boostText} [${checkMode.toUpperCase()}:${targetVal}] ➔ 淨計: ${totalSuccessStacks}成功 / ${totalFailStacks}失敗${sumText}`;
-
+      const boostText = boost !== 0 ? ` (B:${boost >= 0 ? '+' : ''}${boost})` : '';
+      const sumText = totalSummary.classList.contains('hidden') ? '' : ` ｜ 總和: ${totalSum}`;
+      const debugText = isDebug ? '[🧪測試] ' : '';
+      const summaryText = `${debugText}${count}x ${type}${boostText} [${checkMode.toUpperCase()}:${targetVal}] ➔ 淨計: ${totalSuccessStacks}成功 / ${totalFailStacks}暴走${sumText}`;
+      
       addHistory(summaryText, detailText);
 
       if (autoCopyToggle.checked) {
         const parts = allRuns.map(run => {
-          const info = getS0Info(run);
-          if (!info || !info.counted) return '';
-          const delta = info.s0Step.final - info.s0Step.raw;
-          return delta !== 0 ? `(${info.s0Step.raw}${delta > 0 ? '+' : ''}${delta})` : `${info.s0Step.raw}`;
+          if (run.steps[0].levelStr === 'custom') return '';
+          const lastStep = run.steps[run.steps.length - 1];
+          const hasChain = run.steps.length > 1;
+          const endsInS0 = (lastStep.levelStr === 's0');
+          
+          if (!hasChain) {
+            const s0Step = run.steps[0];
+            const delta = s0Step.final - s0Step.raw;
+            return delta !== 0 ? `(${s0Step.raw}${delta > 0 ? '+' : ''}${delta})` : `${s0Step.raw}`;
+          } else if (endsInS0) {
+            const s0Step = lastStep;
+            const delta = s0Step.final - s0Step.raw;
+            return delta !== 0 ? `(${s0Step.raw}${delta > 0 ? '+' : ''}${delta})` : `${s0Step.raw}`;
+          }
+          return '';
         }).filter(Boolean);
-
-        if (parts.length > 0) {
-          const prefix = count + 'd' + (type.includes('d') ? type.split('d')[1] : type);
-          const formulaString = `${prefix}=${parts.join('+')}=${totalSum}`;
-          copyToClipboard(formulaString).then(ok => {
-            if (ok) showToast(`📋 已自動複製：${formulaString}`, 'success');
-            else showToast('❌ 自動複製失敗', 'error');
-          });
-        }
+        const prefix = count + 'd' + (type.includes('d') ? type.split('d')[1] : type);
+        const formulaString = `${prefix}=${parts.join('+')}=${totalSum}`;
+        navigator.clipboard.writeText(formulaString).then(() => showToast(`📋 已自動複製：${formulaString}`, 'success'));
       }
     }
 
-    // ============================================================
-    // 🎲 自訂骰子
-    // ============================================================
-    function rollCustomDice() {
-      const val = customDiceInput.value.trim().toLowerCase();
-      if (!val) return showToast('❌ 請輸入自訂骰子 (如 1d100, ra50 1d100)', 'error');
-
-      const regex = /^(?:(ra|ro)\s*(\d+)\s*)?(\d*)d(\d+)(?:\s*([+-]\s*\d+))?$/i;
-      const match = val.match(regex);
-      if (!match) return showToast('❌ 格式錯誤，請輸入如 1d100, 8d50, ra50 1d100 或 ro25 1d75', 'error');
-
-      const mode      = match[1] ? match[1].toLowerCase() : null;
-      const targetVal = match[2] ? parseInt(match[2], 10) : null;
-      const count     = match[3] ? parseInt(match[3], 10) : 1;
-      const sides     = parseInt(match[4], 10);
-      const modifier  = match[5] ? parseInt(match[5].replace(/\s+/g, ''), 10) : 0;
-
-      if (count < 1 || count > MAX_DICE) return showToast(`❌ 骰子數量必須介於 1 到 ${MAX_DICE} 顆`, 'error');
-      if (sides < 2 || sides > MAX_SIDES) return showToast(`❌ 骰面必須介於 2 到 ${MAX_SIDES} 面`, 'error');
-      if (targetVal !== null && (targetVal < 1 || targetVal > MAX_TARGET)) {
-        return showToast(`❌ 目標值範圍需為 1 ~ ${MAX_TARGET}`, 'error');
-      }
-
-      const { seq: debugSeq, isDebug } = parseDebugSeq();
-      const debugState = { index: 0 };
-
-      let total = 0;
-      const rolls = [];
-      for (let i = 0; i < count; i++) {
-        const r = getRnd(sides, debugSeq, debugState);
-        rolls.push(r);
-        total += r;
-      }
-      total += modifier;
-
-      const modStr    = modifier !== 0 ? ` ${modifier > 0 ? '+' : ''}${modifier}` : '';
-      const rollsStr  = rolls.length > 1 ? `[${rolls.join(', ')}]${modStr} = ` : '';
-      const diceExpr  = `${count}d${sides}${modStr}`;
-      const formula   = `${diceExpr} = ${rollsStr}${total}`;
-
-      let checkDetail = '';
-      let resultMsg   = `🎲 自訂擲骰：${formula}`;
-      if (mode && targetVal !== null) {
-        const isSuccess = (mode === 'ra') ? (total <= targetVal) : (total >= targetVal);
-        checkDetail = `[${mode.toUpperCase()} ${mode === 'ra' ? '<=' : '>='} ${targetVal}] ➔ ${isSuccess ? '✅ 成功' : '❌ 失敗'}`;
-        resultMsg = `🎲 自訂檢定：${formula} | ${checkDetail}`;
-      }
-
-      const mockRun = {
-        steps: [{ levelStr: 'custom', type: diceExpr, raw: total, final: total, extraD2: null, outcome: '普通', msg: resultMsg, checkDetail }],
-        finalStack: 0,
-        baseOutcome: null
-      };
-      emptyState.classList.add('hidden');
-      chainFlowDisplay.classList.remove('hidden');
-      totalSummary.classList.add('hidden');
-      renderFlow([mockRun], 1);
-
-      const debugText = isDebug ? '[🧪測試] ' : '';
-      const summaryStr = (mode && targetVal !== null)
-        ? `${debugText}自訂 ${mode.toUpperCase()}${targetVal} (${diceExpr}) ➔ 結果: ${total} | ${checkDetail}`
-        : `${debugText}自訂擲骰 (${diceExpr}) ➔ 結果: ${total}`;
-
-      addHistory(summaryStr, formula);
-      showToast('🎲 自訂擲骰完成！', 'success');
-
-      if (autoCopyToggle.checked) {
-        copyToClipboard(formula).then(ok => {
-          if (ok) showToast(`📋 已自動複製：${formula}`, 'success');
-        });
-      }
-    }
-
-    // ============================================================
-    // 📜 歷史
-    // ============================================================
     function addHistory(summary, detail) {
-      const now = getTimeString();
-      history.unshift({ time: now, summary, detail });
-      if (history.length > MAX_HISTORY) history.pop();
-      saveHistory();
-      renderHistory();
+      const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      history.unshift({ time: now, summary: summary, detail: detail });
+      if (history.length > 200) history.pop(); 
+      saveHistory(); renderHistory();
     }
 
     function formatOutputText(text) {
-      return outputFormatInput.value === 'markdown' ? `**${text}**` : text;
+      if (outputFormatInput.value === 'markdown') return `**${text}**`;
+      return text;
     }
 
     function renderHistory() {
@@ -1250,64 +776,44 @@
       let textToCopy = item.summary;
       if (item.detail) textToCopy += `\n詳細軌跡：${item.detail}`;
       textToCopy = formatOutputText(textToCopy);
-      copyToClipboard(textToCopy).then(ok => {
-        if (ok) showToast('📋 已複製到剪貼簿喵！', 'success');
-        else showToast('❌ 複製失敗，請長按選取', 'error');
-      });
+      navigator.clipboard.writeText(textToCopy).then(() => showToast('📋 已複製到剪貼簿喵！', 'success'));
     }
 
     function exportHistoryToCSV() {
       if (!Array.isArray(history) || history.length === 0) return showToast('❌ 目前沒有紀錄可以匯出喵！', 'error');
-
-      const lines = ["\uFEFF時間,摘要,詳細骰子軌跡"];
-      const reversed = [...history].reverse();
-      reversed.forEach(item => {
+      let csvContent = "\uFEFF時間,摘要,詳細骰子軌跡\n";
+      const reversedHistory = [...history].reverse();
+      reversedHistory.forEach(item => {
         const sText = item.summary || item.text || '';
         const dText = item.detail || '';
         const safeSummary = `"${sText.replace(/"/g, '""')}"`;
-        const safeDetail  = `"${dText.replace(/"/g, '""')}"`;
-        lines.push(`${item.time},${safeSummary},${safeDetail}`);
+        const safeDetail = `"${dText.replace(/"/g, '""')}"`;
+        csvContent += `${item.time},${safeSummary},${safeDetail}\n`;
       });
-      const csvContent = lines.join('\n') + '\n';
       const defaultFileName = `Fate_Classic_Log_${new Date().toISOString().slice(0,10)}.csv`;
-
-      downloadFile(csvContent, defaultFileName, 'text/csv;charset=utf-8;');
+      if (window.pywebview && window.pywebview.api) {
+        window.pywebview.api.save_csv(csvContent, defaultFileName).then((response) => {
+          if (response && response.success) showToast('✅ 檔案已儲存喵！', 'success');
+        });
+      } else {
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url); link.setAttribute("download", defaultFileName);
+        document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        showToast('✅ 檔案已下載喵！', 'success');
+      }
     }
 
-    // ============================================================
-    // ⌨️ 快捷鍵
-    // ============================================================
     document.addEventListener('keydown', function(e) {
       const tag = e.target.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'BUTTON' || e.target.isContentEditable) return;
-      if (!settingsModal.classList.contains('hidden')) return;
-      if (!confirmModal.classList.contains('hidden')) return;
-
       if (e.code === 'Space' || e.key === 'Enter') { e.preventDefault(); executeRoll('1d100'); }
       else if (e.key === '1') executeRoll('1d10');
       else if (e.key === '2') executeRoll('1d100');
     });
 
-    // ============================================================
-    // 🚀 啟動
-    // ============================================================
-    window.addEventListener('DOMContentLoaded', function() {
-      // Tailwind 檢測
-      const tailwindOK = checkTailwind();
-      if (!tailwindOK) {
-        document.documentElement.classList.add('no-tailwind');
-        offlineBanner.style.display = 'block';
-        // 5 秒後自動收起（避免遮擋）
-        setTimeout(() => { offlineBanner.style.display = 'none'; }, 5000);
-      }
-
-      loadSettings();
-
-      // 若 RNG 降級，提示一次
-      if (!cryptoAvailable) {
-        setTimeout(() => showToast('⚠️ 當前環境不支援加密隨機，已降級為普通隨機', 'info'), 800);
-      }
-    });
+    window.addEventListener('DOMContentLoaded', loadSettings);
   </script>
 </body>
 </html>
