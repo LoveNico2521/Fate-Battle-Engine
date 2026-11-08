@@ -1,19 +1,18 @@
 # 📜 CHANGELOG — Fate-Dreamweaver-Engine
 
-從 2026-10-02 的 Python 原型到今日的完整安科推演引擎。Gemini / DeepSeek 雙線並行開發,2026-11-09 統整。
+2026-10-02 至今的完整開發紀錄,共 47 個標籤版本。
 
-> **時間標記**:2026-11-05 起為對話 API 精確時間戳;誕生對話與 Gemini 線為同日近似。
-> **歷史歸檔**:全部 83 件產物在 [`legacy/`](legacy/)(索引 `manifest.json`);每版的可下載檔案附於各 [Release](https://github.com/LoveNico2521/Fate-Dreamweaver-Engine/releases)。
+> **時間標記**:2026-11-05 起為精確時間戳;早期版本為同日近似。
+> **歷史歸檔**:全部 83 件原始產物在 [`legacy/`](legacy/)(索引 `manifest.json`);每版可下載檔案附於各 [Release](https://github.com/LoveNico2521/Fate-Dreamweaver-Engine/releases)。
 
 ---
 
-## v47 — 2026-11-09(現行版本)
+## v47 — 2026-11-09
 
-- 以 v46 為基底,套用 DeepSeek 線裁決統整
 - d4~d20 改純擲骰顯示,不套 ra/ro(自訂輸入框 `ra50 1d100` 語法保留)
-- 起手 CS/CF 淨 Stack 計 +1(裁決定案,與追擲同向對稱)
+- 起手 CS/CF 計入淨 Stack(與追擲同向對稱)
 - main.py 加入 PyInstaller `_MEIPASS` 資源路徑支援
-- README 改使用者導向、CHANGELOG 細節化、legacy 歸檔 83 件開發產物
+- 新增 MIT 授權、README 重構、legacy 歸檔 83 件歷史產物
 
 ---
 
