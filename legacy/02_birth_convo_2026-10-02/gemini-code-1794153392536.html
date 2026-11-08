@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>我們的問題 - 16:9 全螢幕寫作檢定系統</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes roll3d {
+      0% { transform: rotateX(0deg) rotateY(0deg) scale(0.9); opacity: 0.6; }
+      50% { transform: rotateX(360deg) rotateY(180deg) scale(1.08); opacity: 0.95; }
+      100% { transform: rotateX(720deg) rotateY(360deg) scale(1); opacity: 1; }
+    }
+    .animate-roll { animation: roll3d 0.45s ease-out; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+    ::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.8); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(71, 85, 105, 1); }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center p-4 font-sans overflow-x-hidden">
+
+  <!-- 16:9 寬螢幕主容器 -->
+  <div class="w-full max-w-[1600px] aspect-video bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl flex flex-col p-6 space-y-4 overflow-hidden relative">
+    
+    <!-- 頂部標題列 -->
+    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+      <div class="flex items-center gap-3">
+        <div class="px-3 py-1 bg-indigo-500/10 border border-indigo-500/30 rounded-xl text-indigo-400 font-black text-sm tracking-wider uppercase">
+          TRPG System
+        </div>
+        <h1 class="text-2xl font-black bg-gradient-to-r from-amber-300 via-amber-400 to-amber-500 bg-clip-text text-transparent">
+          《我們的問題》全螢幕寫作檢定系統
+        </h1>
+      </div>
+      <div class="text-xs text-slate-400 font-mono flex items-center gap-4">
+        <span>ra (<= 目標值) / ro (>= 目標值) 雙檢定</span>
+        <span>•</span>
+        <span>與基準同向 ➔ 深入 (+1)</span>
+        <span>•</span>
+        <span>與基準反向 ➔ 退回 (-1)</span>
+      </div>
+    </div>
+
+    <!-- 16:9 雙欄主內容區 -->
+    <div class="grid grid-cols-12 gap-6 flex-1 min-h-0">
+      
+      <!-- 左側：控制與參數設定欄 (Col 4) -->
+      <div class="col-span-4 bg-slate-950/60 border border-slate-800/80 rounded-2xl p-5 flex flex-col justify-between space-y-4">
+        
+        <div class="space-y-4">
+          <div class="text-xs font-bold text-slate-400 tracking-wider uppercase border-b border-slate-800 pb-2">
+            ⚙️ 擲骰參數設定 (Parameters)
+          </div>
+
+          <!-- 擲骰數量 & 基礎加成 -->
+          <div class="grid grid-cols-2 gap-3">
+            <div class="space-y-1">
+              <label class="block text-xs font-medium text-slate-300">擲骰數量</label>
+              <div class="flex items-center bg-slate-900 border border-slate-700 rounded-xl overflow-hidden">
+                <button onclick="adjustCount(-1)" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold">-</button>
+                <input id="dice-count" type="number" min="1" max="20" value="1" class="w-full bg-transparent text-center text-xs font-bold text-amber-300 focus:outline-none" />
+                <button onclick="adjustCount(1)" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold">+</button>
+              </div>
+            </div>
+
+            <div class="space-y-1">
+              <label class="block text-xs font-medium text-slate-300">基礎加值 (Boost)</label>
+              <div class="flex items-center bg-slate-900 border border-slate-700 rounded-xl overflow-hidden">
+                <button onclick="adjustBoost(-1)" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold">-</button>
+                <input id="base-boost" type="number" value="0" class="w-full bg-transparent text-center text-xs font-bold text-emerald-400 focus:outline-none" />
+                <button onclick="adjustBoost(1)" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold">+</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- RA / RO 檢定模式切換與目標值 -->
+          <div class="space-y-2 bg-slate-900/90 border border-slate-700/80 rounded-xl p-3">
+            <div class="flex justify-between items-center">
+              <label class="text-xs font-bold text-amber-400">🎯 檢定模式與目標值 (Target)</label>
+              <span id="mode-desc" class="text-[10px] text-slate-400 font-mono">ra (<= 目標值成功)</span>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-2">
+              <div class="flex rounded-lg overflow-hidden border border-slate-700 bg-slate-950 p-0.5">
+                <button id="btn-mode-ra" onclick="setCheckMode('ra')" class="flex-1 py-1 text-xs font-bold rounded-md bg-indigo-600 text-white transition">ra (<=)</button>
+                <button id="btn-mode-ro" onclick="setCheckMode('ro')" class="flex-1 py-1 text-xs font-bold rounded-md text-slate-400 hover:text-white transition">ro (>=)</button>
+              </div>
+
+              <div class="flex items-center bg-slate-950 border border-slate-700 rounded-lg overflow-hidden px-2">
+                <span class="text-xs text-slate-500 font-bold mr-1">目標:</span>
+                <input id="target-value" type="number" min="1" max="100" value="50" class="w-full bg-transparent text-center text-xs font-bold text-amber-300 focus:outline-none" />
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 主要控制按鈕 -->
+        <div class="space-y-3 pt-1">
+          <button onclick="executeRoll('1d10')" class="w-full py-3.5 px-4 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg border border-indigo-400/30 transition-all flex flex-col items-center justify-center gap-1">
+            <span class="text-base tracking-wide">🎲 擲 1d10 堆疊連鎖</span>
+            <span class="text-[10px] text-indigo-200 opacity-80">1d2=1: 大成功 | 1d2=2: 大失敗</span>
+          </button>
+
+          <button onclick="executeRoll('1d100')" class="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold rounded-2xl shadow-lg border border-emerald-400/30 transition-all flex flex-col items-center justify-center gap-1">
+            <span class="text-base tracking-wide">🎯 擲 1d100 堆疊連鎖 (ra/ro)</span>
+            <span class="text-[10px] text-emerald-200 opacity-80">1~5 ➔ 追擲 1d10 | 96~100 ➔ 大成功</span>
+          </button>
+        </div>
+
+        <!-- 通用標準骰子 -->
+        <div class="space-y-1.5 pt-2 border-t border-slate-800">
+          <span class="text-[11px] font-medium text-slate-500">通用標準骰子</span>
+          <div class="grid grid-cols-5 gap-2">
+            <button onclick="executeRoll('d4')" class="py-1.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs text-slate-300 font-bold transition">d4</button>
+            <button onclick="executeRoll('d6')" class="py-1.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs text-slate-300 font-bold transition">d6</button>
+            <button onclick="executeRoll('d8')" class="py-1.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs text-slate-300 font-bold transition">d8</button>
+            <button onclick="executeRoll('d12')" class="py-1.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs text-slate-300 font-bold transition">d12</button>
+            <button onclick="executeRoll('d20')" class="py-1.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs text-slate-300 font-bold transition">d20</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 右側：連鎖視覺顯示與歷史記錄欄 (Col 8) -->
+      <div class="col-span-8 flex flex-col space-y-4 min-h-0">
+        
+        <!-- 連鎖追擲動態展示區 -->
+        <div class="flex-1 bg-slate-950/80 border border-slate-800 rounded-2xl p-5 flex flex-col relative overflow-hidden shadow-inner min-h-0">
+          
+          <div class="flex justify-between items-center border-b border-slate-800/80 pb-2 mb-3">
+            <span class="text-xs font-bold text-amber-400 tracking-wider uppercase">📊 即時連鎖追擲視覺圖譜 (Live Chain Graph)</span>
+            <div id="strike-badges" class="flex gap-2 text-xs font-bold"></div>
+          </div>
+
+          <div id="dice-container" class="flex-1 overflow-y-auto space-y-3 pr-2">
+            <div id="empty-state" class="h-full flex flex-col items-center justify-center text-slate-600 space-y-2">
+              <div class="text-4xl">🎲</div>
+              <div class="text-sm">點擊左側按鈕開始執行寫作連鎖檢定</div>
+            </div>
+            <div id="chain-flow-display" class="space-y-3 hidden"></div>
+          </div>
+        </div>
+
+        <!-- 歷史紀錄區域 -->
+        <div class="h-44 bg-slate-950/50 border border-slate-800/80 rounded-2xl p-4 flex flex-col min-h-0 space-y-2">
+          <div class="flex justify-between items-center text-xs text-slate-400">
+            <span class="font-bold flex items-center gap-1.5">📜 完整擲骰歷史紀錄 (Roll History)</span>
+            <button onclick="clearHistory()" class="text-slate-500 hover:text-slate-300 underline">清除紀錄</button>
+          </div>
+          <div id="history-log" class="flex-1 overflow-y-auto text-xs space-y-1.5 font-mono pr-1">
+            <div class="text-slate-600 text-center py-4">尚無歷史紀錄</div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const countInput = document.getElementById('dice-count');
+    const boostInput = document.getElementById('base-boost');
+    const targetValueInput = document.getElementById('target-value');
+    const emptyState = document.getElementById('empty-state');
+    const chainFlowDisplay = document.getElementById('chain-flow-display');
+    const strikeBadges = document.getElementById('strike-badges');
+    const diceContainer = document.getElementById('dice-container');
+    const historyLog = document.getElementById('history-log');
+
+    let checkMode = 'ra';
+    let history = [];
+
+    function setCheckMode(mode) {
+      checkMode = mode;
+      const btnRa = document.getElementById('btn-mode-ra');
+      const btnRo = document.getElementById('btn-mode-ro');
+      const modeDesc = document.getElementById('mode-desc');
+
+      if (mode === 'ra') {
+        btnRa.className = "flex-1 py-1 text-xs font-bold rounded-md bg-indigo-600 text-white transition";
+        btnRo.className = "flex-1 py-1 text-xs font-bold rounded-md text-slate-400 hover:text-white transition";
+        modeDesc.innerText = "ra (<= 目標值成功)";
+      } else {
+        btnRo.className = "flex-1 py-1 text-xs font-bold rounded-md bg-emerald-600 text-white transition";
+        btnRa.className = "flex-1 py-1 text-xs font-bold rounded-md text-slate-400 hover:text-white transition";
+        modeDesc.innerText = "ro (>= 目標值成功)";
+      }
+    }
+
+    function adjustCount(delta) {
+      let val = parseInt(countInput.value) || 1;
+      val = Math.max(1, Math.min(20, val + delta));
+      countInput.value = val;
+    }
+
+    function adjustBoost(delta) {
+      let val = parseInt(boostInput.value) || 0;
+      boostInput.value = val + delta;
+    }
+
+    function playAnimation() {
+      diceContainer.classList.remove('animate-roll');
+      void diceContainer.offsetWidth;
+      diceContainer.classList.add('animate-roll');
+    }
+
+    function rollChainEngine(startType, boost, targetVal, mode) {
+      let steps = [];
+      let currentLevel = 0;
+      let initialChainOutcome = null;
+
+      function getDieType(lvl) {
+        return lvl === 0 ? startType : '1d10';
+      }
+
+      let continueLoop = true;
+      let successStrike = 0; // cs -> 大成功連擊數
+      let failStrike = 0;    // cf -> 大失敗連擊數
+      let loopSafety = 0;
+
+      while (continueLoop && loopSafety < 50) {
+        loopSafety++;
+        let dieType = getDieType(currentLevel);
+        let levelStr = `s${currentLevel}`;
+
+        if (dieType === '1d100') {
+          const raw100 = Math.floor(Math.random() * 100) + 1;
+          const final100 = raw100 + boost;
+          let isSuccess = (mode === 'ra') ? (final100 <= targetVal) : (final100 >= targetVal);
+          let checkDetail = `[${mode.toUpperCase()} ${mode === 'ra' ? '<=' : '>='} ${targetVal}] ➔ ${isSuccess ? '✅ 成功' : '❌ 失敗'}`;
+
+          let step = { 
+            levelStr, 
+            type: '1d100', 
+            raw: raw100, 
+            final: final100, 
+            extraD2: null, 
+            outcome: null, 
+            msg: '', 
+            checkDetail 
+          };
+
+          if (raw100 <= 5) {
+            step.outcome = 'DF-Trigger';
+            currentLevel++;
+            step.msg = `🎲 1d100 = ${raw100} (1~5) ➔ 進入 s${currentLevel} (1d10)！ (${checkDetail})`;
+            steps.push(step);
+            continueLoop = true;
+          } else if (raw100 >= 96) {
+            const currentOutcome = '大成功';
+            if (!initialChainOutcome) initialChainOutcome = currentOutcome;
+            successStrike++;
+            step.outcome = currentOutcome;
+            currentLevel++;
+            step.msg = `✨ 1d100 = ${raw100} (96~100: 大成功) ➔ 進入 s${currentLevel} (1d10)！ | ${checkDetail}`;
+            steps.push(step);
+            continueLoop = true;
+          } else {
+            step.msg = `1d100 結果: ${raw100} | ${checkDetail}`;
+            steps.push(step);
+            continueLoop = false;
+          }
+
+        } else if (dieType === '1d10') {
+          const raw10 = Math.floor(Math.random() * 10) + 1;
+          const final10 = raw10 + boost;
+          let step = { 
+            levelStr, 
+            type: '1d10', 
+            raw: raw10, 
+            final: final10, 
+            extraD2: null, 
+            outcome: null, 
+            msg: '', 
+            checkDetail: '' 
+          };
+
+          if (raw10 === 10) {
+            const d2 = Math.floor(Math.random() * 2) + 1;
+            step.extraD2 = d2;
+            
+            // cs (1d2=1) 為「大成功」；cf (1d2=2) 為「大失敗」
+            const currentOutcome = (d2 === 1) ? '大成功' : '大失敗';
+            step.outcome = currentOutcome;
+
+            if (currentOutcome === '大成功') successStrike++;
+            else failStrike++;
+
+            if (!initialChainOutcome) {
+              initialChainOutcome = currentOutcome;
+            }
+
+            if (currentOutcome === initialChainOutcome) {
+              currentLevel++;
+              step.msg = `${currentOutcome === '大成功' ? '✨' : '💥'} 1d10=10 ➔ 1d2=${d2} (${currentOutcome})！與基準 (${initialChainOutcome}) 同向 ➔ 深入加疊至 s${currentLevel} (1d10)！`;
+            } else {
+              if (currentLevel > 0) {
+                currentLevel--;
+                let prevDie = getDieType(currentLevel);
+                step.msg = `${currentOutcome === '大成功' ? '✨' : '💥'} 1d10=10 ➔ 1d2=${d2} (${currentOutcome})！與基準 (${initialChainOutcome}) 反向 ➔ 退回 s${currentLevel} (${prevDie})！`;
+              } else {
+                step.msg = `${currentOutcome === '大成功' ? '✨' : '💥'} 1d10=10 ➔ 1d2=${d2} (${currentOutcome})！與基準 (${initialChainOutcome}) 反向 ➔ 退回頂層 s0！`;
+              }
+            }
+
+            steps.push(step);
+            continueLoop = true;
+          } else {
+            step.msg = `1d10 普通結果 ➔ 原始: ${raw10}`;
+            steps.push(step);
+            continueLoop = false;
+          }
+        } else {
+          const sides = parseInt(dieType.replace('d', ''));
+          const raw = Math.floor(Math.random() * sides) + 1;
+          const final = raw + boost;
+          let isSuccess = (mode === 'ra') ? (final <= targetVal) : (final >= targetVal);
+          let checkDetail = `[${mode.toUpperCase()} ${mode === 'ra' ? '<=' : '>='} ${targetVal}] ➔ ${isSuccess ? '✅ 成功' : '❌ 失敗'}`;
+          steps.push({ levelStr, type: dieType, raw, final, extraD2: null, outcome: null, msg: `擲出 ${dieType} ➔ 原始: ${raw} | ${checkDetail}`, checkDetail });
+          continueLoop = false;
+        }
+      }
+
+      return { steps, successStrike, failStrike };
+    }
+
+    function executeRoll(type) {
+      playAnimation();
+      const count = parseInt(countInput.value) || 1;
+      const boost = parseInt(boostInput.value) || 0;
+      const targetVal = parseInt(targetValueInput.value) || 50;
+
+      emptyState.classList.add('hidden');
+      chainFlowDisplay.classList.remove('hidden');
+
+      let allRuns = [];
+      let totalSuccess = 0, totalFail = 0;
+
+      for (let i = 0; i < count; i++) {
+        const run = rollChainEngine(type, boost, targetVal, checkMode);
+        allRuns.push(run);
+        totalSuccess += run.successStrike;
+        totalFail += run.failStrike;
+      }
+
+      let strikeHtml = '';
+      if (totalSuccess > 0) strikeHtml += `<span class="px-3 py-1 bg-emerald-950 border border-emerald-500/60 text-emerald-400 rounded-full">✨ ${totalSuccess}重大成功</span>`;
+      if (totalFail > 0) strikeHtml += `<span class="px-3 py-1 bg-rose-950 border border-rose-500/60 text-rose-400 rounded-full">💥 ${totalFail}重大失敗</span>`;
+      strikeBadges.innerHTML = strikeHtml;
+
+      let flowHtml = '';
+      allRuns.forEach((run, idx) => {
+        if (count > 1) {
+          flowHtml += `<div class="font-bold text-amber-400 text-xs border-l-2 border-amber-400 pl-2 mt-2"># 第 ${idx + 1} 組連鎖測試：</div>`;
+        }
+
+        run.steps.forEach((s, sIdx) => {
+          let stepBg = 'bg-slate-900 border-slate-800';
+          if (s.outcome === '大成功') {
+            stepBg = 'bg-emerald-950/40 border-emerald-500/40';
+          } else if (s.outcome === '大失敗') {
+            stepBg = 'bg-rose-950/40 border-rose-500/40';
+          } else if (s.outcome === 'DF-Trigger') {
+            stepBg = 'bg-amber-950/40 border-amber-500/40';
+          }
+
+          // 在該組連鎖的最後一步 (Last Roll) 顯示最終累積的 Stacks 結算
+          const isLast = (sIdx === run.steps.length - 1);
+          let stackBadge = '';
+          if (isLast) {
+            if (run.successStrike > 0) {
+              stackBadge = `<span class="px-2.5 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 rounded-lg font-black text-xs">✨ 最終結算：${run.successStrike}重大成功</span>`;
+            } else if (run.failStrike > 0) {
+              stackBadge = `<span class="px-2.5 py-1 bg-rose-500/20 text-rose-300 border border-rose-500/50 rounded-lg font-black text-xs">💥 最終結算：${run.failStrike}重大失敗</span>`;
+            }
+          }
+
+          flowHtml += `
+            <div class="${stepBg} border rounded-xl p-3 flex items-center justify-between text-xs transition-all">
+              <div class="flex items-center gap-3">
+                <span class="px-2 py-0.5 bg-indigo-950 text-indigo-300 border border-indigo-500/30 font-mono rounded text-[10px] font-bold">${s.levelStr}</span>
+                <span class="px-2 py-0.5 bg-slate-800 text-slate-400 font-mono rounded text-[10px] font-bold">Step ${sIdx + 1} (${s.type})</span>
+                <span class="font-bold text-slate-200">${s.msg}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                ${s.extraD2 ? `<span class="font-mono bg-slate-800 px-2 py-0.5 rounded text-amber-300">1d2 = ${s.extraD2}</span>` : ''}
+                ${stackBadge}
+                <span class="text-sm font-black text-amber-400 font-mono">最終: ${s.final}</span>
+              </div>
+            </div>
+          `;
+        });
+      });
+
+      chainFlowDisplay.innerHTML = flowHtml;
+
+      const boostText = boost !== 0 ? ` (Boost:${boost >= 0 ? '+' : ''}${boost})` : '';
+      const summaryText = `${count}x ${type}${boostText} [${checkMode.toUpperCase()}:${targetVal}] ➔ 連鎖檢定完成 [${totalSuccess}重大成功 | ${totalFail}重大失敗]`;
+      addHistory(summaryText);
+    }
+
+    function addHistory(text) {
+      const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      history.unshift({ time: now, text });
+      renderHistory();
+    }
+
+    function clearHistory() {
+      history = [];
+      renderHistory();
+    }
+
+    function renderHistory() {
+      if (history.length === 0) {
+        historyLog.innerHTML = `<div class="text-slate-600 text-center py-4">尚無歷史紀錄</div>`;
+        return;
+      }
+      historyLog.innerHTML = history.map(item => `
+        <div class="flex justify-between items-center py-1 border-b border-slate-800/60 last:border-0">
+          <span class="text-slate-300 truncate pr-2">${item.text}</span>
+          <span class="text-[10px] text-slate-500 shrink-0">${item.time}</span>
+        </div>
+      `).join('');
+    }
+  </script>
+</body>
+</html>

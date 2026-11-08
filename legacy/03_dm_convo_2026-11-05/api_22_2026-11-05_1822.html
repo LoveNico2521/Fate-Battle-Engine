@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>織夢者菲特《Fate》 - 劇情推演系統</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes roll3d {
+      0% { transform: rotateX(0deg) rotateY(0deg) scale(0.9); opacity: 0.6; }
+      50% { transform: rotateX(360deg) rotateY(180deg) scale(1.08); opacity: 0.95; }
+      100% { transform: rotateX(720deg) rotateY(360deg) scale(1); opacity: 1; }
+    }
+    .animate-roll { animation: roll3d 0.45s ease-out; }
+
+    /* 🌟 霓虹脈衝動畫 🌟 */
+    @keyframes glow-green {
+      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); border-color: rgba(16, 185, 129, 1); }
+      50% { box-shadow: 0 0 15px 5px rgba(16, 185, 129, 0.4); border-color: rgba(16, 185, 129, 0.8); }
+      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); border-color: rgba(16, 185, 129, 0.4); }
+    }
+    @keyframes glow-red {
+      0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7); border-color: rgba(244, 63, 94, 1); }
+      50% { box-shadow: 0 0 15px 5px rgba(244, 63, 94, 0.4); border-color: rgba(244, 63, 94, 0.8); }
+      100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); border-color: rgba(244, 63, 94, 0.4); }
+    }
+    @keyframes glow-purple {
+      0% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.7); border-color: rgba(168, 85, 247, 1); }
+      50% { box-shadow: 0 0 20px 8px rgba(168, 85, 247, 0.4); border-color: rgba(168, 85, 247, 0.8); }
+      100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0); border-color: rgba(168, 85, 247, 0.4); }
+    }
+    .glow-cs { animation: glow-green 1.2s ease-out; }
+    .glow-cf { animation: glow-red 1.2s ease-out; }
+    .glow-high { animation: glow-purple 1.5s ease-out; }
+
+    /* 美化捲軸 */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+    ::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.8); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(71, 85, 105, 1); }
+
+    /* 禁用文字選取與右鍵選單 (除了輸入框) */
+    body { user-select: none; -webkit-user-select: none; }
+    input, textarea { user-select: auto; -webkit-user-select: auto; }
+
+    details > summary { list-style: none; }
+    details > summary::-webkit-details-marker { display: none; }
+
+    /* 虛擬滾動 (大幅提升長列表效能) */
+    .virtual-scroll-item {
+      content-visibility: auto;
+      contain-intrinsic-size: 60px; 
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 h-screen flex items-center justify-center p-2 md:p-4 font-sans overflow-hidden">
+
+  <div class="w-full max-w-[1600px] h-full max-h-[900px] min-h-[800px] bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl flex flex-col p-4 md:p-6 space-y-4 overflow-hidden relative">
+    
+    <!-- 頂部標題列 -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-800 pb-3 gap-2 shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="px-3 py-1 bg-indigo-500/10 border border-indigo-500/30 rounded-xl text-indigo-400 font-black text-sm tracking-wider uppercase shadow-[0_0_10px_rgba(99,102,241,0.2)]">
+          織夢機
+        </div>
+        <h1 class="text-xl md:text-2xl font-black bg-gradient-to-r from-amber-300 via-amber-400 to-amber-500 bg-clip-text text-transparent">
+          織夢者菲特《Fate》
+        </h1>
+      </div>
+      <div class="hidden md:flex text-xs text-slate-400 font-mono items-center gap-4">
+        <span>ra (<= 目標值) / ro (>= 目標值) 雙檢定</span>
+        <span>•</span>
+        <span>與基準同向 ➔ 深入 (+1)</span>
+        <span>•</span>
+        <span>與基準反向 ➔ 退回 (-1)</span>
+      </div>
+    </div>
+
+    <!-- 主內容區 -->
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6 flex-1 min-h-0">
+      
+      <!-- 左側：控制與參數設定欄 -->
+      <div class="col-span-1 md:col-span-4 bg-slate-950/60 border border-slate-800/80 rounded-2xl p-4 md:p-5 flex flex-col gap-4 overflow-y-auto">
+        
+        <div class="space-y-4">
+          <div class="text-xs font-bold text-slate-400 tracking-wider uppercase border-b border-slate-800 pb-2 flex justify-between items-center">
+            <span>⚙️ 織夢參數設定</span>
+            <span class="text-[9px] text-slate-500 font-normal bg-slate-900 px-2 py-0.5 rounded">PC: [空白鍵]=1d100 / [1]=1d10</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div class="space-y-1">
+              <label class="block text-xs font-medium text-slate-300">擲骰次數</label>
+              <div class="flex items-center bg-slate-900 border border-slate-700 rounded-xl overflow-hidden">
+                <button onclick="adjustCount(-1)" class="px-3 py-2 md:py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold">-</button>
+                <input id="dice-count" type="number" min="1" max="20" value="1" class="w-full bg-transparent text-center text-sm md:text-xs font-bold text-amber-300 focus:outline-none" />
+                <button onclick="adjustCount(1)" class="px-3 py-2 md:py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold">+</button>
+              </div>
+            </div>
+
+            <div class="space-y-1">
+              <label class="block text-xs font-medium text-slate-300">基礎加值 (Boost)</label>
+              <div class="flex items-center bg-slate-900 border border-slate-700 rounded-xl overflow-hidden">
+                <button onclick="adjustBoost(-1)" class="px-3 py-2 md:py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold">-</button>
+                <input id="base-boost" type="number" value="0" class="w-full bg-transparent text-center text-sm md:text-xs font-bold text-emerald-400 focus:outline-none" />
+                <button onclick="adjustBoost(1)" class="px-3 py-2 md:py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold">+</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-2 bg-slate-900/90 border border-slate-700/80 rounded-xl p-3">
+            <div class="flex justify-between items-center">
+              <label class="text-xs font-bold text-amber-400">🎯 檢定模式與目標值</label>
+              <span id="mode-desc" class="text-[10px] text-slate-400 font-mono">ra (<= 目標值成功)</span>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-2">
+              <div class="flex rounded-lg overflow-hidden border border-slate-700 bg-slate-950 p-0.5">
+                <button id="btn-mode-ra" onclick="setCheckMode('ra')" class="flex-1 py-1.5 md:py-1 text-xs font-bold rounded-md bg-indigo-600 text-white transition">ra (<=)</button>
+                <button id="btn-mode-ro" onclick="setCheckMode('ro')" class="flex-1 py-1.5 md:py-1 text-xs font-bold rounded-md text-slate-400 hover:text-white transition">ro (>=)</button>
+              </div>
+              <div class="flex items-center bg-slate-950 border border-slate-700 rounded-lg overflow-hidden px-2">
+                <span class="text-xs text-slate-500 font-bold mr-1">目標:</span>
+                <input id="target-value" type="number" min="1" max="100" value="50" class="w-full bg-transparent text-center text-sm md:text-xs font-bold text-amber-300 focus:outline-none" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 主要控制按鈕 -->
+        <div class="space-y-3 pt-1">
+          <button onclick="executeRoll('1d10')" class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold rounded-2xl shadow-lg border border-indigo-400/30 transition-all flex flex-col items-center justify-center gap-1">
+            <span class="text-base tracking-wide">🎲 擲 1d10 安科連鎖</span>
+            <span class="text-[10px] text-indigo-200 opacity-80">1d2=1: 大成功 | 1d2=2: 大失敗</span>
+          </button>
+          <button onclick="executeRoll('1d100')" class="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold rounded-2xl shadow-lg border border-emerald-400/30 transition-all flex flex-col items-center justify-center gap-1">
+            <span class="text-base tracking-wide">🎯 擲 1d100 劇情判定 (ra/ro)</span>
+            <span class="text-[10px] text-emerald-200 opacity-80">1~5 ➔ 追擲 1d10 | 96~100 ➔ 大成功</span>
+          </button>
+        </div>
+
+        <!-- 通用標準骰子 -->
+        <div class="space-y-1.5 pt-3 border-t border-slate-800">
+          <span class="text-[11px] font-medium text-slate-500">通用標準骰子</span>
+          <div class="grid grid-cols-5 gap-2">
+            <button onclick="executeRoll('d4')" class="py-2 md:py-1.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs text-slate-300 font-bold transition">d4</button>
+            <button onclick="executeRoll('d6')" class="py-2 md:py-1.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs text-slate-300 font-bold transition">d6</button>
+            <button onclick="executeRoll('d8')" class="py-2 md:py-1.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs text-slate-300 font-bold transition">d8</button>
+            <button onclick="executeRoll('d12')" class="py-2 md:py-1.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs text-slate-300 font-bold transition">d12</button>
+            <button onclick="executeRoll('d20')" class="py-2 md:py-1.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs text-slate-300 font-bold transition">d20</button>
+          </div>
+        </div>
+
+        <!-- 自動複製開關 (新增) -->
+        <div class="flex items-center justify-between bg-slate-900 border border-slate-700 rounded-xl p-3 mt-2 shrink-0">
+          <label class="text-xs font-bold text-slate-300 cursor-pointer flex-1" for="auto-copy-toggle">自動複製公式</label>
+          <input id="auto-copy-toggle" type="checkbox" onchange="saveSettings()" class="w-4 h-4 text-indigo-600 bg-slate-800 border-slate-600 rounded focus:ring-indigo-500 focus:ring-2 cursor-pointer accent-indigo-500">
+        </div>
+
+        <!-- 🧪 隱藏式測試序列 -->
+        <details class="bg-fuchsia-950/20 border border-fuchsia-500/30 rounded-xl p-3 text-xs group mt-2">
+          <summary class="cursor-pointer font-bold text-fuchsia-400 select-none flex justify-between items-center">
+            <span>🧪 測試序列 (Debug)</span>
+            <span class="text-[9px] text-fuchsia-600 font-normal group-open:hidden">點擊展開</span>
+            <span class="text-[9px] text-fuchsia-600 font-normal hidden group-open:inline">點擊收起</span>
+          </summary>
+          <div class="mt-2 space-y-1">
+            <div class="flex justify-between items-center mb-1">
+              <span class="text-[10px] text-fuchsia-300/60">輸入逗號分隔的數字</span>
+              <button type="button" onclick="event.preventDefault(); document.getElementById('debug-seq').value='';" class="text-[10px] text-fuchsia-300/60 hover:text-fuchsia-300 underline">清除</button>
+            </div>
+            <input id="debug-seq" type="text" placeholder="例: 96, 10, 1, 50" class="w-full bg-slate-900/80 border border-fuchsia-500/30 rounded px-2 py-1.5 text-fuchsia-200 focus:outline-none focus:border-fuchsia-500/60 font-mono placeholder-fuchsia-900/50" />
+            <p class="text-[9px] text-fuchsia-400/60 leading-tight mt-1">將依序取代隨機結果。用完後回歸隨機。</p>
+          </div>
+        </details>
+
+      </div>
+
+      <!-- 右側：連鎖視覺顯示與歷史記錄欄 -->
+      <div class="col-span-1 md:col-span-8 flex flex-col space-y-4 min-h-0">
+        
+        <!-- 連鎖追擲動態展示區 -->
+        <div class="flex-1 bg-slate-950/80 border border-slate-800 rounded-2xl p-4 md:p-5 flex flex-col relative overflow-hidden shadow-inner min-h-[300px] md:min-h-0">
+          
+          <div class="flex flex-col md:flex-row md:justify-between md:items-center border-b border-slate-800/80 pb-2 mb-3 gap-2">
+            <span class="text-xs font-bold text-amber-400 tracking-wider uppercase">📊 即時安科織夢圖譜</span>
+            <div id="strike-badges" class="flex gap-2 text-xs font-bold flex-wrap"></div>
+          </div>
+
+          <div id="dice-container" class="flex-1 overflow-y-auto space-y-3 pr-2 scroll-smooth">
+            <div id="empty-state" class="h-full flex flex-col items-center justify-center text-slate-500 space-y-3 py-10">
+              <div class="text-4xl">🪡</div>
+              <div class="text-sm md:text-base text-center px-4 tracking-widest leading-relaxed">
+                命運的經緯在此交織<br>
+                <span class="text-indigo-400 font-bold">織夢者菲特</span> 將為你落下第一顆骰子
+              </div>
+            </div>
+            <div id="chain-flow-display" class="space-y-3 hidden"></div>
+          </div>
+        </div>
+
+        <!-- 本輪總和顯示區 -->
+        <div id="total-summary" class="hidden bg-indigo-950/40 border border-indigo-500/30 rounded-2xl p-3 flex flex-col md:flex-row justify-center items-center text-sm md:text-base font-bold text-indigo-300 shadow-[0_0_15px_rgba(99,102,241,0.15)] transition-all gap-2 shrink-0">
+          <!-- 內容會由 JS 動態生成 -->
+        </div>
+
+        <!-- 歷史紀錄區域 -->
+        <div class="h-40 md:h-44 bg-slate-950/50 border border-slate-800/80 rounded-2xl p-4 flex flex-col min-h-0 space-y-2 shrink-0">
+          <div class="flex justify-between items-center text-xs text-slate-400">
+            <span class="font-bold flex items-center gap-1.5">📜 安科織夢歷史紀錄 (點擊複製)</span>
+            <div class="flex items-center gap-1 md:gap-2">
+              <button onclick="exportHistoryToCSV()" class="text-emerald-500 hover:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 px-2 py-1 rounded transition">匯出 CSV</button>
+              <button onclick="askClearHistory()" class="text-slate-500 hover:text-slate-300 underline px-2 py-1">清除</button>
+            </div>
+          </div>
+          <div id="history-log" class="flex-1 overflow-y-auto text-xs space-y-1.5 font-mono pr-1">
+            <div class="text-slate-600 text-center py-4">尚無織夢歷史紀錄</div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 全域 Toast 提示容器 -->
+  <div id="toast-container" class="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- 自訂確認彈窗 -->
+  <div id="confirm-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-[90] transition-opacity">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-2xl max-w-sm w-full mx-4 text-center transform scale-95 transition-transform duration-200" id="confirm-modal-content">
+      <div class="text-3xl mb-3">🧹</div>
+      <div class="text-lg font-bold text-slate-100 mb-6" id="confirm-msg">確定嗎喵？</div>
+      <div class="flex justify-center gap-4">
+        <button onclick="hideConfirm()" class="px-5 py-2.5 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold text-slate-300 transition">取消</button>
+        <button id="confirm-yes-btn" class="px-5 py-2.5 bg-rose-600 hover:bg-rose-500 rounded-xl font-bold text-white transition shadow-lg shadow-rose-500/30">確定</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const countInput = document.getElementById('dice-count');
+    const boostInput = document.getElementById('base-boost');
+    const targetValueInput = document.getElementById('target-value');
+    const emptyState = document.getElementById('empty-state');
+    const chainFlowDisplay = document.getElementById('chain-flow-display');
+    const strikeBadges = document.getElementById('strike-badges');
+    const diceContainer = document.getElementById('dice-container');
+    const historyLog = document.getElementById('history-log');
+    const totalSummary = document.getElementById('total-summary');
+    const debugSeqInput = document.getElementById('debug-seq');
+    const autoCopyToggle = document.getElementById('auto-copy-toggle'); // 新增
+    
+    document.addEventListener('contextmenu', e => e.preventDefault());
+
+    let checkMode = 'ra';
+    let history = [];
+
+    function showToast(msg, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      
+      let bgClass = 'bg-slate-700 text-slate-100';
+      if (type === 'success') bgClass = 'bg-emerald-600 text-white';
+      if (type === 'error') bgClass = 'bg-rose-600 text-white';
+      if (type === 'info') bgClass = 'bg-indigo-600 text-white';
+
+      toast.className = `px-4 py-3 rounded-xl text-sm font-bold shadow-2xl transition-all duration-300 transform translate-y-4 opacity-0 pointer-events-auto flex items-center gap-2 border border-white/10 ${bgClass}`;
+      toast.innerHTML = msg;
+      
+      container.appendChild(toast);
+      
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-4', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('translate-y-4', 'opacity-0');
+        setTimeout(() => toast.remove(), 300);
+      }, 2500);
+    }
+
+    function askClearHistory() {
+      if (history.length === 0) return;
+      
+      const modal = document.getElementById('confirm-modal');
+      const content = document.getElementById('confirm-modal-content');
+      const yesBtn = document.getElementById('confirm-yes-btn');
+      
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      setTimeout(() => {
+        content.classList.remove('scale-95');
+        content.classList.add('scale-100');
+      }, 10);
+
+      const newYesBtn = yesBtn.cloneNode(true);
+      yesBtn.parentNode.replaceChild(newYesBtn, yesBtn);
+      
+      newYesBtn.onclick = () => {
+        history = [];
+        saveHistory();
+        renderHistory();
+        hideConfirm();
+        showToast('🗑️ 歷史紀錄已清除喵！', 'success');
+      };
+    }
+
+    function hideConfirm() {
+      const modal = document.getElementById('confirm-modal');
+      const content = document.getElementById('confirm-modal-content');
+      content.classList.remove('scale-100');
+      content.classList.add('scale-95');
+      setTimeout(() => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }, 200);
+    }
+
+    function safeGet(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return fallback;
+        return JSON.parse(raw);
+      } catch (e) {
+        return fallback;
+      }
+    }
+
+    function safeSet(key, value) {
+      try {
+        localStorage.setItem(key, JSON.stringify(value));
+      } catch (e) {
+        console.warn('[Fate] localStorage 寫入失敗', e);
+      }
+    }
+
+    function loadSettings() {
+      const s = safeGet('fate_dreamweaver_settings', null);
+      if (s) {
+        countInput.value = s.count || 1;
+        boostInput.value = s.boost || 0;
+        targetValueInput.value = s.target || 50;
+        setCheckMode(s.mode || 'ra');
+        if (s.autoCopy) autoCopyToggle.checked = true;
+      }
+      const savedHistory = safeGet('fate_dreamweaver_history', []);
+      if (Array.isArray(savedHistory)) {
+        history = savedHistory.slice(0, 200); 
+      }
+      renderHistory();
+    }
+
+    function saveSettings() {
+      safeSet('fate_dreamweaver_settings', {
+        count: Number(countInput.value) || 1,
+        boost: Number(boostInput.value) || 0,
+        target: Number(targetValueInput.value) || 50,
+        mode: checkMode,
+        autoCopy: autoCopyToggle.checked
+      });
+    }
+
+    function saveHistory() {
+      safeSet('fate_dreamweaver_history', history);
+    }
+
+    function setCheckMode(mode) {
+      checkMode = mode;
+      const btnRa = document.getElementById('btn-mode-ra');
+      const btnRo = document.getElementById('btn-mode-ro');
+      const modeDesc = document.getElementById('mode-desc');
+
+      if (mode === 'ra') {
+        btnRa.className = "flex-1 py-1.5 md:py-1 text-xs font-bold rounded-md bg-indigo-600 text-white transition";
+        btnRo.className = "flex-1 py-1.5 md:py-1 text-xs font-bold rounded-md text-slate-400 hover:text-white transition";
+        modeDesc.innerText = "ra (<= 目標值成功)";
+      } else {
+        btnRo.className = "flex-1 py-1.5 md:py-1 text-xs font-bold rounded-md bg-emerald-600 text-white transition";
+        btnRa.className = "flex-1 py-1.5 md:py-1 text-xs font-bold rounded-md text-slate-400 hover:text-white transition";
+        modeDesc.innerText = "ro (>= 目標值成功)";
+      }
+      saveSettings();
+    }
+
+    function adjustCount(delta) {
+      let val = Number(countInput.value) || 1;
+      val = Math.max(1, Math.min(20, val + delta));
+      countInput.value = val;
+      saveSettings();
+    }
+
+    function adjustBoost(delta) {
+      let val = Number(boostInput.value) || 0;
+      boostInput.value = val + delta;
+      saveSettings();
+    }
+
+    function playAnimation() {
+      diceContainer.classList.remove('animate-roll');
+      void diceContainer.offsetWidth;
+      diceContainer.classList.add('animate-roll');
+    }
+
+    function getRnd(max, debugSeq, state) {
+      if (debugSeq && debugSeq.length > 0 && state.index < debugSeq.length) {
+        let val = debugSeq[state.index++];
+        if (val > max) val = max;
+        if (val < 1) val = 1;
+        return val;
+      }
+      return Math.floor(Math.random() * max) + 1;
+    }
+
+    function rollChainEngine(startType, boost, targetVal, mode, debugSeq, state) {
+      let steps = [];
+      let currentLevel = 0;
+      let initialChainOutcome = null; 
+      let currentStack = 0;           
+
+      function getDieType(lvl) {
+        return lvl === 0 ? startType : '1d10';
+      }
+
+      let continueLoop = true;
+      let loopSafety = 0;
+
+      while (continueLoop && loopSafety < 50) {
+        loopSafety++;
+        let dieType = getDieType(currentLevel);
+        let levelStr = `s${currentLevel}`;
+
+        if (dieType === '1d100') {
+          const raw100 = getRnd(100, debugSeq, state);
+          const final100 = raw100 + boost;
+          let isSuccess = (mode === 'ra') ? (final100 <= targetVal) : (final100 >= targetVal);
+          let checkDetail = `[${mode.toUpperCase()} ${mode === 'ra' ? '<=' : '>='} ${targetVal}] ➔ ${isSuccess ? '✅ 成功' : '❌ 失敗'}`;
+
+          let step = { levelStr, type: '1d100', raw: raw100, final: final100, extraD2: null, outcome: null, msg: '', checkDetail };
+
+          if (raw100 <= 5) {
+            step.outcome = 'DF-Trigger';
+            currentLevel++;
+            step.msg = `🎲 1d100 = ${raw100} (1~5) ➔ 進入 s${currentLevel} (1d10)！ (${checkDetail})`;
+            steps.push(step);
+            continueLoop = true;
+          } else if (raw100 >= 96) {
+            const currentOutcome = '大成功';
+            if (!initialChainOutcome) initialChainOutcome = currentOutcome;
+            currentStack++;
+            step.outcome = currentOutcome;
+            currentLevel++;
+            step.msg = `✨ 1d100 = ${raw100} (96~100: 大成功) ➔ 進入 s${currentLevel} (1d10)！ | ${checkDetail}`;
+            steps.push(step);
+            continueLoop = true;
+          } else {
+            step.msg = `1d100 結果: ${raw100} | ${checkDetail}`;
+            steps.push(step);
+            continueLoop = false;
+          }
+
+        } else if (dieType === '1d10') {
+          const raw10 = getRnd(10, debugSeq, state);
+          const final10 = raw10 + boost;
+          let step = { levelStr, type: '1d10', raw: raw10, final: final10, extraD2: null, outcome: null, msg: '', checkDetail: '' };
+
+          if (raw10 === 10) {
+            const d2 = getRnd(2, debugSeq, state);
+            step.extraD2 = d2;
+            const currentOutcome = (d2 === 1) ? '大成功' : '大失敗';
+            step.outcome = currentOutcome;
+
+            if (!initialChainOutcome) initialChainOutcome = currentOutcome;
+
+            if (currentOutcome === initialChainOutcome) {
+              currentStack++;
+              currentLevel++;
+              step.msg = `${currentOutcome === '大成功' ? '✨' : '💥'} 1d10=10 ➔ 1d2=${d2} (${currentOutcome})！與基準 (${initialChainOutcome}) 同向 ➔ 深入加疊至 s${currentLevel} (1d10)！`;
+            } else {
+              if (currentStack > 0) currentStack--;
+              if (currentLevel > 0) {
+                currentLevel--;
+                let prevDie = getDieType(currentLevel);
+                step.msg = `${currentOutcome === '大成功' ? '✨' : '💥'} 1d10=10 ➔ 1d2=${d2} (${currentOutcome})！與基準 (${initialChainOutcome}) 反向 ➔ 退回 s${currentLevel} (${prevDie})！`;
+              } else {
+                step.msg = `${currentOutcome === '大成功' ? '✨' : '💥'} 1d10=10 ➔ 1d2=${d2} (${currentOutcome})！與基準 (${initialChainOutcome}) 反向 ➔ 退回起始層 s0！`;
+              }
+            }
+            steps.push(step);
+            continueLoop = true;
+          } else {
+            step.msg = `1d10 普通結果 ➔ 原始: ${raw10}`;
+            steps.push(step);
+            continueLoop = false;
+          }
+        } else {
+          const sides = parseInt(dieType.replace('d', ''));
+          const raw = getRnd(sides, debugSeq, state);
+          const final = raw + boost;
+          let isSuccess = (mode === 'ra') ? (final <= targetVal) : (final >= targetVal);
+          let checkDetail = `[${mode.toUpperCase()} ${mode === 'ra' ? '<=' : '>='} ${targetVal}] ➔ ${isSuccess ? '✅ 成功' : '❌ 失敗'}`;
+          steps.push({ levelStr, type: dieType, raw, final, extraD2: null, outcome: null, msg: `擲出 ${dieType} ➔ 原始: ${raw} | ${checkDetail}`, checkDetail });
+          continueLoop = false;
+        }
+      }
+      return { steps, finalStack: currentStack, baseOutcome: initialChainOutcome };
+    }
+
+    function renderBadges(totalSuccessStacks, totalFailStacks, isDebug) {
+      let strikeHtml = '';
+      if (totalSuccessStacks > 0) strikeHtml += `<span class="px-2 py-1 bg-emerald-950 border border-emerald-500/60 text-emerald-400 rounded-full text-[11px]">✨ 淨計: ${totalSuccessStacks}重大成功</span>`;
+      if (totalFailStacks > 0) strikeHtml += `<span class="px-2 py-1 bg-rose-950 border border-rose-500/60 text-rose-400 rounded-full text-[11px]">💥 淨計: ${totalFailStacks}重大失敗</span>`;
+      if (totalSuccessStacks === 0 && totalFailStacks === 0) strikeHtml += `<span class="px-2 py-1 bg-slate-800 border border-slate-700 text-slate-400 rounded-full text-[11px]">⚪ 淨計: 0 Stacks</span>`;
+      
+      if (isDebug) strikeHtml += `<span class="px-2 py-1 bg-fuchsia-950 border border-fuchsia-500/60 text-fuchsia-400 rounded-full text-[11px]">🧪 測試模式</span>`;
+      strikeBadges.innerHTML = strikeHtml;
+    }
+
+    function renderFlow(allRuns, count) {
+      let flowHtml = '';
+      allRuns.forEach((run, idx) => {
+        if (count > 1) {
+          flowHtml += `<div class="font-bold text-amber-400 text-xs border-l-2 border-amber-400 pl-2 mt-2"># 第 ${idx + 1} 次安科織夢：</div>`;
+        }
+
+        run.steps.forEach((s, sIdx) => {
+          let stepBg = 'bg-slate-900 border-slate-800';
+          let glowClass = ''; 
+
+          if (s.outcome === '大成功') {
+            stepBg = 'bg-emerald-950/40 border-emerald-500/40';
+            glowClass = 'glow-cs';
+          } else if (s.outcome === '大失敗') {
+            stepBg = 'bg-rose-950/40 border-rose-500/40';
+            glowClass = 'glow-cf';
+          } else if (s.outcome === 'DF-Trigger') {
+            stepBg = 'bg-amber-950/40 border-amber-500/40';
+          }
+
+          const levelNum = parseInt(s.levelStr.replace('s', ''));
+          if (levelNum >= 3) {
+            glowClass = 'glow-high';
+          }
+
+          const isLast = (sIdx === run.steps.length - 1);
+          let stackBadge = '';
+          if (isLast) {
+            if (run.finalStack > 0 && run.baseOutcome) {
+              if (run.baseOutcome === '大成功') {
+                stackBadge = `<span class="px-2 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 rounded-lg font-black text-[10px] md:text-xs">✨ 結算：${run.finalStack}重大成功</span>`;
+              } else {
+                stackBadge = `<span class="px-2 py-1 bg-rose-500/20 text-rose-300 border border-rose-500/50 rounded-lg font-black text-[10px] md:text-xs">💥 結算：${run.finalStack}重大失敗</span>`;
+              }
+            } else {
+              stackBadge = `<span class="px-2 py-1 bg-slate-800 text-slate-400 border border-slate-700 rounded-lg text-[10px] md:text-[11px] font-bold">⚪ 結算：0 Stacks</span>`;
+            }
+          }
+
+          flowHtml += `
+            <div class="${stepBg} ${glowClass} border rounded-xl p-3 flex flex-col md:flex-row md:items-center justify-between text-xs transition-all gap-2 virtual-scroll-item">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="px-2 py-0.5 bg-indigo-950 text-indigo-300 border border-indigo-500/30 font-mono rounded text-[10px] font-bold">${s.levelStr}</span>
+                <span class="px-2 py-0.5 bg-slate-800 text-slate-400 font-mono rounded text-[10px] font-bold">Step ${sIdx + 1}</span>
+                <span class="font-bold text-slate-200 leading-relaxed">${s.msg}</span>
+              </div>
+              <div class="flex flex-wrap items-center gap-2 justify-end">
+                ${s.extraD2 ? `<span class="font-mono bg-slate-800 px-2 py-0.5 rounded text-amber-300 text-[10px] md:text-xs">1d2=${s.extraD2}</span>` : ''}
+                ${stackBadge}
+                <span class="text-xs md:text-sm font-black text-amber-400 font-mono">最終: ${s.final}</span>
+              </div>
+            </div>
+          `;
+        });
+      });
+      chainFlowDisplay.innerHTML = flowHtml;
+      setTimeout(() => { diceContainer.scrollTop = diceContainer.scrollHeight; }, 50);
+    }
+
+    function renderTotalSum(allRuns, boost) {
+      let totalSum = 0;
+      let nonTriggerSum = 0;
+      let formulaParts = [];
+      let hasTrigger = false;
+
+      allRuns.forEach(run => {
+        const initialStep = run.steps[0];
+        const isTrigger = run.steps.length > 1;
+        
+        totalSum += initialStep.final;
+        if (isTrigger) hasTrigger = true;
+        else nonTriggerSum += initialStep.final;
+        
+        let partStr = boost !== 0 ? `(${initialStep.raw}${boost > 0 ? '+' : ''}${boost})` : `${initialStep.raw}`;
+        if (isTrigger) partStr = `<span class="text-amber-400 font-bold" title="觸發連鎖">${partStr}</span>`; 
+        formulaParts.push(partStr);
+      });
+
+      if (formulaParts.length > 1 || boost !== 0) {
+        let sumHtml = `🧮 本輪總和：<span class="font-mono text-slate-400 mx-2">${formulaParts.join(' + ')}</span> = 
+          <span class="text-amber-400 text-lg md:text-xl ml-1 cursor-pointer hover:text-amber-300 transition-colors" 
+                title="點擊複製總和" onclick="copyTotalSum(${totalSum})">${totalSum}</span>`;
+                
+        if (hasTrigger) sumHtml += `<span class="ml-2 md:ml-3 text-xs text-slate-500 font-normal">（不含觸發骰：${nonTriggerSum}）</span>`;
+        totalSummary.innerHTML = sumHtml;
+        totalSummary.classList.remove('hidden');
+      } else {
+        totalSummary.classList.add('hidden');
+      }
+      return totalSum;
+    }
+
+    function copyTotalSum(val) {
+      navigator.clipboard.writeText(val.toString()).then(() => {
+        showToast(`📋 已複製總和：${val} 喵！`, 'success');
+      }).catch(() => {
+        try {
+          const textArea = document.createElement("textarea");
+          textArea.value = val;
+          document.body.appendChild(textArea);
+          textArea.select();
+          document.execCommand("copy");
+          document.body.removeChild(textArea);
+          showToast(`📋 已複製總和：${val} 喵！`, 'success');
+        } catch (e) {
+          showToast('❌ 複製失敗了喵...', 'error');
+        }
+      });
+    }
+
+    function executeRoll(type) {
+      playAnimation();
+      
+      let count = Number(countInput.value) || 1;
+      count = Math.max(1, Math.min(20, count));
+      countInput.value = count;
+      const boost = Number(boostInput.value) || 0;
+      let targetVal = Number(targetValueInput.value) || 50;
+      targetVal = Math.max(1, Math.min(100, targetVal));
+      targetValueInput.value = targetVal;
+
+      saveSettings(); 
+
+      let debugSeq = [];
+      let isDebug = false;
+      if (debugSeqInput && debugSeqInput.value.trim() !== '') {
+        isDebug = true;
+        debugSeq = debugSeqInput.value.split(',').map(s => Number(s.trim())).filter(n => !isNaN(n));
+      }
+      const debugState = { index: 0 };
+
+      emptyState.classList.add('hidden');
+      chainFlowDisplay.classList.remove('hidden');
+      totalSummary.classList.add('hidden'); 
+
+      let allRuns = [];
+      let totalSuccessStacks = 0;
+      let totalFailStacks = 0;
+
+      for (let i = 0; i < count; i++) {
+        const run = rollChainEngine(type, boost, targetVal, checkMode, debugSeq, debugState);
+        allRuns.push(run);
+        if (run.finalStack > 0 && run.baseOutcome) {
+          if (run.baseOutcome === '大成功') totalSuccessStacks += run.finalStack;
+          if (run.baseOutcome === '大失敗') totalFailStacks += run.finalStack;
+        }
+      }
+
+      renderBadges(totalSuccessStacks, totalFailStacks, isDebug);
+      renderFlow(allRuns, count);
+      const totalSum = renderTotalSum(allRuns, boost);
+
+      let detailArr = [];
+      allRuns.forEach((run, idx) => {
+        let stepStrArr = run.steps.map(s => {
+          let str = `${s.levelStr}:${s.type}=${s.raw}`;
+          if (s.extraD2) str += `(1d2=${s.extraD2})`;
+          if (s.outcome === '大成功') str += '✨';
+          if (s.outcome === '大失敗') str += '💥';
+          if (s.outcome === 'DF-Trigger') str += '🎲';
+          return str;
+        });
+        let runStr = stepStrArr.join('→');
+        if (run.steps.length > 1) runStr = `[觸發]${runStr}`;
+        if (count > 1) runStr = `[${idx + 1}] ${runStr}`;
+        detailArr.push(runStr);
+      });
+      const detailText = detailArr.join(' | ');
+
+      const boostText = boost !== 0 ? ` (B:${boost >= 0 ? '+' : ''}${boost})` : '';
+      const sumText = totalSummary.classList.contains('hidden') ? '' : ` ｜ 總和: ${totalSum}`;
+      const debugText = isDebug ? '[🧪測試] ' : '';
+      const summaryText = `${debugText}${count}x ${type}${boostText} [${checkMode.toUpperCase()}:${targetVal}] ➔ 淨計: ${totalSuccessStacks}成功 / ${totalFailStacks}失敗${sumText}`;
+      
+      addHistory(summaryText, detailText);
+
+      // === 自動複製公式 ===
+      if (autoCopyToggle.checked) {
+        const parts = allRuns.map(run => {
+          const step = run.steps[0];
+          const b = boost;
+          return b !== 0 ? `(${step.raw}${b > 0 ? '+' : ''}${b})` : `(${step.raw})`;
+        });
+        const prefix = count + 'd' + (type.includes('d') ? type.split('d')[1] : type);
+        const formulaString = `${prefix}=${parts.join('+')}=(${totalSum})`;
+        
+        navigator.clipboard.writeText(formulaString).then(() => {
+          showToast(`📋 已自動複製：${formulaString}`, 'success');
+        }).catch(() => {
+          try {
+            const textArea = document.createElement("textarea");
+            textArea.value = formulaString;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand("copy");
+            document.body.removeChild(textArea);
+            showToast(`📋 已自動複製：${formulaString}`, 'success');
+          } catch (e) {
+            showToast('❌ 複製失敗了喵...', 'error');
+          }
+        });
+      }
+    }
+
+    function addHistory(summary, detail) {
+      const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      history.unshift({ time: now, summary: summary, detail: detail });
+      if (history.length > 200) history.pop(); 
+      saveHistory();
+      renderHistory();
+    }
+
+    function renderHistory() {
+      if (!Array.isArray(history) || history.length === 0) {
+        historyLog.innerHTML = `<div class="text-slate-600 text-center py-4">尚無織夢歷史紀錄</div>`;
+        return;
+      }
+      historyLog.innerHTML = history.map((item, index) => {
+        const sText = item.summary || item.text || '無摘要';
+        const dText = item.detail || '';
+        
+        return `
+          <div class="flex flex-col py-2 border-b border-slate-800/60 last:border-0 gap-1 cursor-pointer hover:bg-slate-800/50 rounded px-1 transition-colors virtual-scroll-item" onclick="copyHistory(${index})">
+            <div class="flex justify-between items-center gap-2 pointer-events-none">
+              <span class="text-slate-300 text-[11px] md:text-xs font-bold leading-tight break-all">${sText}</span>
+              <span class="text-[10px] text-slate-500 shrink-0">${item.time}</span>
+            </div>
+            ${dText ? `<span class="text-[10px] text-indigo-300 font-mono leading-tight break-all bg-indigo-950/30 px-2 py-1 rounded border-l-2 border-indigo-500/50 pointer-events-none">${dText}</span>` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function copyHistory(index) {
+      const item = history[index];
+      if (!item) return;
+      
+      let textToCopy = item.summary;
+      if (item.detail) textToCopy += `\n詳細軌跡：${item.detail}`;
+      
+      navigator.clipboard.writeText(textToCopy).then(() => {
+        showToast('📋 已複製到剪貼簿喵！', 'success');
+      }).catch(() => {
+        try {
+          const textArea = document.createElement("textarea");
+          textArea.value = textToCopy;
+          document.body.appendChild(textArea);
+          textArea.select();
+          document.execCommand("copy");
+          document.body.removeChild(textArea);
+          showToast('📋 已複製到剪貼簿喵！', 'success');
+        } catch (e) {
+          showToast('❌ 複製失敗了喵...', 'error');
+        }
+      });
+    }
+
+    function exportHistoryToCSV() {
+      if (!Array.isArray(history) || history.length === 0) {
+        showToast('❌ 菲特表示：目前沒有紀錄可以匯出喵！', 'error');
+        return;
+      }
+      
+      let csvContent = "\uFEFF時間,摘要,詳細骰子軌跡\n";
+      const reversedHistory = [...history].reverse();
+      
+      reversedHistory.forEach(item => {
+        const sText = item.summary || item.text || '';
+        const dText = item.detail || '';
+        const safeSummary = `"${sText.replace(/"/g, '""')}"`;
+        const safeDetail = `"${dText.replace(/"/g, '""')}"`;
+        csvContent += `${item.time},${safeSummary},${safeDetail}\n`;
+      });
+
+      const defaultFileName = `Fate_DreamWeaver_Log_${new Date().toISOString().slice(0,10)}.csv`;
+
+      if (window.pywebview && window.pywebview.api) {
+        window.pywebview.api.save_csv(csvContent, defaultFileName).then((response) => {
+          if (response && response.success) showToast('✅ 檔案已儲存喵！', 'success');
+          else if (response && response.canceled) { /* 使用者取消 */ }
+          else showToast('❌ 存檔失敗喵。', 'error');
+        });
+      } else {
+        try {
+          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.setAttribute("href", url);
+          link.setAttribute("download", defaultFileName);
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          showToast('✅ 檔案已下載喵！', 'success');
+        } catch (e) {
+          showToast('❌ 匯出失敗，可能是瀏覽器限制。', 'error');
+        }
+      }
+    }
+
+    document.addEventListener('keydown', function(e) {
+      const tag = e.target.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'BUTTON' || e.target.isContentEditable) return;
+      
+      if (e.code === 'Space' || e.key === 'Enter') {
+        e.preventDefault(); 
+        executeRoll('1d100');
+      } else if (e.key === '1') {
+        executeRoll('1d10');
+      } else if (e.key === '2') {
+        executeRoll('1d100');
+      }
+    });
+
+    window.addEventListener('DOMContentLoaded', loadSettings);
+
+  </script>
+</body>
+</html>

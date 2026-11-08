@@ -1,0 +1,474 @@
+{
+ "project": "Fate-Dreamweaver-Engine",
+ "generated": "2026-11-09",
+ "note": "全部 83+ 件歷史產物歸檔;47 個里程碑以 git tag v1~v47 標記;誕生對話與 Gemini 線的時間為近似(對話建立日),DeepSeek 對話時間為 API 精確時間戳",
+ "tagged_versions": [
+  {
+   "tag": "v1",
+   "date": "2026-10-02T20:00:00",
+   "file": "dice_prototype.py",
+   "bytes": 1710,
+   "source": "dl\\gemini-code-1794153317950.py",
+   "message": "v1: Python 原型——1d10/1d2 與 1d100 極值觸發邏輯(專案誕生)"
+  },
+  {
+   "tag": "v2",
+   "date": "2026-10-02T20:05:00",
+   "file": "dice_machine.html",
+   "bytes": 8196,
+   "source": "dl\\gemini-code-1794153322982.html",
+   "message": "v2: 第一個 HTML GUI 版"
+  },
+  {
+   "tag": "v3",
+   "date": "2026-10-02T20:10:00",
+   "file": "dice_machine.html",
+   "bytes": 15698,
+   "source": "dl\\gemini-code-1794153326385.html",
+   "message": "v3: 回歸舊介面 + 多顆骰 + 自訂基礎 Boost"
+  },
+  {
+   "tag": "v4",
+   "date": "2026-10-02T20:15:00",
+   "file": "dice_machine.html",
+   "bytes": 12110,
+   "source": "dl\\gemini-code-1794153329808.html",
+   "message": "v4: 第一版介面重製"
+  },
+  {
+   "tag": "v5",
+   "date": "2026-10-02T20:20:00",
+   "file": "dice_machine.html",
+   "bytes": 14263,
+   "source": "dl\\gemini-code-1794153333520.html",
+   "message": "v5: 1d10=10 連鎖追擲機制(安科連鎖誕生)"
+  },
+  {
+   "tag": "v6",
+   "date": "2026-10-02T20:25:00",
+   "file": "dice_machine.html",
+   "bytes": 17209,
+   "source": "dl\\gemini-code-1794153337278.html",
+   "message": "v6: 1d100 骰數支援修正"
+  },
+  {
+   "tag": "v7",
+   "date": "2026-10-02T20:30:00",
+   "file": "dice_machine.html",
+   "bytes": 16964,
+   "source": "dl\\gemini-code-1794153340645.html",
+   "message": "v7: 16:9 全螢幕 UI + 連鎖支援 1d10 起手"
+  },
+  {
+   "tag": "v8",
+   "date": "2026-10-02T20:35:00",
+   "file": "dice_machine.html",
+   "bytes": 17848,
+   "source": "dl\\gemini-code-1794153344183.html",
+   "message": "v8: CS/CF 交替抵銷提醒與連擊統計"
+  },
+  {
+   "tag": "v9",
+   "date": "2026-10-02T20:40:00",
+   "file": "dice_machine.html",
+   "bytes": 17534,
+   "source": "dl\\gemini-code-1794153347802.html",
+   "message": "v9: ra/ro 大於小於檢定模式"
+  },
+  {
+   "tag": "v10",
+   "date": "2026-10-02T20:45:00",
+   "file": "dice_machine.html",
+   "bytes": 17547,
+   "source": "dl\\gemini-code-1794153351329.html",
+   "message": "v10: 1d100 極值定案 1~5 / 96~100"
+  },
+  {
+   "tag": "v11",
+   "date": "2026-10-02T20:50:00",
+   "file": "dice_machine.html",
+   "bytes": 20723,
+   "source": "dl\\gemini-code-1794153354909.html",
+   "message": "v11: ra 與 ro 雙模式並行"
+  },
+  {
+   "tag": "v12",
+   "date": "2026-10-02T20:55:00",
+   "file": "dice_machine.html",
+   "bytes": 21037,
+   "source": "dl\\gemini-code-1794153358417.html",
+   "message": "v12: 層級(s0/s1)流向實作"
+  },
+  {
+   "tag": "v13",
+   "date": "2026-10-02T21:00:00",
+   "file": "dice_machine.html",
+   "bytes": 19482,
+   "source": "dl\\gemini-code-1794153365823.html",
+   "message": "v13: s0/s1 層級對應修正"
+  },
+  {
+   "tag": "v14",
+   "date": "2026-10-02T21:05:00",
+   "file": "dice_machine.html",
+   "bytes": 20491,
+   "source": "dl\\gemini-code-1794153380010.html",
+   "message": "v14: 層級堆疊方向修正(反向退回)"
+  },
+  {
+   "tag": "v15",
+   "date": "2026-10-02T21:10:00",
+   "file": "dice_machine.html",
+   "bytes": 20404,
+   "source": "dl\\gemini-code-1794153383534.html",
+   "message": "v15: CS/CF 改名「大成功/大失敗」+ x重大成功/x重大失敗"
+  },
+  {
+   "tag": "v16",
+   "date": "2026-10-02T21:15:00",
+   "file": "dice_machine.html",
+   "bytes": 21075,
+   "source": "dl\\gemini-code-1794153392536.html",
+   "message": "v16: 淨 Stacks 顯示於 Last Roll"
+  },
+  {
+   "tag": "v17",
+   "date": "2026-10-02T21:20:00",
+   "file": "dice_machine.html",
+   "bytes": 22028,
+   "source": "dl\\gemini-code-1794153395955.html",
+   "message": "v17: 0 Stacks 結算修正"
+  },
+  {
+   "tag": "v18",
+   "date": "2026-11-05T16:16:00",
+   "file": "dice_machine.html",
+   "bytes": 22531,
+   "source": "api_dm\\api_01_2026-11-05_1616.html",
+   "message": "v18: DeepSeek 接手——CSS 語法與「退回起始層」措辭修正"
+  },
+  {
+   "tag": "v19",
+   "date": "2026-11-05T16:25:00",
+   "file": "dice_machine.html",
+   "bytes": 23591,
+   "source": "api_dm\\api_03_2026-11-05_1625.html",
+   "message": "v19: CSV 紀錄匯出"
+  },
+  {
+   "tag": "v20",
+   "date": "2026-11-05T16:36:00",
+   "file": "dice_machine.html",
+   "bytes": 25520,
+   "source": "api_dm\\api_05_2026-11-05_1636.html",
+   "message": "v20: 專案定名 Fate/菲特"
+  },
+  {
+   "tag": "v21",
+   "date": "2026-11-05T16:40:00",
+   "file": "dice_machine.html",
+   "bytes": 25462,
+   "source": "api_dm\\api_07_2026-11-05_1640.html",
+   "message": "v21: 織夢機 Fate 標題定案"
+  },
+  {
+   "tag": "v22",
+   "date": "2026-11-05T16:45:00",
+   "file": "dice_machine.html",
+   "bytes": 27766,
+   "source": "api_dm\\api_09_2026-11-05_1645.html",
+   "message": "v22: 紀錄逐顆列出所有骰子"
+  },
+  {
+   "tag": "v23",
+   "date": "2026-11-05T16:52:00",
+   "file": "dice_machine.html",
+   "bytes": 27748,
+   "source": "api_dm\\api_10_2026-11-05_1652.html",
+   "message": "v23: 空狀態文案「命運的經緯在此交織」"
+  },
+  {
+   "tag": "v24",
+   "date": "2026-11-05T17:01:00",
+   "file": "dice_machine.html",
+   "bytes": 29306,
+   "source": "api_dm\\api_11_2026-11-05_1701.html",
+   "message": "v24: 連續擲骰總和系統 + Boost 顯示"
+  },
+  {
+   "tag": "v25",
+   "date": "2026-11-05T17:13:00",
+   "file": "dice_machine.html",
+   "bytes": 31832,
+   "source": "api_dm\\api_13_2026-11-05_1713.html",
+   "message": "v25: debug 測試序列輸入"
+  },
+  {
+   "tag": "v26",
+   "date": "2026-11-05T17:32:00",
+   "file": "dice_machine.html",
+   "bytes": 33010,
+   "source": "api_dm\\api_15_2026-11-05_1732.html",
+   "message": "v26: pywebview 打包方向 + CSV 修正 + 視窗尺寸"
+  },
+  {
+   "tag": "v27",
+   "date": "2026-11-05T17:57:00",
+   "file": "dice_machine.html",
+   "bytes": 39043,
+   "source": "api_dm\\api_16_2026-11-05_1757.html",
+   "message": "v27: 虛擬滾動、點擊複製與三項優化"
+  },
+  {
+   "tag": "v28",
+   "date": "2026-11-05T18:22:00",
+   "file": "dice_machine.html",
+   "bytes": 41582,
+   "source": "api_dm\\api_22_2026-11-05_1822.html",
+   "message": "v28: 自動複製公式 xdy=(r1+b)+(r2+b)=(sum)"
+  },
+  {
+   "tag": "v29",
+   "date": "2026-11-05T18:28:00",
+   "file": "dice_machine.html",
+   "bytes": 41649,
+   "source": "api_dm\\api_24_2026-11-05_1828.html",
+   "message": "v29: 總和永不加括號"
+  },
+  {
+   "tag": "v30",
+   "date": "2026-11-05T19:02:00",
+   "file": "dice_machine.html",
+   "bytes": 43131,
+   "source": "api_dm\\api_28_2026-11-05_1902.html",
+   "message": "v30: Boost v3 模式(降面 + CF/CS 看最終值)"
+  },
+  {
+   "tag": "v31",
+   "date": "2026-11-05T19:21:00",
+   "file": "dice_machine.html",
+   "bytes": 44203,
+   "source": "api_dm\\api_30_2026-11-05_1921.html",
+   "message": "v31: 負 Boost 降面處理 + Last Step 總和規則"
+  },
+  {
+   "tag": "v32",
+   "date": "2026-11-08T17:41:00",
+   "file": "dice_machine.html",
+   "bytes": 48977,
+   "source": "api_dm\\api_34_2026-11-08_1741.html",
+   "message": "v32: 設定選項頁與功能擴充"
+  },
+  {
+   "tag": "v33",
+   "date": "2026-11-08T18:34:00",
+   "file": "dice_machine.html",
+   "bytes": 50324,
+   "source": "api_dm\\api_38_2026-11-08_1834.html",
+   "message": "v33: 深色主題對比度修正"
+  },
+  {
+   "tag": "v34",
+   "date": "2026-11-08T19:02:00",
+   "file": "dice_machine.html",
+   "bytes": 59987,
+   "source": "api_dm\\api_44_2026-11-08_1902.html",
+   "message": "v34: 戰鬥版——技能/符卡、回合制與雙人對戰"
+  },
+  {
+   "tag": "v35",
+   "date": "2026-11-08T19:04:00",
+   "file": "dice_machine.html",
+   "bytes": 49954,
+   "source": "api_dm\\api_45_2026-11-08_1904.html",
+   "message": "v35: 經典版分岔(移除戰鬥系統)"
+  },
+  {
+   "tag": "v36",
+   "date": "2026-11-08T19:11:00",
+   "file": "index_classic.html",
+   "bytes": 50026,
+   "source": "api_classic\\api_01_2026-11-08_1911.html",
+   "message": "v36: A/B/C 裁決實作(措辭/DF-Trigger/通用骰方向)"
+  },
+  {
+   "tag": "v37",
+   "date": "2026-11-08T19:14:00",
+   "file": "index_classic.html",
+   "bytes": 47745,
+   "source": "api_classic\\api_02_2026-11-08_1914.html",
+   "message": "v37: 移除 HP/SAN 狀態追蹤"
+  },
+  {
+   "tag": "v38",
+   "date": "2026-11-08T21:08:00",
+   "file": "index_classic.html",
+   "bytes": 51477,
+   "source": "api_classic\\api_04_2026-11-08_2108.html",
+   "message": "v38: 代碼審查修復"
+  },
+  {
+   "tag": "v39",
+   "date": "2026-11-08T21:16:00",
+   "file": "index_classic.html",
+   "bytes": 50839,
+   "source": "api_classic\\api_05_2026-11-08_2116.html",
+   "message": "v39: 代碼優化"
+  },
+  {
+   "tag": "v40",
+   "date": "2026-11-08T22:29:00",
+   "file": "index_classic.html",
+   "bytes": 54105,
+   "source": "api_classic\\api_07_2026-11-08_2229.html",
+   "message": "v40: 重新優化(規則不變)"
+  },
+  {
+   "tag": "v41",
+   "date": "2026-11-08T22:34:00",
+   "file": "index_classic.html",
+   "bytes": 67962,
+   "source": "api_classic\\api_08_2026-11-08_2234.html",
+   "message": "v41: 跨平台相容版(Windows/macOS/Android/iOS/Linux)"
+  },
+  {
+   "tag": "v42",
+   "date": "2026-11-08T23:30:00",
+   "file": "index_classic.html",
+   "bytes": 47803,
+   "source": "dl\\gemini-code-1794152565022.html",
+   "message": "v42: Gemini 線接手——經典版首個完整輸出"
+  },
+  {
+   "tag": "v43",
+   "date": "2026-11-08T23:35:00",
+   "file": "index_classic.html",
+   "bytes": 49050,
+   "source": "dl\\gemini-code-1794152568944.html",
+   "message": "v43: 大失敗用語統一 + 自訂骰 ra/ro 語法 + Boost 隔離"
+  },
+  {
+   "tag": "v44",
+   "date": "2026-11-08T23:40:00",
+   "file": "index_classic.html",
+   "bytes": 49570,
+   "source": "dl\\gemini-code-1794152571704.html",
+   "message": "v44: 五項審查修復(按鈕文案/regex 空格/快捷鍵/自動複製/死碼)"
+  },
+  {
+   "tag": "v45",
+   "date": "2026-11-08T23:45:00",
+   "file": "index_classic.html",
+   "bytes": 50257,
+   "source": "dl\\gemini-code-1794152574563.html",
+   "message": "v45: 密碼學安全隨機數 + 浮點與邊界防呆"
+  },
+  {
+   "tag": "v46",
+   "date": "2026-11-08T23:50:00",
+   "file": "index_classic.html",
+   "bytes": 50357,
+   "source": "dl\\gemini-code-1794152577479.html",
+   "message": "v46: 骰數上限解放至 50 + main.py + README"
+  }
+ ],
+ "legacy_groups": {
+  "01_python_prototype": [
+   "gemini-code-1794153317950.py"
+  ],
+  "02_birth_convo_2026-10-02": [
+   "gemini-code-1794153322982.html",
+   "gemini-code-1794153326385.html",
+   "gemini-code-1794153329808.html",
+   "gemini-code-1794153333520.html",
+   "gemini-code-1794153337278.html",
+   "gemini-code-1794153340645.html",
+   "gemini-code-1794153344183.html",
+   "gemini-code-1794153347802.html",
+   "gemini-code-1794153351329.html",
+   "gemini-code-1794153354909.html",
+   "gemini-code-1794153358417.html",
+   "gemini-code-1794153362197.html",
+   "gemini-code-1794153365823.html",
+   "gemini-code-1794153369403.html",
+   "gemini-code-1794153372913.html",
+   "gemini-code-1794153376489.html",
+   "gemini-code-1794153380010.html",
+   "gemini-code-1794153383534.html",
+   "gemini-code-1794153387095.html",
+   "gemini-code-1794153392536.html",
+   "gemini-code-1794153395955.html",
+   "gemini-code-1794153401067.html"
+  ],
+  "03_dm_convo_2026-11-05": [
+   "api_01_2026-11-05_1616.html",
+   "api_02_2026-11-05_1621.html",
+   "api_03_2026-11-05_1625.html",
+   "api_04_2026-11-05_1628.html",
+   "api_05_2026-11-05_1636.html",
+   "api_06_2026-11-05_1639.html",
+   "api_07_2026-11-05_1640.html",
+   "api_08_2026-11-05_1641.html",
+   "api_09_2026-11-05_1645.html",
+   "api_10_2026-11-05_1652.html",
+   "api_11_2026-11-05_1701.html",
+   "api_12_2026-11-05_1709.html",
+   "api_13_2026-11-05_1713.html",
+   "api_14_2026-11-05_1717.html",
+   "api_15_2026-11-05_1732.html",
+   "api_16_2026-11-05_1757.html",
+   "api_17_2026-11-05_1802.html",
+   "api_18_2026-11-05_1805.html",
+   "api_19_2026-11-05_1807.html",
+   "api_20_2026-11-05_1813.html",
+   "api_21_2026-11-05_1817.html",
+   "api_22_2026-11-05_1822.html",
+   "api_23_2026-11-05_1827.html",
+   "api_24_2026-11-05_1828.html",
+   "api_25_2026-11-05_1843.html",
+   "api_26_2026-11-05_1846.html",
+   "api_27_2026-11-05_1850.html",
+   "api_28_2026-11-05_1902.html",
+   "api_29_2026-11-05_1904.html",
+   "api_30_2026-11-05_1921.html",
+   "api_31_2026-11-05_2302.html",
+   "api_32_2026-11-05_2304.html",
+   "api_33_2026-11-05_2306.html",
+   "api_34_2026-11-08_1741.html",
+   "api_35_2026-11-08_1749.html",
+   "api_36_2026-11-08_1827.html",
+   "api_37_2026-11-08_1829.html",
+   "api_38_2026-11-08_1834.html",
+   "api_39_2026-11-08_1838.html",
+   "api_40_2026-11-08_1840.html",
+   "api_41_2026-11-08_1842.html",
+   "api_42_2026-11-08_1850.html",
+   "api_43_2026-11-08_1853.html",
+   "api_44_2026-11-08_1902.html",
+   "api_45_2026-11-08_1904.html",
+   "api_46_2026-11-08_1911.html"
+  ],
+  "04_classic_convo_2026-11-08": [
+   "api_01_2026-11-08_1911.html",
+   "api_02_2026-11-08_1914.html",
+   "api_03_2026-11-08_1919.html",
+   "api_04_2026-11-08_2108.html",
+   "api_05_2026-11-08_2116.html",
+   "api_06_2026-11-08_2122.html",
+   "api_07_2026-11-08_2229.html",
+   "api_08_2026-11-08_2234.html"
+  ],
+  "05_gemini_classic_2026-11-08": [
+   "gemini-code-1794152565022.html",
+   "gemini-code-1794152568944.html",
+   "gemini-code-1794152571704.html",
+   "gemini-code-1794152574563.html",
+   "gemini-code-1794152577479.html",
+   "gemini-code-1794152580132.md",
+   "gemini-code-1794152582901.py"
+  ],
+  "06_packaging": [
+   "deepseek_python_20261108_88a107.py"
+  ]
+ }
+}

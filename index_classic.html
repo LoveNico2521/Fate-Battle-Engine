@@ -610,10 +610,10 @@
             steps.push(step); continueLoop = false;
           }
         } else {
+          // 通用骰子 (d4~d20)：純擲骰顯示，不套用 ra/ro 成功/失敗判定 (裁決 2026-11-09)
           const sides = parseInt(dieType.replace('d', '')); const raw = getRnd(sides, debugSeq, state); const final = raw + boost;
-          let isSuccess = (mode === 'ra') ? (final <= targetVal) : (final >= targetVal);
-          let checkDetail = `[${mode.toUpperCase()} ${mode === 'ra' ? '<=' : '>='} ${targetVal}] ➔ ${isSuccess ? '✅ 成功' : '❌ 失敗'}`;
-          steps.push({ levelStr, type: dieType, raw, final, extraD2: null, outcome: null, msg: `擲出 ${dieType} ➔ 原始: ${raw} | ${checkDetail}`, checkDetail });
+          const boostStr = boost !== 0 ? ` (${boost > 0 ? '+' : ''}${boost} = ${final})` : '';
+          steps.push({ levelStr, type: dieType, raw, final, extraD2: null, outcome: null, msg: `🎲 擲出 ${dieType} ➔ 結果: ${raw}${boostStr}`, checkDetail: '' });
           continueLoop = false;
         }
       }

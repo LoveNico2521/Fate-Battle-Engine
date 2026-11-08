@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>我們的問題 - TRPG 專用擲骰機</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    @keyframes roll3d {
+      0% { transform: rotateX(0deg) rotateY(0deg) scale(0.8); opacity: 0.5; }
+      50% { transform: rotateX(360deg) rotateY(180deg) scale(1.1); opacity: 0.9; }
+      100% { transform: rotateX(720deg) rotateY(360deg) scale(1); opacity: 1; }
+    }
+    .animate-roll { animation: roll3d 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-center p-4 font-sans selection:bg-indigo-500 selection:text-white">
+
+  <!-- 主容器 -->
+  <div class="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl p-6 space-y-6 relative overflow-hidden backdrop-blur-xl">
+    
+    <!-- 背景裝飾 -->
+    <div class="absolute -top-24 -right-24 w-48 h-48 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-emerald-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <!-- 標題區 -->
+    <div class="text-center space-y-1 relative z-10">
+      <div class="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-indigo-400 text-xs font-semibold uppercase tracking-wider mb-1">
+        <i class="fa-solid font-bold fa-diceD20"></i> System Engine
+      </div>
+      <h1 class="text-2xl font-black tracking-wide bg-gradient-to-r from-amber-200 via-amber-400 to-amber-500 bg-clip-text text-transparent">
+        《我們的問題》擲骰機
+      </h1>
+      <p class="text-xs text-slate-400">複數骰連擲 ‧ 基礎加成 ‧ 特殊極端值判定</p>
+    </div>
+
+    <!-- 參數設定面板 (數量 & 加成) -->
+    <div class="grid grid-cols-2 gap-3 bg-slate-950/60 border border-slate-800 rounded-2xl p-3 z-10 relative">
+      <div>
+        <label class="block text-[11px] font-medium text-slate-400 mb-1 flex items-center gap-1">
+          <i class="fa-solid fa-cubes text-indigo-400"></i> 擲骰數量 (Dice Count)
+        </label>
+        <div class="flex items-center bg-slate-900 border border-slate-700/80 rounded-xl overflow-hidden">
+          <button onclick="adjustCount(-1)" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold active:bg-slate-600 transition">-</button>
+          <input id="dice-count" type="number" min="1" max="20" value="1" class="w-full bg-transparent text-center text-sm font-bold text-amber-300 focus:outline-none" />
+          <button onclick="adjustCount(1)" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold active:bg-slate-600 transition">+</button>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-[11px] font-medium text-slate-400 mb-1 flex items-center gap-1">
+          <i class="fa-solid fa-bolt text-amber-400"></i> 基礎加值 (Base Boost)
+        </label>
+        <div class="flex items-center bg-slate-900 border border-slate-700/80 rounded-xl overflow-hidden">
+          <button onclick="adjustBoost(-1)" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold active:bg-slate-600 transition">-</button>
+          <input id="base-boost" type="number" value="0" class="w-full bg-transparent text-center text-sm font-bold text-emerald-400 focus:outline-none" />
+          <button onclick="adjustBoost(1)" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold active:bg-slate-600 transition">+</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 主要結果展示區 -->
+    <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-5 text-center min-h-[160px] flex flex-col items-center justify-center relative overflow-hidden shadow-inner">
+      <div id="dice-container" class="w-full transition-all duration-300">
+        <div id="primary-display" class="text-5xl font-black text-amber-300 tracking-tight">--</div>
+        <div id="sub-display" class="text-xs text-slate-400 mt-2 min-h-[20px]">設定參數後點擊下方按鈕擲骰</div>
+      </div>
+      <div id="results-list" class="w-full mt-3 space-y-2 hidden max-h-48 overflow-y-auto pr-1"></div>
+    </div>
+
+    <!-- 主要控制按鈕區 -->
+    <div class="grid grid-cols-2 gap-3 z-10 relative">
+      <button onclick="executeRoll('1d10')" class="group relative py-3.5 px-4 bg-gradient-to-br from-indigo-600 to-indigo-800 hover:from-indigo-500 hover:to-indigo-700 active:scale-95 text-white font-bold rounded-2xl shadow-lg shadow-indigo-950/50 border border-indigo-400/30 transition-all">
+        <div class="flex flex-col items-center">
+          <span class="text-base flex items-center gap-1.5">
+            <i class="fa-solid fa-dice-d10 text-indigo-300"></i> 擲 1d10
+          </span>
+          <span class="text-[10px] text-indigo-200/80 font-normal">10 ➔ 1d2 (1:CS / 2:CF)</span>
+        </div>
+      </button>
+
+      <button onclick="executeRoll('1d100')" class="group relative py-3.5 px-4 bg-gradient-to-br from-emerald-600 to-emerald-800 hover:from-emerald-500 hover:to-emerald-700 active:scale-95 text-white font-bold rounded-2xl shadow-lg shadow-emerald-950/50 border border-emerald-400/30 transition-all">
+        <div class="flex flex-col items-center">
+          <span class="text-base flex items-center gap-1.5">
+            <i class="fa-solid fa-percent text-emerald-300"></i> 擲 1d100
+          </span>
+          <span class="text-[10px] text-emerald-200/80 font-normal">5 (DF) / 95 (CS)</span>
+        </div>
+      </button>
+    </div>
+
+    <!-- 通用標準骰子 (支持數量與 Boost) -->
+    <div class="space-y-1.5 z-10 relative">
+      <span class="text-[11px] text-slate-500 font-medium px-1">通用骰子 (套用數量與加值)</span>
+      <div class="grid grid-cols-5 gap-2">
+        <button onclick="executeRoll('d4')" class="py-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-700/50 rounded-xl text-xs font-bold text-slate-300 transition active:scale-95">d4</button>
+        <button onclick="executeRoll('d6')" class="py-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-700/50 rounded-xl text-xs font-bold text-slate-300 transition active:scale-95">d6</button>
+        <button onclick="executeRoll('d8')" class="py-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-700/50 rounded-xl text-xs font-bold text-slate-300 transition active:scale-95">d8</button>
+        <button onclick="executeRoll('d12')" class="py-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-700/50 rounded-xl text-xs font-bold text-slate-300 transition active:scale-95">d12</button>
+        <button onclick="executeRoll('d20')" class="py-2 bg-slate-800/80 hover:bg-slate-700 border border-slate-700/50 rounded-xl text-xs font-bold text-slate-300 transition active:scale-95">d20</button>
+      </div>
+    </div>
+
+    <!-- 歷史紀錄 -->
+    <div class="space-y-2 z-10 relative">
+      <div class="flex justify-between items-center text-xs text-slate-400 px-1">
+        <span class="font-medium flex items-center gap-1.5"><i class="fa-solid fa-clock-rotate-left text-slate-500"></i> 歷史紀錄</span>
+        <button onclick="clearHistory()" class="text-slate-500 hover:text-slate-300 transition underline">清除</button>
+      </div>
+      <div id="history-log" class="bg-slate-950/50 border border-slate-800/80 rounded-2xl p-3 h-36 overflow-y-auto text-xs space-y-2 font-mono">
+        <div class="text-slate-600 text-center py-6">尚無擲骰紀錄</div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const countInput = document.getElementById('dice-count');
+    const boostInput = document.getElementById('base-boost');
+    const primaryDisplay = document.getElementById('primary-display');
+    const subDisplay = document.getElementById('sub-display');
+    const resultsList = document.getElementById('results-list');
+    const diceContainer = document.getElementById('dice-container');
+    const historyLog = document.getElementById('history-log');
+
+    let history = [];
+
+    function adjustCount(delta) {
+      let val = parseInt(countInput.value) || 1;
+      val = Math.max(1, Math.min(20, val + delta));
+      countInput.value = val;
+    }
+
+    function adjustBoost(delta) {
+      let val = parseInt(boostInput.value) || 0;
+      boostInput.value = val + delta;
+    }
+
+    function playAnimation() {
+      diceContainer.classList.remove('animate-roll');
+      void diceContainer.offsetWidth;
+      diceContainer.classList.add('animate-roll');
+    }
+
+    function playSound(type) {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        if (type === 'roll') {
+          osc.frequency.setValueAtTime(300, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(120, ctx.currentTime + 0.15);
+          gain.gain.setValueAtTime(0.3, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.15);
+        } else if (type === 'cs') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+          osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1);
+          gain.gain.setValueAtTime(0.3, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.3);
+        } else if (type === 'cf' || type === 'df') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(200, ctx.currentTime);
+          osc.frequency.linearRampToValueAtTime(80, ctx.currentTime + 0.25);
+          gain.gain.setValueAtTime(0.3, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.25);
+        }
+      } catch (e) {}
+    }
+
+    function executeRoll(type) {
+      playAnimation();
+      playSound('roll');
+
+      const count = parseInt(countInput.value) || 1;
+      const boost = parseInt(boostInput.value) || 0;
+      let rollResults = [];
+      let totalFinalValue = 0;
+      let hasCS = false, hasCF = false, hasDF = false;
+
+      for (let i = 0; i < count; i++) {
+        let item = { id: i + 1, type: type, raw: 0, boost: boost, final: 0, extra: null, tag: null, tagClass: '' };
+
+        if (type === '1d10') {
+          item.raw = Math.floor(Math.random() * 10) + 1;
+          item.final = item.raw + boost;
+
+          if (item.raw === 10) {
+            const d2 = Math.floor(Math.random() * 2) + 1;
+            item.extra = d2;
+            if (d2 === 1) {
+              item.tag = 'CS (大成功)';
+              item.tagClass = 'bg-emerald-950/80 text-emerald-400 border-emerald-500/50';
+              hasCS = true;
+            } else {
+              item.tag = 'CF (大失敗)';
+              item.tagClass = 'bg-rose-950/80 text-rose-400 border-rose-500/50';
+              hasCF = true;
+            }
+          }
+        } else if (type === '1d100') {
+          item.raw = Math.floor(Math.random() * 100) + 1;
+          item.final = item.raw + boost;
+
+          if (item.raw === 5) {
+            item.tag = 'DF (劇烈失敗)';
+            item.tagClass = 'bg-rose-950/80 text-rose-400 border-rose-500/50';
+            hasDF = true;
+          } else if (item.raw === 95) {
+            item.tag = 'CS (大成功)';
+            item.tagClass = 'bg-emerald-950/80 text-emerald-400 border-emerald-500/50';
+            hasCS = true;
+          }
+        } else {
+          const sides = parseInt(type.replace('d', ''));
+          item.raw = Math.floor(Math.random() * sides) + 1;
+          item.final = item.raw + boost;
+        }
+
+        totalFinalValue += item.final;
+        rollResults.push(item);
+      }
+
+      // 播放特別音效
+      setTimeout(() => {
+        if (hasCS) playSound('cs');
+        else if (hasCF || hasDF) playSound('cf');
+      }, 150);
+
+      // 渲染畫面顯示
+      if (count === 1) {
+        resultsList.classList.add('hidden');
+        primaryDisplay.classList.remove('hidden');
+        subDisplay.classList.remove('hidden');
+
+        const res = rollResults[0];
+        primaryDisplay.innerText = res.final;
+        
+        let subText = `基礎: ${res.raw}`;
+        if (boost !== 0) subText += ` ${boost >= 0 ? '+' : ''}${boost}`;
+        
+        if (res.extra !== null) {
+          subText += ` | 追擲 1d2=${res.extra}`;
+        }
+        if (res.tag) {
+          subText += ` ➔ <span class="font-bold uppercase ${res.tagClass.includes('emerald') ? 'text-emerald-400' : 'text-rose-400'}">${res.tag}</span>`;
+        }
+        subDisplay.innerHTML = subText;
+
+      } else {
+        // 多顆骰子清單模式
+        primaryDisplay.classList.add('hidden');
+        subDisplay.classList.add('hidden');
+        resultsList.classList.remove('hidden');
+
+        resultsList.innerHTML = rollResults.map(r => `
+          <div class="flex items-center justify-between bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs">
+            <div class="flex items-center gap-2">
+              <span class="text-slate-500 font-mono">#${r.id}</span>
+              <span class="font-bold text-amber-300 text-sm">${r.final}</span>
+              <span class="text-slate-400 text-[11px]">(原始 ${r.raw}${boost !== 0 ? (boost > 0 ? '+' + boost : boost) : ''})</span>
+            </div>
+            ${r.extra !== null ? `<span class="text-slate-400 text-[11px]">1d2=${r.extra}</span>` : ''}
+            ${r.tag ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold border ${r.tagClass}">${r.tag}</span>` : ''}
+          </div>
+        `).join('');
+      }
+
+      // 記錄到歷史
+      const boostText = boost !== 0 ? ` (Boost: ${boost >= 0 ? '+' : ''}${boost})` : '';
+      const summaryText = `${count}d${type.replace('1d', '')}${boostText} ➔ 總和: ${totalFinalValue}`;
+      addHistory(summaryText, rollResults);
+    }
+
+    function addHistory(summary, details) {
+      const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      history.unshift({ time: now, summary, details });
+      renderHistory();
+    }
+
+    function clearHistory() {
+      history = [];
+      renderHistory();
+    }
+
+    function renderHistory() {
+      if (history.length === 0) {
+        historyLog.innerHTML = `<div class="text-slate-600 text-center py-6">尚無擲骰紀錄</div>`;
+        return;
+      }
+
+      historyLog.innerHTML = history.map(item => {
+        const detailStr = item.details.map(d => {
+          let str = `[${d.final}`;
+          if (d.extra !== null) str += ` (1d2=${d.extra})`;
+          if (d.tag) str += ` ${d.tag.split(' ')[0]}`;
+          str += `]`;
+          return str;
+        }).join(' ');
+
+        return `
+          <div class="border-b border-slate-800/80 pb-1.5 last:border-0 space-y-0.5">
+            <div class="flex justify-between text-slate-300 font-semibold">
+              <span>${item.summary}</span>
+              <span class="text-[10px] text-slate-500 font-normal">${item.time}</span>
+            </div>
+            <div class="text-[10px] text-slate-400 truncate">${detailStr}</div>
+          </div>
+        `;
+      }).join('');
+    }
+  </script>
+</body>
+</html>
