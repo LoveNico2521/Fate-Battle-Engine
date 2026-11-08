@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>織夢者菲特《Fate》 - 劇情推演系統</title>
+  <title>織夢者菲特《Fate》 - 安科推演系統 (Classic)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     /* 🎨 主題變數設定 */
@@ -122,7 +122,7 @@
     <div class="flex flex-col md:flex-row md:items-center justify-between border-b border-default pb-3 gap-2 shrink-0">
       <div class="flex items-center gap-3">
         <div class="px-3 py-1 bg-indigo-500/10 border border-indigo-500/30 rounded-xl text-indigo-500 font-black text-sm tracking-wider uppercase">
-          織夢機
+          織夢機 (經典)
         </div>
         <h1 class="text-xl md:text-2xl font-black bg-gradient-to-r from-amber-300 via-amber-400 to-amber-500 bg-clip-text text-transparent">
           織夢者菲特《Fate》
@@ -172,41 +172,6 @@
             </div>
           </div>
 
-          <!-- 🌟 雙陣營戰鬥追蹤器 🌟 -->
-          <div class="space-y-2 border border-indigo-500/30 rounded-xl p-3 bg-indigo-500/5">
-            <div class="flex justify-between items-center mb-1">
-              <div class="flex items-center gap-2">
-                <span class="text-xs font-bold text-indigo-500">⚔️ 戰鬥追蹤</span>
-                <span id="turn-display" class="text-[10px] bg-indigo-500/20 text-indigo-500 px-2 py-0.5 rounded-full font-bold">Turn 1</span>
-              </div>
-              <button onclick="endTurn()" class="text-[10px] bg-indigo-600 hover:bg-indigo-500 text-white px-2 py-1 rounded transition font-bold shadow-sm">下一回合 ⏭️</button>
-            </div>
-
-            <!-- 陣營切換 -->
-            <div class="grid grid-cols-2 gap-1 bg-black/20 p-1 rounded-lg">
-              <button id="tab-player" onclick="switchActor('player')" class="py-1 text-xs font-bold rounded-md bg-indigo-600 text-white transition">玩家</button>
-              <button id="tab-enemy" onclick="switchActor('enemy')" class="py-1 text-xs font-bold rounded-md opacity-50 hover:opacity-100 transition">敵人</button>
-            </div>
-
-            <!-- 當前陣營狀態 -->
-            <div class="flex justify-between text-xs px-1">
-              <span class="text-rose-500 font-bold">❤️ HP: <span id="stat-hp">10</span></span>
-              <span class="text-indigo-400 font-bold">🧠 理智: <span id="stat-san">50</span></span>
-            </div>
-
-            <!-- 技能選擇 -->
-            <div class="flex gap-2 mt-1">
-              <select id="skill-select" onchange="onSkillSelectChange()" class="flex-1 border border-default rounded-lg px-2 py-1.5 text-xs focus:outline-none">
-                <option value="">-- 選擇技能 --</option>
-              </select>
-              <button onclick="castSkill()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-xs font-bold text-white transition whitespace-nowrap">施放</button>
-            </div>
-            <div class="flex justify-between text-[10px] text-muted mt-1 h-4">
-              <span id="skill-cost-display"></span>
-              <span id="skill-cd-display"></span>
-            </div>
-          </div>
-
           <div class="space-y-2 border border-default rounded-xl p-3 bg-black/10">
             <div class="flex justify-between items-center">
               <label class="text-xs font-bold text-amber-500">🎯 檢定模式與目標值</label>
@@ -249,6 +214,26 @@
           <div class="flex gap-2 mt-2">
             <input id="custom-dice-input" type="text" placeholder="自訂 (如 d100, d1000)" class="flex-1 border border-default rounded-lg px-2 py-1.5 text-xs focus:outline-none" />
             <button onclick="rollCustomDice()" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 rounded-lg text-xs font-bold text-white transition">投下</button>
+          </div>
+        </div>
+
+        <!-- 簡單狀態追蹤 -->
+        <div class="space-y-2 border border-default rounded-xl p-3 bg-black/10 mt-2">
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-bold text-rose-500">❤️ HP</span>
+            <div class="flex items-center gap-2">
+              <button onclick="adjustStat('hp', -1)" class="w-7 h-7 bg-slate-500/20 hover:bg-rose-600 rounded-lg text-white font-bold transition">-</button>
+              <span id="stat-hp" class="text-base font-black w-8 text-center">10</span>
+              <button onclick="adjustStat('hp', 1)" class="w-7 h-7 bg-slate-500/20 hover:bg-emerald-600 rounded-lg text-white font-bold transition">+</button>
+            </div>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-bold text-indigo-400">🧠 理智</span>
+            <div class="flex items-center gap-2">
+              <button onclick="adjustStat('san', -1)" class="w-7 h-7 bg-slate-500/20 hover:bg-rose-600 rounded-lg text-white font-bold transition">-</button>
+              <span id="stat-san" class="text-base font-black w-8 text-center">50</span>
+              <button onclick="adjustStat('san', 1)" class="w-7 h-7 bg-slate-500/20 hover:bg-emerald-600 rounded-lg text-white font-bold transition">+</button>
+            </div>
           </div>
         </div>
 
@@ -335,27 +320,6 @@
           </select>
         </div>
 
-        <!-- 🌟 雙陣營技能數據庫管理 🌟 -->
-        <div>
-          <h3 class="text-sm font-bold text-indigo-500 mb-2 flex justify-between items-center">
-            <span>🃏 技能/符卡數據庫</span>
-            <button onclick="addNewSkill()" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white px-2 py-1 rounded transition">+ 新增</button>
-          </h3>
-          
-          <!-- 設定頁的陣營切換 -->
-          <div class="grid grid-cols-2 gap-1 bg-black/20 p-1 rounded-lg mb-2">
-            <button id="set-tab-player" onclick="switchSettingsActor('player')" class="py-1 text-xs font-bold rounded-md bg-indigo-600 text-white transition">編輯玩家技能</button>
-            <button id="set-tab-enemy" onclick="switchSettingsActor('enemy')" class="py-1 text-xs font-bold rounded-md opacity-50 hover:opacity-100 transition">編輯敵人技能</button>
-          </div>
-
-          <div class="text-[10px] text-muted mb-1 flex justify-between px-1">
-            <span>名稱</span><span>Boost</span><span>HP</span><span>CD</span><span>刪除</span>
-          </div>
-          <div id="skill-list-container" class="border border-default p-3 rounded-xl space-y-2 bg-black/10 max-h-40 overflow-y-auto">
-            <!-- 技能列表會由 JS 生成 -->
-          </div>
-        </div>
-
         <div>
           <h3 class="text-sm font-bold text-fuchsia-500 mb-2 flex items-center gap-1">🧪 測試序列 (Debug)</h3>
           <div class="bg-fuchsia-950/20 border border-fuchsia-500/30 rounded-xl p-3 text-xs">
@@ -400,214 +364,12 @@
     const outputFormatInput = document.getElementById('output-format');
     const autoCopyToggle = document.getElementById('auto-copy-toggle'); 
     
-    // UI 元素
-    const skillSelect = document.getElementById('skill-select');
-    const skillCostDisplay = document.getElementById('skill-cost-display');
-    const skillCdDisplay = document.getElementById('skill-cd-display');
-    const skillListContainer = document.getElementById('skill-list-container');
-    const turnDisplay = document.getElementById('turn-display');
-    const tabPlayer = document.getElementById('tab-player');
-    const tabEnemy = document.getElementById('tab-enemy');
-    const setTabPlayer = document.getElementById('set-tab-player');
-    const setTabEnemy = document.getElementById('set-tab-enemy');
-
-    // === 狀態變數 ===
-    let turnCount = 1;
-    let activeActor = 'player'; // 'player' or 'enemy'
-    let settingsActor = 'player'; // 設定頁面正在編輯誰的技能
-
-    let combatants = {
-      player: { name: '玩家', hp: 10, san: 50 },
-      enemy: { name: '敵人', hp: 20, san: 100 }
-    };
-
-    let skills = {
-      player: [
-        { id: 'p1', name: '普通攻擊', boost: 0, cost: 0, maxCd: 0, currentCd: 0 },
-        { id: 'p2', name: '消力 (防禦)', boost: 20, cost: 0, maxCd: 1, currentCd: 0 },
-        { id: 'p3', name: 'Master Spark', boost: 50, cost: 10, maxCd: 3, currentCd: 0 }
-      ],
-      enemy: [
-        { id: 'e1', name: '觸手橫掃', boost: 10, cost: 0, maxCd: 0, currentCd: 0 },
-        { id: 'e2', name: '精神污染', boost: 30, cost: 5, maxCd: 2, currentCd: 0 }
-      ]
-    };
-
+    let charStats = { hp: 10, san: 50 };
     document.addEventListener('contextmenu', e => e.preventDefault());
     let checkMode = 'ra';
     let history = [];
 
-    // === 🌟 戰鬥與技能系統 ===
-    function loadCombatData() {
-      const savedC = safeGet('fate_combatants', null);
-      if (savedC) combatants = savedC;
-      
-      const savedS = safeGet('fate_skills_v3', null);
-      if (savedS) skills = savedS;
-
-      updateCombatUI();
-    }
-
-    function saveCombatData() {
-      safeSet('fate_combatants', combatants);
-      safeSet('fate_skills_v3', skills);
-    }
-
-    function switchActor(actor) {
-      activeActor = actor;
-      
-      // 更新 UI 顏色
-      if (actor === 'player') {
-        tabPlayer.className = "py-1 text-xs font-bold rounded-md bg-indigo-600 text-white transition";
-        tabEnemy.className = "py-1 text-xs font-bold rounded-md opacity-50 hover:opacity-100 transition";
-      } else {
-        tabEnemy.className = "py-1 text-xs font-bold rounded-md bg-rose-600 text-white transition";
-        tabPlayer.className = "py-1 text-xs font-bold rounded-md opacity-50 hover:opacity-100 transition";
-      }
-      
-      updateCombatUI();
-    }
-
-    function updateCombatUI() {
-      const actor = combatants[activeActor];
-      document.getElementById('stat-hp').innerText = actor.hp;
-      document.getElementById('stat-san').innerText = actor.san;
-      
-      renderSkillSelect();
-      onSkillSelectChange();
-    }
-
-    function switchSettingsActor(actor) {
-      settingsActor = actor;
-      if (actor === 'player') {
-        setTabPlayer.className = "py-1 text-xs font-bold rounded-md bg-indigo-600 text-white transition";
-        setTabEnemy.className = "py-1 text-xs font-bold rounded-md opacity-50 hover:opacity-100 transition";
-      } else {
-        setTabEnemy.className = "py-1 text-xs font-bold rounded-md bg-rose-600 text-white transition";
-        setTabPlayer.className = "py-1 text-xs font-bold rounded-md opacity-50 hover:opacity-100 transition";
-      }
-      renderSkillSettings();
-    }
-
-    function renderSkillSelect() {
-      skillSelect.innerHTML = '<option value="">-- 選擇技能 --</option>';
-      skills[activeActor].forEach(skill => {
-        const opt = document.createElement('option');
-        opt.value = skill.id;
-        if (skill.currentCd > 0) {
-          opt.innerText = `[冷卻中 ${skill.currentCd}] ${skill.name}`;
-          opt.disabled = true;
-        } else {
-          opt.innerText = `${skill.name} (加成:${skill.boost >= 0 ? '+' : ''}${skill.boost})`;
-        }
-        skillSelect.appendChild(opt);
-      });
-    }
-
-    function renderSkillSettings() {
-      skillListContainer.innerHTML = '';
-      skills[settingsActor].forEach(skill => {
-        const div = document.createElement('div');
-        div.className = 'flex items-center gap-1 bg-slate-500/10 p-1.5 rounded-lg border border-default';
-        div.innerHTML = `
-          <input type="text" value="${skill.name}" onchange="updateSkill('${skill.id}', 'name', this.value)" class="flex-1 bg-transparent border-0 text-xs font-bold focus:ring-0 p-0" placeholder="名稱">
-          <input type="number" value="${skill.boost}" onchange="updateSkill('${skill.id}', 'boost', this.value)" class="w-12 bg-transparent border-0 text-xs text-center focus:ring-0 p-0 text-emerald-500" placeholder="Boost">
-          <input type="number" value="${skill.cost}" onchange="updateSkill('${skill.id}', 'cost', this.value)" class="w-10 bg-transparent border-0 text-xs text-center focus:ring-0 p-0 text-rose-500" placeholder="HP">
-          <input type="number" value="${skill.maxCd}" onchange="updateSkill('${skill.id}', 'maxCd', this.value)" class="w-10 bg-transparent border-0 text-xs text-center focus:ring-0 p-0 text-amber-500" placeholder="CD">
-          <button onclick="deleteSkill('${skill.id}')" class="text-rose-500 hover:text-rose-400 font-bold px-1">&times;</button>
-        `;
-        skillListContainer.appendChild(div);
-      });
-      if (skills[settingsActor].length === 0) {
-        skillListContainer.innerHTML = '<div class="text-xs text-muted text-center py-2">尚無技能</div>';
-      }
-    }
-
-    function onSkillSelectChange() {
-      const id = skillSelect.value;
-      if (!id) {
-        skillCostDisplay.innerText = '';
-        skillCdDisplay.innerText = '';
-        return;
-      }
-      const skill = skills[activeActor].find(s => s.id === id);
-      if (skill) {
-        skillCostDisplay.innerText = skill.cost > 0 ? `消耗 HP: ${skill.cost}` : '';
-        skillCdDisplay.innerText = skill.maxCd > 0 ? `冷卻: ${skill.maxCd} 回合` : '';
-      }
-    }
-
-    function castSkill() {
-      const id = skillSelect.value;
-      if (!id) return showToast('❌ 請先選擇技能', 'error');
-      const skill = skills[activeActor].find(s => s.id === id);
-      if (!skill) return;
-      if (skill.currentCd > 0) return showToast('❌ 技能冷卻中！', 'error');
-
-      const actor = combatants[activeActor];
-      if (skill.cost > 0) {
-        if (actor.hp < skill.cost) {
-          return showToast(`❌ ${actor.name} HP 不足！(需要 ${skill.cost}，當前 ${actor.hp})`, 'error');
-        }
-        actor.hp -= skill.cost;
-        saveCombatData();
-        updateCombatUI();
-      }
-
-      // 套用 Boost & CD
-      boostInput.value = skill.boost;
-      if (skill.maxCd > 0) {
-        skill.currentCd = skill.maxCd;
-        saveCombatData();
-        renderSkillSelect();
-      }
-      
-      saveSettings();
-      showToast(`✨ ${actor.name} 施放【${skill.name}】！`, 'info');
-      
-      setTimeout(() => { executeRoll('1d100'); }, 200);
-    }
-
-    function endTurn() {
-      turnCount++;
-      turnDisplay.innerText = `Turn ${turnCount}`;
-      
-      // 雙方技能 CD 遞減
-      skills.player.forEach(s => { if (s.currentCd > 0) s.currentCd--; });
-      skills.enemy.forEach(s => { if (s.currentCd > 0) s.currentCd--; });
-      
-      saveCombatData();
-      renderSkillSelect(); 
-      renderSkillSettings();
-      showToast(`⏭️ 進入第 ${turnCount} 回合`, 'info');
-    }
-
-    function addNewSkill() {
-      const newId = settingsActor[0] + Date.now();
-      skills[settingsActor].push({ id: newId, name: '新技能', boost: 0, cost: 0, maxCd: 0, currentCd: 0 });
-      saveCombatData();
-      renderSkillSettings();
-      showToast('🃏 已新增技能', 'success');
-    }
-
-    function updateSkill(id, field, value) {
-      const skill = skills[settingsActor].find(s => s.id === id);
-      if (skill) {
-        skill[field] = field === 'name' ? value : Number(value);
-        saveCombatData();
-        renderSkillSelect();
-      }
-    }
-
-    function deleteSkill(id) {
-      skills[settingsActor] = skills[settingsActor].filter(s => s.id !== id);
-      saveCombatData();
-      renderSkillSettings();
-      renderSkillSelect();
-      showToast('🗑️ 已刪除技能', 'success');
-    }
-
-    // === 其他基礎邏輯 ===
+    // === 基礎邏輯 ===
     function openSettings() {
       const modal = document.getElementById('settings-modal');
       modal.classList.remove('hidden'); modal.classList.add('flex');
@@ -625,8 +387,14 @@
       showToast(`🎨 已切換至 ${themeName.replace('theme-', '')} 主題`, 'info');
     }
 
-    // 移除舊的單人狀態追蹤，因為現在由戰鬥系統接管
-    // (保留以防設定頁面用到，但實際上設定頁面的角色狀態現在不顯示了，由左側主面板取代)
+    function adjustStat(stat, delta) {
+      charStats[stat] += delta;
+      if (charStats[stat] < 0) charStats[stat] = 0;
+      document.getElementById(`stat-${stat}`).innerText = charStats[stat];
+      localStorage.setItem('fate_char_stats', JSON.stringify(charStats));
+      if (delta < 0) showToast(`💥 ${stat.toUpperCase()} 減少 ${-delta} 點！`, 'error');
+      if (delta > 0) showToast(`💚 ${stat.toUpperCase()} 恢復 ${delta} 點！`, 'success');
+    }
 
     function rollCustomDice() {
       let val = customDiceInput.value.trim().toLowerCase();
@@ -702,6 +470,13 @@
       const savedTheme = localStorage.getItem('fate_theme') || 'theme-dark';
       document.documentElement.className = savedTheme;
       
+      const savedStats = safeGet('fate_char_stats', null);
+      if (savedStats) {
+        charStats = savedStats;
+        document.getElementById('stat-hp').innerText = charStats.hp;
+        document.getElementById('stat-san').innerText = charStats.san;
+      }
+      
       const s = safeGet('fate_dreamweaver_settings', null);
       if (s) {
         countInput.value = s.count || 1; boostInput.value = s.boost || 0; targetValueInput.value = s.target || 50;
@@ -712,7 +487,6 @@
       const savedHistory = safeGet('fate_dreamweaver_history', []);
       if (Array.isArray(savedHistory)) history = savedHistory.slice(0, 200); 
       
-      loadCombatData();
       renderHistory();
     }
 
@@ -1030,7 +804,7 @@
         const safeDetail = `"${dText.replace(/"/g, '""')}"`;
         csvContent += `${item.time},${safeSummary},${safeDetail}\n`;
       });
-      const defaultFileName = `Fate_DreamWeaver_Log_${new Date().toISOString().slice(0,10)}.csv`;
+      const defaultFileName = `Fate_Classic_Log_${new Date().toISOString().slice(0,10)}.csv`;
       if (window.pywebview && window.pywebview.api) {
         window.pywebview.api.save_csv(csvContent, defaultFileName).then((response) => {
           if (response && response.success) showToast('✅ 檔案已儲存喵！', 'success');
