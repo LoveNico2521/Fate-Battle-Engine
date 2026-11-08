@@ -2,6 +2,15 @@
 // 回傳 { hash, per, len }:hash 為全結果 JSON 的 FNV-1a,per 為逐情境 CRC。
 (() => {
   const $ = id => document.getElementById(id);
+  // 隨機尾巴確定化:debug 序列用盡後改用固定種子 LCG(取代 crypto 真隨機)——保證兩輪完全一致;
+  // 序列只需覆蓋情境設計路徑,尾巴由種子確定。電池結束不還原(eval 測試頁專用;正式使用不載入 battery.js)
+  let lcgState = 0x2F6E2B1;
+  const origGetRnd = getRnd;
+  getRnd = function(max, debugSeq, state) {
+    if (debugSeq && debugSeq.length > 0 && state.index < debugSeq.length) return origGetRnd(max, debugSeq, state);
+    lcgState = (lcgState * 1664525 + 1013904223) >>> 0;
+    return ((lcgState >>> 16) % max) + 1;
+  };
   // 起始狀態正規化(清 localStorage 殘留,兩輪測試起點一致)
   try { localStorage.clear(); } catch (e) {}
   history = [];
@@ -86,28 +95,28 @@
   executeRoll('d6');
   S['s32_clamp'] = { inputs: [countInput.value, boostInput.value, targetValueInput.value].join('|'), flow: $('chain-flow-display').innerText.slice(0, 120) };
 
-  // ⚔️ 戰鬥情境(B 案對拼模型):debug 序列驅動確定性重現;每情境前重置為預設角色
-  // 消費序:每回合對拼 2 骰(攻方 rollA+守方 rollB)→命中再 1 骰受傷表(1d10)→第 10 行再 1 骰(1d2)→破解再 1 骰;必中技僅骰式骰
+  // ⚔️ 戰鬥情境(B 案對拼模型 v3,88:633~642F 精確版):debug 序列驅動;每回合消費序=守方 rollB → 攻方 rollA(免擲則缺)→ 受傷表 → 第10行 1d2 → 大失敗再擲 → 破解
   const resetBattle = () => { battle = JSON.parse(JSON.stringify(BATTLE_DEFAULT)); renderBattleCards(); };
   resetBattle();
   const B = (debug, mutate) => {
     resetBattle();
     if (mutate) mutate();
     debugSeqInput.value = debug || '';
-    startBattle();
+    startBattle(); // 序列用盡處由 LCG 補確定值,兩輪必然一致
     return { battle: $('battle-log').innerText, hist0: (($('history-log').firstElementChild || { innerText: '' }).innerText), toasts: toasts.splice(0) };
   };
   const onlyNormal = side => { battle[side].skills = [{ id: side + 'n', name: '普通攻擊', ct: 0, atkMod: 0, mult: 1, dice: '', cost: 0, counter: 0 }]; };
-  S['b01_instant'] = B('60,40', () => { battle.player.skills = [BATTLE_DEFAULT.player.skills[1]]; battle.enemy.skills = [BATTLE_DEFAULT.enemy.skills[0]]; renderBattleCards(); }); // 超人烈海王對拼 926 vs 265 差值 661 ➔ 即決勝(A-1)
-  S['b02_hit_injury'] = B('60,40,7,20,50,70,10,8', () => { onlyNormal('player'); onlyNormal('enemy'); battle.enemy.hp = 5; renderBattleCards(); }); // R1 命中受傷表 7=大傷3;R2 特大4 ➔ 勝
-  S['b03_counter'] = B('60,40,5,60,1,30,40,80,10,6,70', () => { onlyNormal('player'); battle.enemy.skills = [BATTLE_DEFAULT.enemy.skills[0], { id: 'ex', name: '紅海皇', ct: 0, atkMod: 0, mult: 1, dice: '', cost: 0, counter: 50 }]; battle.enemy.hp = 2; renderBattleCards(); }); // 敵二技(R1 選技骰 1=普攻)破解 60/70≥50 ➔ 減半後擊殺
-  S['b04_direct'] = B('4', () => { battle.player.skills = [{ id: 'y1', name: 'Flower star', ct: 0, atkMod: 0, mult: 1, dice: '2+1d5', cost: 0, counter: 0, alwaysHit: 1 }]; battle.enemy.hp = 6; renderBattleCards(); }); // 直接傷害技:跳過對拼,2+4=6 一擊
-  S['b05_injury10'] = B('60,40,10,2', () => { onlyNormal('player'); battle.enemy.hp = 99; renderBattleCards(); }); // 受傷表 10 極端 ➔ 1d2=2 戰鬥不能 ➔ 勝
-  S['b06_draw'] = B(Array.from({ length: 200 }, (_, i) => [10, 90, 30, 90][i % 4]).join(','), () => { onlyNormal('player'); onlyNormal('enemy'); renderBattleCards(); }); // 雙方全落空 50 回合 ➔ 平局
-  S['b07_nocscf'] = B('96,10,8,20,50,70,10,8', () => { onlyNormal('player'); onlyNormal('enemy'); battle.enemy.hp = 6; renderBattleCards(); }); // 骰 96 不再是 CS(傷害 4 而非 ×2=8):B 案保真驗證
-  S['b08_injury10_counter'] = B('60,40,10,1,10,70,70,10,5', () => { onlyNormal('player'); onlyNormal('enemy'); battle.enemy.hp = 2; renderBattleCards(); }); // 受傷表 10 極端 ➔ 1d2=1 受擊方大成功(防禦+反擊2:烈海王 HP 17→15)➔ 敵落空 ➔ R2 中傷 2 擊殺
-  S['b09_skilldice'] = B('1,60,40,8', () => { onlyNormal('enemy'); battle.enemy.hp = 4; renderBattleCards(); }); // 原作式選技骰(88:446F):1d3=1 普攻 ➔ 對拼命中 ➔ 特大 4 擊殺;選技隨機讓 R1 不再必開大招
-
+  const SUPERSKILL = () => BATTLE_DEFAULT.player.skills[1];
+  const FLOWER = () => ({ id: 'y1', name: 'Flower star', ct: 0, atkMod: 0, mult: 1, dice: '2+1d5', cost: 0, counter: 0, alwaysHit: 1 });
+  S['b01_freehit'] = B('40,8', () => { battle.player.skills = [SUPERSKILL(), BATTLE_DEFAULT.player.skills[0]]; battle.enemy.skills = [BATTLE_DEFAULT.enemy.skills[0]]; battle.enemy.hp = 16; renderBattleCards(); }); // 斬殺線選超人;免擲自動命中(我方下限 927>265)➔ 特大4×4=16 擊殺
+  S['b02_freefail'] = B('35,10,2,2,1,100,3,90,1,10,2', () => { onlyNormal('player'); battle.enemy.skills = [{ id: 'ek', name: '攻消力', ct: 0, atkMod: 60, mult: 1, dice: '', cost: 0, counter: 0 }]; battle.enemy.hp = 99; battle.player.hp = 3; renderBattleCards(); }); // 635F 復現:對手 320 我方上限 316 追不上➔免擲自動失敗+大失敗鏈;R2 勝、R3 再敗➔敵勝
+  S['b03_counter'] = B('40,60,5,60,30,80,6,70', () => { onlyNormal('player'); battle.enemy.skills = [BATTLE_DEFAULT.enemy.skills[0], { id: 'ex', name: '紅海皇', ct: 0, atkMod: 0, mult: 1, dice: '', cost: 0, counter: 50 }]; battle.enemy.hp = 2; renderBattleCards(); }); // 破解 60/70≥50 ➔ 減半後擊殺
+  S['b04_direct'] = B('4', () => { battle.player.skills = [FLOWER()]; battle.enemy.skills = [BATTLE_DEFAULT.enemy.skills[0]]; battle.enemy.hp = 6; renderBattleCards(); }); // 直接傷害技:跳過對拼,2+4=6 一擊
+  S['b05_bigfail'] = B('40,60,10,2,3', () => { onlyNormal('player'); onlyNormal('enemy'); battle.enemy.hp = 4; renderBattleCards(); }); // 受傷表 10 ➔ 1d2=2 大失敗 ➔ 再擲 3 中傷×2=4 擊殺
+  S['b06_draw'] = B(Array.from({ length: 150 }, (_, i) => [40, 60, 1][i % 3]).join(','), () => { onlyNormal('player'); onlyNormal('enemy'); battle.enemy.hp = 999; renderBattleCards(); }); // 50 回合全迴避 ➔ 平局
+  S['b07_nocscf'] = B('10,96,8,20,70,8', () => { onlyNormal('player'); onlyNormal('enemy'); battle.enemy.hp = 6; renderBattleCards(); }); // 骰 96 不再是 CS(傷害 4 而非 ×2=8):B 案保真驗證
+  S['b08_injury10_counter'] = B('40,60,10,1,10,70,5', () => { onlyNormal('player'); onlyNormal('enemy'); battle.enemy.hp = 2; renderBattleCards(); }); // 受傷表 10 ➔ 1d2=1 受擊方大成功(防禦+反擊2:烈海王 HP 17→15)➔ R2 擊殺
+  S['b09_rhythm'] = B('40,60,1,10,70,1,40,8,10,70,8', () => { battle.player.skills = [BATTLE_DEFAULT.player.skills[0], SUPERSKILL()]; battle.enemy.skills = [BATTLE_DEFAULT.enemy.skills[0]]; battle.enemy.hp = 20; renderBattleCards(); }); // 策略節奏:R1-2 普攻試探(迴避)、R3 劣勢翻盤超人(免擲)、R4 超人 CD 改普攻斬殺
   // 還原掛鉤
   window.showToast = origToast;
   navigator.clipboard.writeText = origWrite;
