@@ -1229,7 +1229,7 @@
     // 2) 劣勢翻盤:開場 2 回合試探後,基礎 Atk 低於對手(對拼期望輸)→ 開 atkMod 最大技(88:紅美鈴Ⅱ戰烈海王被壓制後開超人)
     // 3) 常態普攻(第一個 atkMod=0/mult=1/無骰式的技);多張同級由上規則自然分序
     function pickBattleSkill(self, foe, round) {
-      const usable = self.skills.filter(s => (s.currentCd || 0) === 0 && (s.cost || 0) <= self.hp);
+      const usable = self.skills.filter(s => (s.currentCd || 0) === 0 && (s.cost || 0) <= self.hp && (s.oncePerBattle ? !s.usedThisBattle : true));
       if (!usable.length) return self.skills[0];
       const dmgEst = s => 4 * (s.mult || 1) + (s.dice ? 5 : 0);
       const kill = usable.filter(s => dmgEst(s) >= foe.hp);
@@ -1257,9 +1257,11 @@
     function settleInjury(loser, loserName, winner, winnerSkill, debugSeq, state) {
       let diceTotal = 0, diceParts = [];
       if (winnerSkill.dice) { const d = rollDiceExpr(winnerSkill.dice, debugSeq, state); diceTotal = d.total; diceParts = d.parts; }
-      const injRoll = getRnd(10, debugSeq, state);
+      const shift = loser.injuryShift || 0;
+      const injRollRaw = getRnd(10, debugSeq, state);
+      const injRoll = Math.max(1, Math.min(10, injRollRaw + shift));
       const row = injuryLookup(injRoll);
-      let clashTail = `受傷表 1d10=${injRoll} ${row.label}`;
+      let clashTail = `受傷表 1d10=${injRollRaw}${shift ? `+${shift}→${injRoll}` : ''} ${row.label}`;
       let dmg = 0, counterNote = '';
       if (row.dmg === null) {
         const coin = getRnd(2, debugSeq, state);
@@ -1302,6 +1304,9 @@
       if (skFoe.cost) foe.hp -= skFoe.cost;
       if (skSelf.ct > 0) skSelf.currentCd = skSelf.ct;
       if (skFoe.ct > 0) skFoe.currentCd = skFoe.ct;
+      if (skSelf.oncePerBattle) skSelf.usedThisBattle = 1; // 一場一次(A-3)
+      // 持續效果(A-8):duration>0 的技能,atkMod 轉入 buff(發動當回合起生效,持續 duration 回合)——88:武之怀 T5 發動 T6-T7 生效
+      if ((skSelf.duration || 0) > 0 && (skSelf.atkMod || 0) !== 0) { self.buffAtk = (self.buffAtk || 0) + skSelf.atkMod; self.buffTurns = skSelf.duration; }
       const base = { round, side, actor: self.name, target: foe.name, skillName: skSelf.name, diceParts: [], counterNote: '' };
       // 直接傷害技(必中,原作「造成必中的【2+1d5】傷害」):跳過對拼,直接骰式傷害(640F 實演:破解成功與否皆結算)
       if (skSelf.alwaysHit) {
@@ -1312,8 +1317,8 @@
       }
       // 對拼:守方先擲——88:635F 紅 320 已擲,烈最大 316<320 ➔ 免擲自動失敗
       const rollB = getRnd(100, debugSeq, state);
-      const defVal = foe.atk + (skFoe.atkMod || 0) + rollB;
-      const myBase = self.atk + (skSelf.atkMod || 0);
+      const defVal = foe.atk + (foe.buffAtk || 0) + (skFoe.duration ? 0 : (skFoe.atkMod || 0)) + rollB;
+      const myBase = self.atk + (self.buffAtk || 0) + (skSelf.duration ? 0 : (skSelf.atkMod || 0));
       const myMin = myBase + 1, myMax = myBase + 100;
       if (myMax < defVal) {
         const r = settleInjury(self, self.name, foe, skFoe, debugSeq, state);
@@ -1344,7 +1349,9 @@
         return { ...base, clash: `${clashMid} ➔ 對拼落空 ${r.clashTail}`, dmg: r.dmg, diceParts: r.diceParts, counterNote: r.counterNote, foeHp: Math.max(0, foe.hp), selfHpAfter: Math.max(0, self.hp) };
       }
       const r = settleInjury(foe, foe.name, self, skSelf, debugSeq, state);
-      return { ...base, clash: `${clashMid} ➔ 差值 ${atkVal - defVal} 命中 ${r.clashTail}`, dmg: r.dmg, diceParts: r.diceParts, counterNote: r.counterNote, foeHp: Math.max(0, foe.hp) };
+      let healNote = '';
+      if ((skSelf.heal || 0) > 0 && self.hp < self.hpMax) { self.hp = Math.min(self.hp + skSelf.heal, self.hpMax); healNote = ` 💚回復 ${skSelf.heal}(HP→${self.hp})`; }
+      return { ...base, clash: `${clashMid} ➔ 差值 ${atkVal - defVal} 命中 ${r.clashTail}`, dmg: r.dmg, diceParts: r.diceParts, counterNote: r.counterNote, healNote, foeHp: Math.max(0, foe.hp) };
     }
 
     function runBattle(debugSeq, state) {
@@ -1352,6 +1359,11 @@
       const B = JSON.parse(JSON.stringify(battle.enemy));
       (A.skills || []).forEach(s => s.currentCd = 0);
       (B.skills || []).forEach(s => s.currentCd = 0);
+      (A.skills || []).forEach(s => s.usedThisBattle = 0);
+      (B.skills || []).forEach(s => s.usedThisBattle = 0);
+      A.hpMax = BATTLE_DEFAULT.player.hp; B.hpMax = BATTLE_DEFAULT.enemy.hp; // 回復上限取角色卡原廠值(mutate 測試降 HP 時 heal/regen 仍有空間)
+      A.buffAtk = 0; A.buffTurns = 0; B.buffAtk = 0; B.buffTurns = 0;
+      A.regenVal = A.regen || 0; B.regenVal = B.regen || 0;
       const steps = [];
       let winner = null, rounds = 0;
       while (rounds < 50) { // loopSafety 兜底:50 回合未分勝負判平局(原作靠免擲即決收束)
@@ -1362,6 +1374,11 @@
         if (B.hp <= 0) { winner = A; break; }
         (A.skills || []).forEach(s => { if (s.currentCd > 0) s.currentCd--; });
         (B.skills || []).forEach(s => { if (s.currentCd > 0) s.currentCd--; });
+        // 持續效果結算:buff 遞減(A-8)+regen 回復(clamp hpMax)
+        [A, B].forEach(c => {
+          if (c.buffTurns > 0) { c.buffTurns--; if (c.buffTurns === 0) c.buffAtk = 0; }
+          if (c.regenVal > 0 && c.hp > 0) c.hp = Math.min(c.hp + c.regenVal, c.hpMax);
+        });
       }
       return { steps, rounds, draw: !winner,
         winnerName: winner ? winner.name : null,
@@ -1399,7 +1416,7 @@
         const arrow = t.side === 'player' ? '▶' : '◀';
         const border = (t.dmg > 0 || typeof t.dmg === 'string') ? 'border-slate-400' : 'border-slate-500/40';
         const diceStr = t.diceParts.length ? ` [骰:${t.diceParts.join(',')}]` : '';
-        lines.push(`<div class="border-l-2 ${border} pl-2 py-0.5"><span class="text-amber-500 font-bold">R${t.round}${arrow}</span> ${t.actor}【${t.skillName}】${t.clash} ➔ 傷害 <span class="font-black text-rose-400">${t.dmg}</span>${diceStr}${t.counterNote ? '<br><span class="text-sky-400">' + t.counterNote + '</span>' : ''}</div>`);
+        lines.push(`<div class="border-l-2 ${border} pl-2 py-0.5"><span class="text-amber-500 font-bold">R${t.round}${arrow}</span> ${t.actor}【${t.skillName}】${t.clash} ➔ 傷害 <span class="font-black text-rose-400">${t.dmg}</span>${diceStr}${t.counterNote ? '<br><span class="text-sky-400">' + t.counterNote + '</span>' : ''}${t.healNote ? '<span class="text-emerald-400 font-bold">' + t.healNote + '</span>' : ''}</div>`);
       });
       lines.push(result.draw
         ? `<div class="text-center font-bold text-amber-500 pt-1">⚖️ ${result.rounds} 回合未分勝負 ➔ 平局(玩家 HP ${result.finalA} / 敵人 HP ${result.finalB})</div>`

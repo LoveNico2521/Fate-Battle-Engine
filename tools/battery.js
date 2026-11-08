@@ -117,6 +117,10 @@
   S['b07_nocscf'] = B('10,96,8,20,70,8', () => { onlyNormal('player'); onlyNormal('enemy'); battle.enemy.hp = 6; renderBattleCards(); }); // 骰 96 不再是 CS(傷害 4 而非 ×2=8):B 案保真驗證
   S['b08_injury10_counter'] = B('40,60,10,1,10,70,5', () => { onlyNormal('player'); onlyNormal('enemy'); battle.enemy.hp = 2; renderBattleCards(); }); // 受傷表 10 ➔ 1d2=1 受擊方大成功(防禦+反擊2:烈海王 HP 17→15)➔ R2 擊殺
   S['b09_rhythm'] = B('40,60,1,10,70,1,40,8,10,70,8', () => { battle.player.skills = [BATTLE_DEFAULT.player.skills[0], SUPERSKILL()]; battle.enemy.skills = [BATTLE_DEFAULT.enemy.skills[0]]; battle.enemy.hp = 20; renderBattleCards(); }); // 策略節奏:R1-2 普攻試探(迴避)、R3 劣勢翻盤超人(免擲)、R4 超人 CD 改普攻斬殺
+  S['b10_once'] = B('40,60,5,40,60,5,40,8,40,60,5', () => { battle.player.skills = [BATTLE_DEFAULT.player.skills[0], { ...SUPERSKILL(), oncePerBattle: 1 }]; battle.enemy.skills = [BATTLE_DEFAULT.enemy.skills[0]]; battle.enemy.hp = 99; renderBattleCards(); }); // 一場一次(A-3):R3 翻盤用掉大招後 R4 不再選(once 用過)➔ 普攻
+  S['b11_duration'] = B('40,60,1,40,60,1,40,5,40,10,5,40,60,5,90,5,3', () => { battle.player.skills = [BATTLE_DEFAULT.player.skills[0], { id: 'wzh', name: '武之怀', ct: 5, atkMod: 60, duration: 3, mult: 1, dice: '', cost: 0, counter: 0 }]; battle.enemy.skills = [BATTLE_DEFAULT.enemy.skills[0]]; battle.enemy.hp = 99; renderBattleCards(); }); // 持續效果(A-8):R3 發動 buff 60(免擲)、R4 普攻仍吃 buff(286)、R5 336、R6 buff 到期回落 276
+  S['b12_heal'] = B('40,70,5,2,3', () => { battle.player.skills = [{ id: 'zr', name: '戰刃', ct: 0, atkMod: 0, mult: 1, dice: '2d3', cost: 0, counter: 0, heal: 1 }]; battle.enemy.skills = [BATTLE_DEFAULT.enemy.skills[0]]; battle.enemy.hp = 99; battle.player.hp = 8; battle.player.regen = 1; renderBattleCards(); }); // 回復(命中後 +1)與 regen(每回合 +1):HP 8→heal 9→regen 10
+  S['b13_shift'] = B('40,60,1', () => { onlyNormal('player'); onlyNormal('enemy'); battle.enemy.hp = 99; battle.enemy.injuryShift = 3; renderBattleCards(); }); // 受傷表位移:骰 1+3→4=中傷(2)——迴避被位移成中傷
   // 還原掛鉤
   window.showToast = origToast;
   navigator.clipboard.writeText = origWrite;
