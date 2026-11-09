@@ -1367,6 +1367,11 @@
       // HP 閾值自動技(B-5②,88:2044F 俠客行 Hp<8 自動發動/2926F 換命):自身 HP ≤ 上限×autoHpPct ➔ 跳過策略強制出卡(命先於勝)
       const autoTrig = usable.filter(s => (s.autoHpPct || 0) > 0 && self.hp <= self.hpMax * s.autoHpPct);
       if (autoTrig.length) return autoTrig[0];
+      // 姿態 AI(B-9 適配):殘血 ≤30% 且有姿態切換技可用 ➔ 切閃避(報告適配建議)
+      if (self.stance !== 'def' && self.hp <= self.hpMax * 0.3) {
+        const sw = usable.find(s => (s.stanceSwitch || 0) > 0);
+        if (sw) return sw;
+      }
       const dmgEst = s => 4 * (s.mult || 1) + (s.dice ? 5 : 0);
       const kill = usable.filter(s => dmgEst(s) >= foe.hp);
       if (kill.length) return kill.reduce((a, b) => dmgEst(b) > dmgEst(a) ? b : a);
@@ -1560,6 +1565,9 @@
       // 對稱生效(既有 bug 修正):敵方側 duration/shieldGain 原語同樣處理(原實現僅 self 側)
       if (skFoe && (skFoe.duration || 0) > 0 && (skFoe.atkMod || 0) !== 0) { foe.buffAtk = (foe.buffAtk || 0) + skFoe.atkMod; foe.buffTurns = skFoe.duration; }
       if (skFoe && (skFoe.shieldGain || 0) > 0) { foe.shield = (foe.shield || 0) + skFoe.shieldGain; }
+      // 姿態切換(B-9,269:189F 姿態轉換 CT1——本引擎以技能自身 CT 計):stanceSwitch 技發動時切換 atk↔def
+      if (skSelf && (skSelf.stanceSwitch || 0) > 0) { self.stance = self.stance === 'def' ? 'atk' : 'def'; }
+      if (skFoe && (skFoe.stanceSwitch || 0) > 0) { foe.stance = foe.stance === 'def' ? 'atk' : 'def'; }
       // 無法行動(眩暈 B-3/蓄力 A-5):單方 ➔ 對手攻擊自動成立;雙方 ➔ 對峙一回合
       // (88:636F 束縛=戰鬥自動失敗走 special 的 bindLost 旗標;炎火村眩暈=跳回合——本引擎採跳回合+受傷結算)
       const selfStun = (self.stunTurns || 0) > 0, selfChg = (self.chargeTurns || 0) > 0, selfGear = (self.gearFailed || 0) > 0;
@@ -1581,6 +1589,11 @@
         const tag = foeStun ? `😵${foe.name}眩暈/束縛中` : foeChg ? `🌀${foe.name}蓄力中【${(foe.chargeSkill || { name: '—' }).name}】` : `⚙️${foe.name}裝備判定失敗(1d100=${foe.gearRollLast}<門檻)`;
         return { ...base, clash: `${tag},該回合戰鬥自動失敗——${self.name}攻擊自動成立 ${r.clashTail}`, dmg: r.dmg, diceParts: r.diceParts, counterNote: r.counterNote, foeHp: Math.max(0, foe.hp) };
       }
+      // 姿態結算閘(B-9,269:233F「閃避姿態:ATK×1.8,但對抗成功後不計算傷害」):交換勝者為閃避方 ➔ 敗方不受傷
+      const clashSettle = (loser, loserName, winner, winSkill) => {
+        if (winner.stance === 'def') return { clashTail: ` 🛃閃避姿態:對抗成功,不結算傷害(269F)`, dmg: 0, diceParts: [], counterNote: '' };
+        return settleInjury(loser, loserName, winner, winSkill, debugSeq, state);
+      };
       // 處決技(B-4,74:8130F 榮耀處決):敵 HP ≤ 門檻比例 ➔ 直接擊殺,免對拼。
       // 多段血條(8130F 原作):依總和生命判定+只能最後一段使用+判定區間 +10;單段維持 當段上限×比例
       if ((skSelf.execHp || 0) > 0 && foe.hp > 0) {
@@ -1625,10 +1638,14 @@
       const supNote = (supSelf || supFoe) ? ` 🤝支援插手${supSelf ? `+${supSelf}` : ''}${supFoe ? `(敵+${supFoe})` : ''}(88:1000F)` : '';
       let defVal = foe.atk + (foe.buffAtk || 0) + (skFoe.duration ? 0 : (skFoe.atkMod || 0)) + supFoe + rollB;
       let myBase = self.atk + (self.buffAtk || 0) + (skSelf.duration ? 0 : (skSelf.atkMod || 0)) + supSelf;
+      // 姿態(B-9,269:233F 閃避姿態 ATK×1.8):閃避側對抗值 ×1.8
+      const mulNote = (foe.stance === 'def' || self.stance === 'def') ? ' ⛨閃避×1.8' : '';
+      if (foe.stance === 'def') defVal = Math.round(defVal * 1.8);
+      if (self.stance === 'def') myBase = Math.round(myBase * 1.8);
       const myMin = myBase + 1, myMax = myBase + 100;
       if (myMax < defVal) {
-        const r = settleInjury(self, self.name, foe, skFoe, debugSeq, state);
-        return { ...base, clash: `⚔️對拼 對手先擲 ${foe.atk + (foe.buffAtk || 0) + (skFoe.duration ? 0 : (skFoe.atkMod || 0)) + supFoe}+${rollB}=${defVal},我方上限 ${myMax} 追不上 ➔ 差值大於 100 自動失敗${supNote} ${r.clashTail}`, dmg: r.dmg, diceParts: r.diceParts, counterNote: r.counterNote, foeHp: Math.max(0, foe.hp), selfHpAfter: Math.max(0, self.hp) };
+        const r = clashSettle(self, self.name, foe, skFoe, debugSeq, state);
+        return { ...base, clash: `⚔️對拼 對手先擲 ${foe.atk + (foe.buffAtk || 0) + (skFoe.duration ? 0 : (skFoe.atkMod || 0)) + supFoe}+${rollB}=${defVal},我方上限 ${myMax} 追不上 ➔ 差值大於 100 自動失敗${supNote}${mulNote} ${r.clashTail}`, dmg: r.dmg, diceParts: r.diceParts, counterNote: r.counterNote, foeHp: Math.max(0, foe.hp), selfHpAfter: Math.max(0, self.hp) };
       }
       let rollA = null, atkVal;
       if (myMin > defVal) {
@@ -1638,23 +1655,23 @@
         atkVal = myBase + rollA;
       }
       const clashMid = rollA === null
-        ? `⚔️對拼 我方下限 ${myMin} 已高於對手 ${defVal} ➔ 免擲自動命中${supNote}`
-        : `⚔️對拼 ${myBase}+${rollA}=${atkVal} vs ${foe.atk + (foe.buffAtk || 0) + (skFoe.duration ? 0 : (skFoe.atkMod || 0)) + supFoe}+${rollB}=${defVal}${supNote}`;
+        ? `⚔️對拼 我方下限 ${myMin} 已高於對手 ${defVal} ➔ 免擲自動命中${supNote}${mulNote}`
+        : `⚔️對拼 ${myBase}+${rollA}=${atkVal} vs ${foe.atk + (foe.buffAtk || 0) + (skFoe.duration ? 0 : (skFoe.atkMod || 0)) + supFoe}+${rollB}=${defVal}${supNote}${mulNote}`;
       // 平手裁定(88:634F/639F 同值兩次實演):雙方各擲武藝 1d100 比高低,勝者攻擊成立
       if (atkVal === defVal) {
         const wSelf = getRnd(100, debugSeq, state), wFoe = getRnd(100, debugSeq, state);
         if (wSelf >= wFoe) {
-          const r = settleInjury(foe, foe.name, self, skSelf, debugSeq, state);
+          const r = clashSettle(foe, foe.name, self, skSelf, debugSeq, state);
           return { ...base, clash: `${clashMid} ➔ 平手 ➔ 武藝 ${wSelf} vs ${wFoe} 攻擊成立 ${r.clashTail}`, dmg: r.dmg, diceParts: r.diceParts, counterNote: r.counterNote, foeHp: Math.max(0, foe.hp) };
         }
-        const r = settleInjury(self, self.name, foe, skFoe, debugSeq, state);
+        const r = clashSettle(self, self.name, foe, skFoe, debugSeq, state);
         return { ...base, clash: `${clashMid} ➔ 平手 ➔ 武藝 ${wSelf} vs ${wFoe} 守方成立 ${r.clashTail}`, dmg: r.dmg, diceParts: r.diceParts, counterNote: r.counterNote, foeHp: Math.max(0, foe.hp), selfHpAfter: Math.max(0, self.hp) };
       }
       if (atkVal < defVal) {
-        const r = settleInjury(self, self.name, foe, skFoe, debugSeq, state);
+        const r = clashSettle(self, self.name, foe, skFoe, debugSeq, state);
         return { ...base, clash: `${clashMid} ➔ 對拼落空 ${r.clashTail}`, dmg: r.dmg, diceParts: r.diceParts, counterNote: r.counterNote, foeHp: Math.max(0, foe.hp), selfHpAfter: Math.max(0, self.hp) };
       }
-      const r = settleInjury(foe, foe.name, self, skSelf, debugSeq, state);
+      const r = clashSettle(foe, foe.name, self, skSelf, debugSeq, state);
       let healNote = '';
       if ((skSelf.heal || 0) > 0 && self.hp < self.hpMax) { self.hp = Math.min(self.hp + skSelf.heal, self.hpMax); healNote = ` 💚回復 ${skSelf.heal}(HP→${self.hp})`; }
       return { ...base, clash: `${clashMid} ➔ 差值 ${atkVal - defVal} 命中 ${r.clashTail}`, dmg: r.dmg, diceParts: r.diceParts, counterNote: r.counterNote, healNote, foeHp: Math.max(0, foe.hp) };
@@ -1695,6 +1712,7 @@
       A.stunFailStack = 0; B.stunFailStack = 0; // 眩暈未中累計難度(21033:886F)
       A.reviveUsed = 0; B.reviveUsed = 0; // 復活攔截計數(B-5①)
       A.supportArrived = 0; B.supportArrived = 0; // 支援骰到場旗標(B-7②)
+      A.stance = 'atk'; B.stance = 'atk'; // 姿態(B-9,atk/def)
       A.regenVal = A.regen || 0; B.regenVal = B.regen || 0;
       const steps = [];
       let winner = null, rounds = 0, stopped = null;
@@ -1919,7 +1937,7 @@
       if (field === 'name') s.name = value.trim() || s.name;
       else if (field === 'dice') s.dice = value.trim();
       else if (field === 'cat') s.cat = value.trim();
-      else if (field === 'alwaysHit' || field === 'oncePerBattle' || field === 'stun' || field === 'elem') s[field] = value ? 1 : 0;
+      else if (field === 'alwaysHit' || field === 'oncePerBattle' || field === 'stun' || field === 'elem' || field === 'stanceSwitch') s[field] = value ? 1 : 0;
       else s[field] = Math.max(0, Math.floor(Number(value)) || 0);
       if (field === 'mult' && s.mult < 1) s.mult = 1;
       saveCombatData(); renderBattleCards();
@@ -1974,7 +1992,7 @@
       else if (field === 'dice') sk.dice = value.trim();
       else if (field === 'cat') sk.cat = value.trim();
       else if (field === 'autoHpPct') { const v = Number(value) || 0; sk.autoHpPct = v > 0 ? Math.min(1, v) : undefined; if (!sk.autoHpPct) delete sk.autoHpPct; }
-      else if (['oncePerBattle', 'stun', 'alwaysHit', 'elem'].includes(field)) sk[field] = value ? 1 : 0;
+      else if (['oncePerBattle', 'stun', 'alwaysHit', 'elem', 'stanceSwitch'].includes(field)) sk[field] = value ? 1 : 0;
       else sk[field] = Math.max(0, Math.floor(Number(value)) || 0);
       saveCombatData(); renderBattleCards();
     }
@@ -2045,6 +2063,7 @@
               <label class="flex items-center gap-1 text-[11px] text-muted cursor-pointer"><input type="checkbox" ${sk.elem ? 'checked' : ''} onchange="forgeSkill('${side}', ${i}, 'elem', this.checked)" class="w-4 h-4 accent-indigo-500 cursor-pointer" />屬性</label>
               <label class="flex items-center gap-1 text-[11px] text-muted cursor-pointer"><input type="checkbox" ${sk.counterCat ? 'checked' : ''} onchange="forgeSkill('${side}', ${i}, 'counterCat', this.checked)" class="w-4 h-4 accent-indigo-500 cursor-pointer" />破解檔</label>
               <label class="flex items-center gap-1 text-[11px] text-muted cursor-pointer"><input type="checkbox" ${sk.counterRip ? 'checked' : ''} onchange="forgeSkill('${side}', ${i}, 'counterRip', this.checked)" class="w-4 h-4 accent-indigo-500 cursor-pointer" />破解連動</label>
+              <label class="flex items-center gap-1 text-[11px] text-muted cursor-pointer"><input type="checkbox" ${sk.stanceSwitch ? 'checked' : ''} onchange="forgeSkill('${side}', ${i}, 'stanceSwitch', this.checked)" class="w-4 h-4 accent-indigo-500 cursor-pointer" />姿態切換</label>
               <label class="flex items-center gap-1 text-[11px] text-muted cursor-pointer"><input type="text" value="${sk.cat || ''}" placeholder="近戰/必殺" onchange="forgeSkill('${side}', ${i}, 'cat', this.value)" class="w-16 border border-default rounded px-1 py-1 bg-transparent text-center font-mono" />類別</label>
               <button onclick="forgeDelSkill('${side}', ${i})" class="text-rose-500 hover:text-rose-400 font-bold px-1 text-lg">&times;</button>
             </div>
