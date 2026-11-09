@@ -582,7 +582,7 @@
   <div id="confirm-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center z-[290] transition-opacity">
     <div class="border rounded-2xl p-6 shadow-2xl max-w-sm w-full mx-4 text-center transform scale-95 transition-transform duration-200" id="confirm-modal-content">
       <div class="text-3xl mb-3">🧹</div>
-      <div class="text-lg font-bold mb-6" id="confirm-msg">確定嗎喵？</div>
+      <div class="text-lg font-bold mb-6" id="confirm-msg">確定嗎？</div>
       <div class="flex justify-center gap-4">
         <button onclick="hideConfirm()" class="px-5 py-2.5 bg-slate-500/20 hover:bg-slate-500/30 rounded-xl font-bold transition">取消</button>
         <button id="confirm-yes-btn" class="px-5 py-2.5 bg-rose-600 hover:bg-rose-500 rounded-xl font-bold text-white transition shadow-lg shadow-rose-500/30">確定</button>
@@ -774,7 +774,7 @@
       const newYesBtn = yesBtn.cloneNode(true);
       yesBtn.parentNode.replaceChild(newYesBtn, yesBtn);
       newYesBtn.onclick = () => {
-        history = []; saveHistory(); renderHistory(); renderCompact(); hideConfirm(); showToast('🗑️ 歷史紀錄已清除喵！', 'success');
+        history = []; saveHistory(); renderHistory(); renderCompact(); hideConfirm(); showToast('🗑️ 歷史紀錄已清除！', 'success');
       };
     }
     function hideConfirm() {
@@ -1029,7 +1029,7 @@
     }
 
     function copyTotalSum(val) {
-      copyText(val.toString()).then(() => showToast(`📋 已複製總和:${val} 喵!`, 'success'));
+      copyText(val.toString()).then(() => showToast(`📋 已複製總和:${val}!`, 'success'));
     }
 
     // 核心執行邏輯，同步解放上限為 50
@@ -1145,11 +1145,11 @@
       let textToCopy = item.summary;
       if (item.detail) textToCopy += `\n詳細軌跡：${item.detail}`;
       textToCopy = formatOutputText(textToCopy);
-      copyText(textToCopy).then(() => showToast('📋 已複製到剪貼簿喵!', 'success'));
+      copyText(textToCopy).then(() => showToast('📋 已複製到剪貼簿!', 'success'));
     }
 
     function exportHistoryToCSV() {
-      if (!Array.isArray(history) || history.length === 0) return showToast('❌ 目前沒有紀錄可以匯出喵！', 'error');
+      if (!Array.isArray(history) || history.length === 0) return showToast('❌ 目前沒有紀錄可以匯出！', 'error');
       let csvContent = "\uFEFF時間,摘要,詳細骰子軌跡\n";
       const reversedHistory = [...history].reverse();
       // 效能:以 map + join 取代逐列字串串接
@@ -1163,7 +1163,7 @@
       const defaultFileName = `Fate_Classic_Log_${new Date().toISOString().slice(0,10)}.csv`;
       if (window.pywebview && window.pywebview.api) {
         window.pywebview.api.save_csv(csvContent, defaultFileName).then((response) => {
-          if (response && response.success) showToast('✅ 檔案已儲存喵!', 'success');
+          if (response && response.success) showToast('✅ 檔案已儲存!', 'success');
         }).catch(() => {}); // 防護:桌面 API 異常時不拋未處理拒絕
       } else {
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -1171,7 +1171,7 @@
         const link = document.createElement("a");
         link.setAttribute("href", url); link.setAttribute("download", defaultFileName);
         document.body.appendChild(link); link.click(); document.body.removeChild(link);
-        showToast('✅ 檔案已下載喵！', 'success');
+        showToast('✅ 檔案已下載！', 'success');
       }
     }
 
@@ -1769,7 +1769,7 @@
       renderCompact();
       const btn = document.getElementById('battle-start-btn');
       if (btn) btn.textContent = '🔄 戰鬥重演';
-      showToast(result.draw ? '⚖️ 戰鬥結束:平局喵!' : `🏆 戰鬥結束:勝者 ${result.winnerName} 喵!`, 'success');
+      showToast(result.draw ? '⚖️ 戰鬥結束:平局!' : `🏆 戰鬥結束:勝者 ${result.winnerName}!`, 'success');
     }
 
     function renderBattleLog(result, isDebug) {
@@ -1843,7 +1843,7 @@
     function addBattleSkill() {
       battle[battleActor].skills.push({ id: 's' + Date.now(), name: '新技能', ct: 0, atkMod: 0, mult: 1, dice: '', cost: 0, counter: 0 });
       saveCombatData(); renderBattleEditor(); renderBattleCards();
-      showToast('🃏 已新增技能喵', 'success');
+      showToast('🃏 已新增技能', 'success');
     }
     function updateBattleSkill(i, field, value) {
       const s = battle[battleActor].skills[i];
@@ -1859,7 +1859,7 @@
     function deleteBattleSkill(i) {
       battle[battleActor].skills.splice(i, 1);
       saveCombatData(); renderBattleEditor(); renderBattleCards();
-      showToast('🗑️ 已刪除技能喵', 'success');
+      showToast('🗑️ 已刪除技能', 'success');
     }
     // === 🃏 角色卡工房(全尺寸視圖+卡組管理) ===
     function openCardForge() {
@@ -1891,7 +1891,7 @@
     function resetForge() {
       battle = JSON.parse(JSON.stringify(BATTLE_DEFAULT));
       saveCombatData(); renderForge(); renderBattleCards();
-      showToast('🔄 已重置為烈幻入預設雙卡喵', 'success');
+      showToast('🔄 已重置為烈幻入預設雙卡', 'success');
     }
     function forgeActor(side, field, value) {
       if (field === 'name') battle[side].name = value.trim() || battle[side].name;
@@ -1921,21 +1921,21 @@
       const v = (value || '').trim();
       if (!v) delete sk.special;
       else if (parseSpecial(v)) sk.special = v;
-      else { showToast('⚠️ 特殊判定格式無法解析,已保留原值喵', 'error'); return; }
+      else { showToast('⚠️ 特殊判定格式無法解析,已保留原值', 'error'); return; }
       saveCombatData(); renderBattleCards();
     }
     function forgeMoraleCheck(side, value) {
       const v = (value || '').trim();
       if (!v) delete battle[side].moraleCheck;
       else if (parseMoraleCheck(v)) battle[side].moraleCheck = v;
-      else { showToast('⚠️ 戰意檢定格式為「回合:門檻」,已保留原值喵', 'error'); return; }
+      else { showToast('⚠️ 戰意檢定格式為「回合:門檻」,已保留原值', 'error'); return; }
       saveCombatData();
     }
     function forgeInjTable(side, value) {
       const v = (value || '').trim();
       if (!v) delete battle[side].injTable;
       else if (parseInjTable(v)) battle[side].injTable = v;
-      else { showToast('⚠️ 受傷表格式無法解析(需完整涵蓋 1-10),已保留原值喵', 'error'); return; }
+      else { showToast('⚠️ 受傷表格式無法解析(需完整涵蓋 1-10),已保留原值', 'error'); return; }
       saveCombatData();
     }
     function forgeAddSkill(side) {
@@ -2014,27 +2014,27 @@
     function saveCardSlots(slots) { safeSet('fate_battle_v1_cards', slots); }
     function saveCardSlot() {
       const name = document.getElementById('forge-slot-name').value.trim();
-      if (!name) return showToast('❌ 請輸入卡組名稱喵', 'error');
+      if (!name) return showToast('❌ 請輸入卡組名稱', 'error');
       const slots = cardSlots().filter(x => x.name !== name);
       slots.push({ name, data: JSON.parse(JSON.stringify(battle)), time: new Date().toLocaleString() });
       saveCardSlots(slots);
       document.getElementById('forge-slot-name').value = '';
       renderForgeSlots();
-      showToast(`📦 卡組「${name}」已保存喵`, 'success');
+      showToast(`📦 卡組「${name}」已保存`, 'success');
     }
     function loadCardSlot(i) {
       const slot = cardSlots()[i];
       if (!slot) return;
       battle = JSON.parse(JSON.stringify(slot.data));
       saveCombatData(); renderForge(); renderBattleCards();
-      showToast(`📂 已載入卡組「${slot.name}」喵`, 'success');
+      showToast(`📂 已載入卡組「${slot.name}」`, 'success');
     }
     function delCardSlot(i) {
       const slots = cardSlots();
       const name = slots[i] ? slots[i].name : '';
       slots.splice(i, 1);
       saveCardSlots(slots); renderForgeSlots();
-      showToast(`🗑️ 卡組「${name}」已刪除喵`, 'info');
+      showToast(`🗑️ 卡組「${name}」已刪除`, 'info');
     }
     function renderForgeSlots() {
       const list = cardSlots();
@@ -2048,7 +2048,7 @@
       `).join('') : '<div class="text-muted text-center py-2 text-xs">尚無保存的卡組——當前雙卡可直接保存</div>';
     }
     function exportForge() {
-      copyText(JSON.stringify(battle, null, 1)).then(() => showToast('📋 角色卡 JSON 已複製喵', 'success'));
+      copyText(JSON.stringify(battle, null, 1)).then(() => showToast('📋 角色卡 JSON 已複製', 'success'));
     }
     function downloadForge() {
       const blob = new Blob([JSON.stringify(battle, null, 1)], { type: 'application/json' });
@@ -2057,17 +2057,17 @@
       link.setAttribute('href', url);
       link.setAttribute('download', 'fate_cards_' + new Date().toISOString().slice(0, 10) + '.json');
       document.body.appendChild(link); link.click(); document.body.removeChild(link);
-      showToast('✅ 角色卡已下載喵!', 'success');
+      showToast('✅ 角色卡已下載!', 'success');
     }
     function importForge() {
       const raw = document.getElementById('forge-import').value.trim();
-      if (!raw) return showToast('❌ 請先貼上角色卡 JSON 喵', 'error');
+      if (!raw) return showToast('❌ 請先貼上角色卡 JSON ', 'error');
       try {
         const j = JSON.parse(raw);
         if (!(j.player && j.enemy && Array.isArray(j.player.skills) && Array.isArray(j.enemy.skills))) throw new Error('結構不符');
         battle = j;
         saveCombatData(); renderForge(); renderBattleCards();
-        showToast('✅ 角色卡已匯入喵!', 'success');
+        showToast('✅ 角色卡已匯入!', 'success');
         document.getElementById('forge-import').value = '';
       } catch (e) { showToast('❌ 匯入失敗:' + e.message, 'error'); }
     }
