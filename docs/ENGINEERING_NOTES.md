@@ -68,7 +68,7 @@
 
 ## 6. 迴歸測試(改代碼必跑)
 
-`tools/battery.js`:**battle 分支 36 個情境(引擎 31 + 戰鬥機 5),全部用 debug 序列強制確定性**,涵蓋 CS/CF 連鎖、三種 Boost(含負值與鉗制)、反向退回、0 Stacks、通用骰、自訂骰語法與錯誤、自動複製格式、Markdown 複製、輸入鉗制、戰鬥機(即決/免擲命中受傷表/破解減半/直接傷害/大失敗鏈/平局/無CS保真/第10行反擊/選技策略+排程表/一場一次/持續buff/回復regen/表位移/injuryFlat/stun眩暈/處決/自動勝利/CT操作/真實傷害/支援位/每段獨立HP)(CSV 情境已移除——會觸發真實下載)。
+`tools/battery.js`:**battle 分支 36 個情境(引擎 31 + 戰鬥機 5),全部用 debug 序列強制確定性**,涵蓋 CS/CF 連鎖、三種 Boost(含負值與鉗制)、反向退回、0 Stacks、通用骰、自訂骰語法與錯誤、自動複製格式、Markdown 複製、輸入鉗制、戰鬥機(即決/免擲命中受傷表/破解減半/直接傷害/大失敗鏈/平局/無CS保真/第10行反擊/選技策略+排程表/一場一次/持續buff/回復regen/表位移/injuryFlat/stun眩暈/處決/自動勝利/CT操作/真實傷害/支援位/每段獨立HP)+BBCode匯出(CSV 情境已移除——會觸發真實下載)。
 
 **基線(電池 hash)**:main 分支 31 情境 = `463080c0`;battle 分支 44 情境 = `8507b8f0`(兩輪一致已驗證;B 案 v3+選技策略+原語全套+支援位+LCG 基線)。**驗證引擎零變更的方法**:跑 main 版電池(31 情境)於當前代碼,hash 應仍為 `463080c0`,且 s01~s32 逐項 per 與新電池完全一致。
 
@@ -88,6 +88,7 @@
 - s08 是哨兵情境:依賴 isCS 先於 isCF 的判定順序 + loopSafety 兜底,動了引擎順序它第一個爆
 - **隨機尾巴已 LCG 確定化**:battery.js 開頭把 getRnd 包裝——debug 序列用盡後改用固定種子 LCG(取代 crypto),**兩輪必然一致,序列只需覆蓋情境設計路徑**(不再需要手算補齊尾巴;序列值對小骰會被 clamp,如 1d2 收到 5 出 2,屬正常);s01~s32 序列覆蓋完整不受 LCG 影響(per 與 main 基線逐項不變)。LCG 版 getRnd 在電池結束後不還原——正式使用不載入 battery.js 即無影響
 - **分頁僵死陷阱**:長 session 的瀏覽器分頁可能 chrome-error 黏死(tabs[0] 也可能消失)——**開新分頁即恢復**;evaluate 失敗先檢查 tabs.list 再重試
+- **BBCode 匯出**(outputFormat 第三格式,參考 AnkeCreator 的 NGA 匯出):formatOutputText 的 bbcode 分支=整段 [b] 包裹,僅作用於 copyHistory 路徑(經典版自動複製公式**不經此**,格式紅線不動);摘要內含的方括號(如 [RA:50])非 NGA 合法標籤,原樣顯示
 
 ## 7. ⚔️ 自動戰鬥機(battle 分支專屬)
 

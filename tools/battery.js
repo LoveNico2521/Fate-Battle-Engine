@@ -89,6 +89,9 @@
   outputFormatInput.value = 'markdown';
   copyHistory(0);
   S['s31_md_copy'] = { clip: clip.splice(0) };
+  outputFormatInput.value = 'bbcode';
+  copyHistory(0);
+  S['s33_bbcode'] = { clip: clip.splice(0) };
   outputFormatInput.value = 'plain';
   countInput.value = 'abc'; boostInput.value = '5.5'; targetValueInput.value = '500';
   debugSeqInput.value = '4';

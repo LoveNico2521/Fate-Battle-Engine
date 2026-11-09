@@ -465,6 +465,7 @@
           <select id="output-format" onchange="saveSettings()" class="w-full border border-default rounded-xl px-2 py-2 text-sm focus:outline-none">
             <option value="plain">純文字 (適合記事本)</option>
             <option value="markdown">Markdown 粗體 (適合論壇/Discord)</option>
+            <option value="bbcode">BBCode 粗體 (適合 NGA 論壇)</option>
           </select>
         </div>
 
@@ -1104,6 +1105,7 @@
 
     function formatOutputText(text) {
       if (outputFormatInput.value === 'markdown') return `**${text}**`;
+      if (outputFormatInput.value === 'bbcode') return `[b]${text}[/b]`; // NGA BBCode(參考 AnkeCreator 匯出格式)
       return text;
     }
 
