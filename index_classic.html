@@ -1301,6 +1301,18 @@
       return { dice, bands };
     }
 
+    // 戰意檢定(A-6 檢定型,88:234F 一輪 10 以下投降/403F 影狼 30 以下停戰):「回合:門檻」DSL,例 3:30 = 第 3 回合末擲 1d100 < 30 ➔ 投降(該方判負)。
+    // 停戰(無結果)語義用 A-10 離場線表達;物件形式 {round, at} 通行(電池用)。回傳 {round, at} 或 null。
+    function parseMoraleCheck(v) {
+      if (!v) return null;
+      if (typeof v === 'object') {
+        const r = Math.floor(Number(v.round)) || 0, at = Math.floor(Number(v.at)) || 0;
+        return (r > 0 && at > 0) ? { round: r, at } : null;
+      }
+      const m = String(v).trim().match(/^(\d+)\s*[:：]\s*(\d+)$/);
+      return m ? { round: +m[1], at: +m[2] } : null;
+    }
+
     // AI 選技(確定策略,無機率——模擬原作作者的節奏決策;骰子只負責原作有骰的位置:對拼/受傷表/破解):
     // 1) 斬殺線:預估傷害(受傷表特大 4 × mult + 骰式期望)≥ 敵 HP → 速戰速決用最大傷技
     // 2) 劣勢翻盤:開場 2 回合試探後,基礎 Atk 低於對手(對拼期望輸)→ 開 atkMod 最大技(88:紅美鈴Ⅱ戰烈海王被壓制後開超人)
@@ -1420,6 +1432,13 @@
         else stunNote = `特殊攻擊判定 ${sr} 1-30 ➔ 不眩`;
       }
       if (stunNote) clashTail += ` ${stunNote}`;
+      // 戰意條(A-6 資源條型,24688:642F 每次受到攻擊 -1D50/350F 60 以下跑):低於門檻 ➔ 逃跑(該方判負,runBattle 收束)
+      if ((loser.moraleFlee || 0) > 0 && dmg > 0) {
+        const mdr = getRnd(50, debugSeq, state);
+        loser.moraleVal = Math.max(0, (loser.moraleVal || 100)) - mdr;
+        clashTail += ` 💔戰意 -${mdr}→${loser.moraleVal}`;
+        if (loser.moraleVal < loser.moraleFlee) { loser.moraleFled = 1; clashTail += ` < 門檻 ${loser.moraleFlee} ➔ 逃跑`; }
+      }
       clashTail += ` (${loserName} HP→${Math.max(0, loser.hp)})`;
       return { clashTail, dmg, diceParts, counterNote };
     }
@@ -1561,6 +1580,7 @@
       A.stunTurns = 0; B.stunTurns = 0;
       A.bindLost = 0; B.bindLost = 0; // 束縛即死旗標(88:636F)
       A.chargeTurns = 0; B.chargeTurns = 0; A.chargeSkill = null; B.chargeSkill = null; // 蓄力狀態(A-5)
+      A.moraleVal = 100; B.moraleVal = 100; A.moraleFled = 0; B.moraleFled = 0; // 戰意條(A-6,100 起始)
       A.regenVal = A.regen || 0; B.regenVal = B.regen || 0;
       const steps = [];
       let winner = null, rounds = 0, stopped = null;
@@ -1599,6 +1619,9 @@
         // 束縛即死(88:636F):special 判定束縛 ➔ 被縛方戰鬥自動失敗——先於 HP/血條/支援位結算
         if (A.bindLost) { winner = B; break; }
         if (B.bindLost) { winner = A; break; }
+        // 戰意條逃跑(A-6 資源條型,24688:350F):低於門檻 ➔ 該方判負(擊退)
+        if (A.moraleFled) { winner = B; break; }
+        if (B.moraleFled) { winner = A; break; }
         // 支援位(炎火村 4865F 援護手式):每回合末對敵固定傷害(隊友不出戰,僅火力支援)
         const supA = A.supportDmg || 0;
         if (supA > 0 && B.hp > 0) {
@@ -1627,6 +1650,17 @@
           if (c.buffTurns > 0) { c.buffTurns--; if (c.buffTurns === 0) c.buffAtk = 0; }
           if (c.regenVal > 0 && c.hp > 0) c.hp = Math.min(c.hp + c.regenVal, c.hpMax);
         });
+        // 戰意檢定(A-6 檢定型,88:234F/403F):指定回合末擲 1d100 < 門檻 ➔ 投降(該方判負);A 先檢
+        let surrendered = null;
+        for (const c of [A, B]) {
+          const mc = parseMoraleCheck(c.moraleCheck);
+          if (mc && rounds === mc.round && c.hp > 0) {
+            const mr = getRnd(100, debugSeq, state);
+            steps.push({ round: rounds, side: c === A ? 'player' : 'enemy', actor: c.name, skillName: '—', clash: `🏳️戰意檢定 1d100=${mr}${mr < mc.at ? ` < 門檻 ${mc.at} ➔ ${c.name} 投降` : ` ≥ 門檻 ${mc.at} ➔ 戰意不動`}`, dmg: 0, diceParts: [], counterNote: '', foeHp: Math.max(0, (c === A ? B : A).hp), selfHpAfter: Math.max(0, c.hp) });
+            if (mr < mc.at) surrendered = c;
+          }
+        }
+        if (surrendered) { winner = surrendered === A ? B : A; break; }
       }
       // 回合上限(A-10,21033:1671F 五回合約定):期滿比血量定勝
       if (!winner && cfgMaxRounds > 0) winner = A.hp > B.hp ? A : (B.hp > A.hp ? B : null);
@@ -1809,6 +1843,13 @@
       else { showToast('⚠️ 特殊判定格式無法解析,已保留原值喵', 'error'); return; }
       saveCombatData(); renderBattleCards();
     }
+    function forgeMoraleCheck(side, value) {
+      const v = (value || '').trim();
+      if (!v) delete battle[side].moraleCheck;
+      else if (parseMoraleCheck(v)) battle[side].moraleCheck = v;
+      else { showToast('⚠️ 戰意檢定格式為「回合:門檻」,已保留原值喵', 'error'); return; }
+      saveCombatData();
+    }
     function forgeAddSkill(side) {
       battle[side].skills.push({ id: 'f' + Date.now(), name: '新技能', ct: 0, atkMod: 0, mult: 1, dice: '', cost: 0, counter: 0 });
       saveCombatData(); renderForge(); renderBattleCards();
@@ -1857,10 +1898,12 @@
               <label class="flex flex-col items-center gap-0.5 text-[11px]"><span class="text-muted">血條段(可「20,10,5,5,1」)</span><input type="text" value="${c.bars || 1}" onchange="forgeActor('${side}', 'bars', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center font-bold" /></label>
               <label class="flex flex-col items-center gap-0.5 text-[11px]"><span class="text-muted">支援位</span><input type="number" value="${c.supportDmg || 0}" min="0" onchange="forgeActor('${side}', 'supportDmg', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center font-bold" /></label>
             </div>
-            <div class="grid grid-cols-3 gap-2 text-[11px]">
+            <div class="grid grid-cols-3 md:grid-cols-5 gap-2 text-[11px]">
               <label class="flex flex-col items-center gap-0.5"><span class="text-muted">regen</span><input type="number" value="${c.regen || 0}" min="0" onchange="forgeActor('${side}', 'regen', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center" /></label>
               <label class="flex flex-col items-center gap-0.5"><span class="text-muted">表位移</span><input type="number" value="${c.injShift || 0}" onchange="forgeActor('${side}', 'injShift', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center" /></label>
               <label class="flex flex-col items-center gap-0.5"><span class="text-muted">表+N</span><input type="number" value="${c.injFlat || 0}" min="0" onchange="forgeActor('${side}', 'injFlat', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center" /></label>
+              <label class="flex flex-col items-center gap-0.5"><span class="text-muted">戰意門檻(低於即逃)</span><input type="number" value="${c.moraleFlee || 0}" min="0" onchange="forgeActor('${side}', 'moraleFlee', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center" /></label>
+              <label class="flex flex-col items-center gap-0.5"><span class="text-muted">戰意檢定(回合:門檻)</span><input type="text" value="${c.moraleCheck || ''}" placeholder="3:30" onchange="forgeMoraleCheck('${side}', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center font-mono" /></label>
             </div>
             <label class="flex flex-col gap-1 text-[11px]"><span class="text-muted">📋 排程表(逗號分隔技能名,按回合出卡;表外回合用普攻,如「超人烈海王,Flower star」)</span><textarea rows="1" onchange="forgeSchedule('${side}', this.value)" class="w-full border border-default rounded-lg px-2 py-1.5 bg-transparent text-xs font-mono focus:outline-none">${(c.schedule || []).join(',')}</textarea></label>
             <div class="space-y-2">

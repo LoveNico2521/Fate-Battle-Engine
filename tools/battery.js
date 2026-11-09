@@ -98,7 +98,7 @@
   executeRoll('d6');
   S['s32_clamp'] = { inputs: [countInput.value, boostInput.value, targetValueInput.value].join('|'), flow: $('chain-flow-display').innerText.slice(0, 120) };
 
-  // ⚔️ 戰鬥情境(B 案對拼模型 v3,88:633~642F 精確版):debug 序列驅動;每回合消費序=守方 rollB → 攻方 rollA(免擲則缺)→ 受傷表 → 第10行 1d2 → 大失敗再擲 → 破解 → 特殊判定(B-11,僅帶 special/stun 技且 dmg>0 時)
+  // ⚔️ 戰鬥情境(B 案對拼模型 v3,88:633~642F 精確版):debug 序列驅動;每回合消費序=守方 rollB → 攻方 rollA(免擲則缺)→ 受傷表 → 第10行 1d2 → 大失敗再擲 → 破解 → 特殊判定(B-11,僅帶 special/stun 技且 dmg>0 時)→ 戰意條(A-6,僅 moraleFlee>0 且 dmg>0 時)
   const resetBattle = () => { battle = JSON.parse(JSON.stringify(BATTLE_DEFAULT)); renderBattleCards(); };
   resetBattle();
   const B = (debug, mutate) => {
@@ -154,6 +154,10 @@
   S['b36_retreat'] = B('50,2', () => { onlyNormal('player'); onlyNormal('enemy'); CFG({ retreatAt: 8 }); renderBattleCards(); }); // 離場條件(A-10,3801F):R5 烈海王 HP 17-10=7 ≤ 8 ➔ 戰鬥中止(無結果)
   S['b37_maxrounds'] = B('50,60,4,50,40,1', () => { onlyNormal('player'); onlyNormal('enemy'); CFG({ maxRounds: 2 }); renderBattleCards(); }); // 回合上限(A-10,1671F):2 回合期滿比血量——B 傷 2/A 傷 0 ➔ 勝者烈海王(比血量)
   S['b38_lock_bars'] = B('50,2', () => { onlyNormal('player'); battle.enemy.skills = [BATTLE_DEFAULT.enemy.skills[0]]; battle.enemy.atk = 5; battle.enemy.bars = '3,3'; CFG({ hpLock: 3 }); renderBattleCards(); }); // 敵側鎖定+壓血條:R1 敵段 3-1=2 ≤ 3 ➔ 鎖定即終(勝者烈海王;鎖定先於血條段推進)
+  const moraleSetup = (side, fields) => { onlyNormal('player'); onlyNormal('enemy'); battle.player.atk = 300; battle.enemy.atk = 5; Object.assign(battle[side], fields); renderBattleCards(); };
+  S['b39_morale_flee'] = B('50,2,20', () => moraleSetup('enemy', { moraleFlee: 90 })); // 戰意條(A-6 資源條型,642F/350F):R1 有效受擊 -1d50=20 ➔ 戰意 80 < 門檻 90 ➔ 逃跑,勝者烈海王(R1)
+  S['b40_morale_check'] = B('50,2,50,2,40', () => moraleSetup('player', { moraleCheck: '2:50' })); // 戰意檢定(A-6 檢定型,234F):R2 末擲 40 < 50 ➔ 烈海王投降,勝者紅美鈴
+  S['b41_morale_check_pass'] = B('50,2,50,2,60', () => moraleSetup('player', { moraleCheck: '2:50' })); // 檢定通過:R2 末擲 60 ≥ 50 ➔ 戰意不動,戰鬥續行(尾巴 LCG)
   // 還原掛鉤
   window.showToast = origToast;
   navigator.clipboard.writeText = origWrite;
