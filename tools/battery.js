@@ -147,6 +147,13 @@
   const chargeSetup = (name, charge) => { battle.player.skills = [CHARGESKILL(name, charge)]; battle.player.atk = 300; battle.enemy.skills = [BATTLE_DEFAULT.enemy.skills[0]]; battle.enemy.atk = 5; battle.enemy.hp = 99; renderBattleCards(); };
   S['b31_charge1'] = B('5,50,4', () => chargeSetup('星脈地轉彈', 1)); // 蓄力 A-5(4045F/639-642F):R1 宣告➔🌀蓄力中敵攻自動成立;R2 蓄滿釋放——免擲命中,受傷表 4 中傷×4=8
   S['b32_charge2'] = B('5,3,50,4', () => chargeSetup('星脈地轉彈', 2)); // 蓄力 2T:R1 宣告、R2 仍蓄力(敵再自動命中)、R3 釋放免擲 中傷×4=8——639-642F 蓄力 1T→2T→宣言釋放
+  const CFG = (o) => { battle.cfg = { ...(battle.cfg || {}), ...o }; };
+  S['b33_points'] = B('60,40,70,30,50,55', () => { onlyNormal('player'); onlyNormal('enemy'); CFG({ mode: 'points', pointRounds: 3 }); renderBattleCards(); }); // 勝點制(B-12,5040F):3 輪拼點 2:1 ➔ 勝者烈海王(勝點 2:1)
+  S['b34_points_draw'] = B('60,51,70,61,80,71', () => { onlyNormal('player'); onlyNormal('enemy'); CFG({ mode: 'points', pointRounds: 3 }); renderBattleCards(); }); // 拼點全平手(276/286/296 vs 276/286/296)➔ 0:0 平局
+  S['b35_hplock'] = B('50,2', () => { onlyNormal('player'); onlyNormal('enemy'); CFG({ hpLock: 3 }); renderBattleCards(); }); // HP 鎖定線(A-10,4146F):敵我互有傷損,R6 烈海王 HP 17-15=2 ≤ 3 ➔ 觸線判負,戰鬥即終(勝者紅美鈴)
+  S['b36_retreat'] = B('50,2', () => { onlyNormal('player'); onlyNormal('enemy'); CFG({ retreatAt: 8 }); renderBattleCards(); }); // 離場條件(A-10,3801F):R5 烈海王 HP 17-10=7 ≤ 8 ➔ 戰鬥中止(無結果)
+  S['b37_maxrounds'] = B('50,60,4,50,40,1', () => { onlyNormal('player'); onlyNormal('enemy'); CFG({ maxRounds: 2 }); renderBattleCards(); }); // 回合上限(A-10,1671F):2 回合期滿比血量——B 傷 2/A 傷 0 ➔ 勝者烈海王(比血量)
+  S['b38_lock_bars'] = B('50,2', () => { onlyNormal('player'); battle.enemy.skills = [BATTLE_DEFAULT.enemy.skills[0]]; battle.enemy.atk = 5; battle.enemy.bars = '3,3'; CFG({ hpLock: 3 }); renderBattleCards(); }); // 敵側鎖定+壓血條:R1 敵段 3-1=2 ≤ 3 ➔ 鎖定即終(勝者烈海王;鎖定先於血條段推進)
   // 還原掛鉤
   window.showToast = origToast;
   navigator.clipboard.writeText = origWrite;
