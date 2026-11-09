@@ -19,6 +19,29 @@
 
 ---
 
+## 戰鬥線歷史版本(battle-01–14,發布於主倉)
+
+> 2026-11-09/10 的逐版演進,全部在主倉 [Releases](https://github.com/LoveNico2521/Fate-Dreamweaver-Engine/releases) 以 `battle-NN` 標籤發布,每版附當時完整單檔 `index_classic.html`。其後的修正與新原語(喵語尾掃除/標準層保真/三 bug 修復/B-5–B-9/拼點累計池)統合於上方 **v53**。
+
+| 標籤 | 日期 | 內容 | 電池基線 |
+|---|---|---|---|
+| [battle-01](https://github.com/LoveNico2521/Fate-Dreamweaver-Engine/releases/tag/battle-01) | 11-09 | docs: APK 打包改單檔原則 | — |
+| [battle-02](https://github.com/LoveNico2521/Fate-Dreamweaver-Engine/releases/tag/battle-02) | 11-09 | 自動戰鬥機(烈幻入式規格) | 36 情境 `1ff293c0` |
+| [battle-03](https://github.com/LoveNico2521/Fate-Dreamweaver-Engine/releases/tag/battle-03) | 11-09 | A 案必中 flag alwaysHit | 37 情境 `3b2ec5d0` |
+| [battle-04](https://github.com/LoveNico2521/Fate-Dreamweaver-Engine/releases/tag/battle-04) | 11-09 | B 案對拼模型(88:797F/A-1/B-2) | 38 情境 `8f31461a` |
+| [battle-05](https://github.com/LoveNico2521/Fate-Dreamweaver-Engine/releases/tag/battle-05) | 11-09 | AI 選技改原作式選技骰(88:446F) | 39 情境 `ef6b7ca0` |
+| [battle-06](https://github.com/LoveNico2521/Fate-Dreamweaver-Engine/releases/tag/battle-06) | 11-09 | 對拼核升級 633-642F 精確版+LCG 確定化 | 39 情境 `f19696c8` |
+| [battle-07](https://github.com/LoveNico2521/Fate-Dreamweaver-Engine/releases/tag/battle-07) | 11-09 | 卡面層四原語(once/duration/heal+regen/injuryShift) | 43 情境 `44764948` |
+| [battle-08](https://github.com/LoveNico2521/Fate-Dreamweaver-Engine/releases/tag/battle-08) | 11-09 | 對拼核 v4+六新原語+🃏角色卡工房 | 43 情境 `cbdada0c` |
+| [battle-09](https://github.com/LoveNico2521/Fate-Dreamweaver-Engine/releases/tag/battle-09) | 11-09 | docs: battle 分支獨立 README | — |
+| [battle-10](https://github.com/LoveNico2521/Fate-Dreamweaver-Engine/releases/tag/battle-10) | 11-09 | 支援位原語 supportDmg(炎火村 4865F) | 44 情境 `8507b8f0` |
+| [battle-11](https://github.com/LoveNico2521/Fate-Dreamweaver-Engine/releases/tag/battle-11) | 11-09 | 多段血條每段獨立 HP(20/10/5/5/1 式) | 55 情境 `82bcdf40` |
+| [battle-12](https://github.com/LoveNico2521/Fate-Dreamweaver-Engine/releases/tag/battle-12) | 11-10 | A-9 技能排程表(21033:5147F) | 56 情境 `737f2968` |
+| [battle-13](https://github.com/LoveNico2521/Fate-Dreamweaver-Engine/releases/tag/battle-13) | 11-10 | BBCode 匯出第三格式(NGA) | 57 情境 `773d3a6f` |
+| [battle-14](https://github.com/LoveNico2521/Fate-Dreamweaver-Engine/releases/tag/battle-14) | 11-10 | B-11 特殊攻擊判定框架 | 60 情境 `4998170` |
+
+---
+
 ## 經典版歷史(v1–v52,主倉)
 
 2026-10-02 至今的完整開發紀錄,共 52 個標籤版本。
