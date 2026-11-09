@@ -161,6 +161,11 @@
   S['b42_reduce_flat_zero'] = B('50,2', () => moraleSetup('enemy', { reduceFlat: 2 })); // 消力固定減(B-1①):中傷 2-1=1 ➔ 消力-2 ➔ 0 無傷(1149F「必中 1-消力 2=無傷」),敵 HP 不動
   S['b43_pierce'] = B('50,4', () => { moraleSetup('enemy', { reduceHalf: 1 }); battle.player.pierceAt = 240; }); // 穿透門檻(B-1③,325F):Atk 300 ≥ 240 ➔ 穿透消力,特大 4 不減半
   S['b44_elem_bypass'] = B('50,2', () => { moraleSetup('enemy', { reduceFlat: 5 }); battle.player.skills = [{ id: 'el', name: '屬性彈', ct: 0, atkMod: 0, mult: 1, dice: '', cost: 0, counter: 0, elem: 1 }]; renderBattleCards(); }); // 屬性繞過(B-1②,253F):火焰系攻擊無視消力-5,小傷 1 全額入 HP
+  const catSkill = (cat) => ({ id: 'cs', name: '分檔彈', ct: 0, atkMod: 0, mult: 1, dice: '', cost: 0, counter: 0, cat });
+  const counterSetup = (cat, counterSkill) => { onlyNormal('player'); battle.player.skills = [catSkill(cat)]; battle.player.atk = 300; battle.enemy.skills = [BATTLE_DEFAULT.enemy.skills[0], counterSkill]; battle.enemy.atk = 5; renderBattleCards(); };
+  S['b45_counter_cat'] = B('50,4,60', () => counterSetup('必殺', { id: 'ex', name: '紅海皇', ct: 0, atkMod: 0, mult: 1, dice: '', cost: 0, counter: 0, counterCat: 1 })); // 破解分檔(B-8,77F):counterCat 按攻方類別取檔——必殺技 75+;擲 60<75 ➔ 失敗,傷害全額(對照 b03 explicit 50 擲 60 成功)
+  S['b46_counter_cat_melee'] = B('50,4,40', () => counterSetup('近戰', { id: 'ex', name: '紅海皇', ct: 0, atkMod: 0, mult: 1, dice: '', cost: 0, counter: 0, counterCat: 1 })); // 類別門檻:近戰 30+;擲 40≥30 ➔ 傷害減半
+  S['b47_counter_rip'] = B('50,4,60,4', () => counterSetup('', { id: 'ex', name: '紅海皇', ct: 0, atkMod: 0, mult: 1, dice: '', cost: 0, counter: 50, counterRip: 1 })); // 破解連動(684F):explicit 50 擲 60 成功減半 ➔ counterRip 反擊自動成立,烈海王再吃中傷 2(HP 17→15)
   // 還原掛鉤
   window.showToast = origToast;
   navigator.clipboard.writeText = origWrite;

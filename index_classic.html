@@ -1313,6 +1313,14 @@
       return m ? { round: +m[1], at: +m[2] } : null;
     }
 
+    // 破解分檔(B-8,88:77F 武之懷檔位/455F 七鼓八鼓 50+ 實演):受擊方破解技帶 counterCat 時,門檻按「攻方技能類別」取檔——普通/近戰 30+、其他 50+、必殺技 75+
+    function catCounterThreshold(attackSkill) {
+      const cat = String((attackSkill && attackSkill.cat) || '').trim();
+      if (cat === '近戰' || cat === '普通') return 30;
+      if (cat === '必殺') return 75;
+      return 50;
+    }
+
     // AI 選技(確定策略,無機率——模擬原作作者的節奏決策;骰子只負責原作有骰的位置:對拼/受傷表/破解):
     // 1) 斬殺線:預估傷害(受傷表特大 4 × mult + 骰式期望)≥ 敵 HP → 速戰速決用最大傷技
     // 2) 劣勢翻盤:開場 2 回合試探後,基礎 Atk 低於對手(對拼期望輸)→ 開 atkMod 最大技(88:紅美鈴Ⅱ戰烈海王被壓制後開超人)
@@ -1365,18 +1373,19 @@
       const injRoll = Math.max(1, Math.min(10, injRollRaw + shift));
       const row = injuryLookup(injRoll);
       let clashTail = `受傷表 1d10=${injRollRaw}${shift ? `+${shift}→${injRoll}` : ''} ${row.label}`;
-      let dmg = 0, counterNote = '', stunNote = '';
+      let dmg = 0, counterNote = '', stunNote = '', ripSkill = null;
       if (row.dmg === null) {
         const coin = getRnd(2, debugSeq, state);
         if (coin === 2) {
           const r2roll = getRnd(10, debugSeq, state);
           const row2 = injuryLookup(r2roll);
           dmg = row2.dmg * 2 * (winnerSkill.mult || 1);
-          const counterSkill = (loser.skills || []).find(s => (s.counter || 0) > 0 && (s.currentCd || 0) === 0);
+          const counterSkill = (loser.skills || []).find(s => ((s.counter || 0) > 0 || (s.counterCat || 0) > 0) && (s.currentCd || 0) === 0);
           if (counterSkill && dmg > 0) {
+            const cth = counterSkill.counterCat ? catCounterThreshold(winnerSkill) : counterSkill.counter;
             const cr = getRnd(100, debugSeq, state);
-            if (cr >= counterSkill.counter) { dmg = Math.floor(dmg / 2); counterNote = `🛡️【${counterSkill.name}】破解 ${cr}≥${counterSkill.counter} ➔ 減半`; }
-            else counterNote = `🛡️【${counterSkill.name}】破解 ${cr}<${counterSkill.counter} ➔ 失敗`;
+            if (cr >= cth) { dmg = Math.floor(dmg / 2); counterNote = `🛡️【${counterSkill.name}】破解 ${cr}≥${cth} ➔ 減半`; if ((counterSkill.counterRip || 0) > 0) ripSkill = counterSkill; }
+            else counterNote = `🛡️【${counterSkill.name}】破解 ${cr}<${cth} ➔ 失敗`;
           }
           dmg += (loser.injuryFlat || 0);
           dmg += diceTotal;
@@ -1387,11 +1396,12 @@
         }
       } else {
         dmg = row.dmg * (winnerSkill.mult || 1);
-        const counterSkill = (loser.skills || []).find(s => (s.counter || 0) > 0 && (s.currentCd || 0) === 0);
+        const counterSkill = (loser.skills || []).find(s => ((s.counter || 0) > 0 || (s.counterCat || 0) > 0) && (s.currentCd || 0) === 0);
         if (counterSkill && dmg > 0 && !(winnerSkill.trueDmg)) {
+          const cth = counterSkill.counterCat ? catCounterThreshold(winnerSkill) : counterSkill.counter;
           const cr = getRnd(100, debugSeq, state);
-          if (cr >= counterSkill.counter) { dmg = Math.floor(dmg / 2); counterNote = `🛡️【${counterSkill.name}】破解 ${cr}≥${counterSkill.counter} ➔ 傷害減半`; }
-          else counterNote = `🛡️【${counterSkill.name}】破解 ${cr}<${counterSkill.counter} ➔ 失敗`;
+          if (cr >= cth) { dmg = Math.floor(dmg / 2); counterNote = `🛡️【${counterSkill.name}】破解 ${cr}≥${cth} ➔ 傷害減半`; if ((counterSkill.counterRip || 0) > 0) ripSkill = counterSkill; }
+          else counterNote = `🛡️【${counterSkill.name}】破解 ${cr}<${cth} ➔ 失敗`;
         }
         dmg += (loser.injuryFlat || 0);
         dmg += diceTotal;
@@ -1453,6 +1463,11 @@
         if (loser.moraleVal < loser.moraleFlee) { loser.moraleFled = 1; clashTail += ` < 門檻 ${loser.moraleFlee} ➔ 逃跑`; }
       }
       clashTail += ` (${loserName} HP→${Math.max(0, loser.hp)})`;
+      // 破解連動反擊(B-8,88:684F「破解成功 ➔ 我方攻擊自動成功」):破解技帶 counterRip 且受擊方未倒 ➔ 以破解技自身數值反結算攻方
+      if (ripSkill && loser.hp > 0) {
+        const rr = settleInjury(winner, winner.name, loser, ripSkill, debugSeq, state);
+        clashTail += ` ↩️破解連動反擊 ${rr.clashTail}`;
+      }
       return { clashTail, dmg, diceParts, counterNote };
     }
 
@@ -1784,6 +1799,7 @@
       if (!s) return;
       if (field === 'name') s.name = value.trim() || s.name;
       else if (field === 'dice') s.dice = value.trim();
+      else if (field === 'cat') s.cat = value.trim();
       else if (field === 'alwaysHit' || field === 'oncePerBattle' || field === 'stun' || field === 'elem') s[field] = value ? 1 : 0;
       else s[field] = Math.max(0, Math.floor(Number(value)) || 0);
       if (field === 'mult' && s.mult < 1) s.mult = 1;
@@ -1837,6 +1853,7 @@
       if (!sk) return;
       if (field === 'name') sk.name = value.trim() || sk.name;
       else if (field === 'dice') sk.dice = value.trim();
+      else if (field === 'cat') sk.cat = value.trim();
       else if (['oncePerBattle', 'stun', 'alwaysHit', 'elem'].includes(field)) sk[field] = value ? 1 : 0;
       else sk[field] = Math.max(0, Math.floor(Number(value)) || 0);
       saveCombatData(); renderBattleCards();
@@ -1885,6 +1902,9 @@
               <label class="flex items-center gap-1 text-[11px] text-muted cursor-pointer"><input type="checkbox" ${sk.stun ? 'checked' : ''} onchange="forgeSkill('${side}', ${i}, 'stun', this.checked)" class="w-4 h-4 accent-indigo-500 cursor-pointer" />眩暈</label>
               <label class="flex items-center gap-1 text-[11px] text-muted cursor-pointer"><input type="checkbox" ${sk.alwaysHit ? 'checked' : ''} onchange="forgeSkill('${side}', ${i}, 'alwaysHit', this.checked)" class="w-4 h-4 accent-indigo-500 cursor-pointer" />必中</label>
               <label class="flex items-center gap-1 text-[11px] text-muted cursor-pointer"><input type="checkbox" ${sk.elem ? 'checked' : ''} onchange="forgeSkill('${side}', ${i}, 'elem', this.checked)" class="w-4 h-4 accent-indigo-500 cursor-pointer" />屬性</label>
+              <label class="flex items-center gap-1 text-[11px] text-muted cursor-pointer"><input type="checkbox" ${sk.counterCat ? 'checked' : ''} onchange="forgeSkill('${side}', ${i}, 'counterCat', this.checked)" class="w-4 h-4 accent-indigo-500 cursor-pointer" />破解檔</label>
+              <label class="flex items-center gap-1 text-[11px] text-muted cursor-pointer"><input type="checkbox" ${sk.counterRip ? 'checked' : ''} onchange="forgeSkill('${side}', ${i}, 'counterRip', this.checked)" class="w-4 h-4 accent-indigo-500 cursor-pointer" />破解連動</label>
+              <label class="flex items-center gap-1 text-[11px] text-muted cursor-pointer"><input type="text" value="${sk.cat || ''}" placeholder="近戰/必殺" onchange="forgeSkill('${side}', ${i}, 'cat', this.value)" class="w-16 border border-default rounded px-1 py-1 bg-transparent text-center font-mono" />類別</label>
               <button onclick="forgeDelSkill('${side}', ${i})" class="text-rose-500 hover:text-rose-400 font-bold px-1 text-lg">&times;</button>
             </div>
             <div class="grid grid-cols-4 md:grid-cols-9 gap-1.5 text-[11px]">
