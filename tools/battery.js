@@ -166,6 +166,9 @@
   S['b45_counter_cat'] = B('50,4,60', () => counterSetup('必殺', { id: 'ex', name: '紅海皇', ct: 0, atkMod: 0, mult: 1, dice: '', cost: 0, counter: 0, counterCat: 1 })); // 破解分檔(B-8,77F):counterCat 按攻方類別取檔——必殺技 75+;擲 60<75 ➔ 失敗,傷害全額(對照 b03 explicit 50 擲 60 成功)
   S['b46_counter_cat_melee'] = B('50,4,40', () => counterSetup('近戰', { id: 'ex', name: '紅海皇', ct: 0, atkMod: 0, mult: 1, dice: '', cost: 0, counter: 0, counterCat: 1 })); // 類別門檻:近戰 30+;擲 40≥30 ➔ 傷害減半
   S['b47_counter_rip'] = B('50,4,60,4', () => counterSetup('', { id: 'ex', name: '紅海皇', ct: 0, atkMod: 0, mult: 1, dice: '', cost: 0, counter: 50, counterRip: 1 })); // 破解連動(684F):explicit 50 擲 60 成功減半 ➔ counterRip 反擊自動成立,烈海王再吃中傷 2(HP 17→15)
+  const INJ_DBL_DODGE = '1-2:迴避:0,3-4:小傷:1,5-6:中傷:2,7-8:大傷:3,9:特大傷:4,10:極端';
+  S['b48_custom_table'] = B('50,2', () => moraleSetup('enemy', { injTable: INJ_DBL_DODGE })); // 個人受傷表(B-2 表驅動):雙迴避行 1-2 ➔ 擲 2 = 迴避 0 傷(預設表同骰為小傷 1),敵 HP 不動
+  S['b49_custom_table_reroll'] = B('50,10,2,5', () => moraleSetup('enemy', { injTable: '1:迴避:0,2-8:小傷:1,9:特大傷:4,10:極端' })); // 自訂表+第10行鏈:極端 ➔ 1d2=2 大失敗 ➔ 再擲 5 查自訂表=小傷 1 ×2=2(HP 18→16)
   // 還原掛鉤
   window.showToast = origToast;
   navigator.clipboard.writeText = origWrite;

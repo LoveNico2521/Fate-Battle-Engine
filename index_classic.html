@@ -1362,7 +1362,38 @@
       { min: 8, max: 9, label: '特大傷', dmg: 4 },
       { min: 10, max: 10, label: '極端', dmg: null } // 第 10 行 → 1d2:1 受擊方大成功(完全防禦+反擊2)、2 戰鬥不能
     ];
-    function injuryLookup(roll) { return INJURY_TABLE.find(r => roll >= r.min && roll <= r.max); }
+    // 個人受傷表(B-2 表驅動傷害器,88:225F→232F 表即角色防禦畫像/1487F 紫苑改表):角色 injTable DSL——
+    // 「lo-hi:label:dmg」逗號分隔,例「1-2:迴避:0,3-4:小傷:1,5-6:中傷:2,7-8:大傷:3,9:特大傷:4,10:極端」;
+    // dmg 為「極端」或標籤恰為「極端」(省略 dmg)➔ 極端行(1d2 分支);其餘缺 dmg ➔ 格式錯誤(防誤觸 1d2)。
+    // 需完整涵蓋 1-10(防查表落空);解析失敗/未設 ➔ 回退預設表。物件形式(陣列 {min,max,label,dmg})通行(電池用)。
+    function parseInjTable(v) {
+      if (!v) return null;
+      const norm = rows => {
+        for (let i = 1; i <= 10; i++) if (!rows.some(r => i >= r.min && i <= r.max)) return null;
+        return rows;
+      };
+      if (typeof v === 'object') {
+        const rows = (Array.isArray(v) ? v : []).filter(r => r && Number(r.max) >= Number(r.min)).map(r => ({ min: Number(r.min), max: Number(r.max), label: String(r.label || '傷'), dmg: (r.dmg === null || r.dmg === undefined || r.dmg === '' || r.dmg === '極端') ? null : Math.max(0, Math.floor(Number(r.dmg)) || 0) }));
+        return rows.length ? norm(rows) : null;
+      }
+      const rows = [];
+      for (const seg of String(v).split(',').map(s => s.trim()).filter(Boolean)) {
+        const m = seg.match(/^(\d+)(?:\s*-\s*(\d+))?\s*:\s*([^:]+?)(?:\s*:\s*(極端|\d+))?$/);
+        if (!m) return null;
+        const min = +m[1], max = m[2] !== undefined ? +m[2] : min;
+        if (max < min) return null;
+        let dmg;
+        if (m[4] !== undefined) dmg = m[4] === '極端' ? null : +m[4];
+        else if (m[3].trim() === '極端') dmg = null;
+        else return null;
+        rows.push({ min, max, label: m[3].trim(), dmg });
+      }
+      return rows.length ? norm(rows) : null;
+    }
+    function injuryLookup(roll, actor) {
+      const tbl = actor ? parseInjTable(actor.injTable) : null;
+      return (tbl || INJURY_TABLE).find(r => roll >= r.min && roll <= r.max);
+    }
 
     // 受傷表結算(88:633~642F 精確版):受擊方=loser 擲 1d10;第 10 行→1d2(1=受擊方大成功:完全防禦+反擊 2【設計值】/2=大失敗→再擲受傷表全行×2,635F 實演);破解=受擊方 counter 技
     function settleInjury(loser, loserName, winner, winnerSkill, debugSeq, state) {
@@ -1371,14 +1402,14 @@
       const shift = loser.injuryShift || 0;
       const injRollRaw = getRnd(10, debugSeq, state);
       const injRoll = Math.max(1, Math.min(10, injRollRaw + shift));
-      const row = injuryLookup(injRoll);
+      const row = injuryLookup(injRoll, loser);
       let clashTail = `受傷表 1d10=${injRollRaw}${shift ? `+${shift}→${injRoll}` : ''} ${row.label}`;
       let dmg = 0, counterNote = '', stunNote = '', ripSkill = null;
       if (row.dmg === null) {
         const coin = getRnd(2, debugSeq, state);
         if (coin === 2) {
           const r2roll = getRnd(10, debugSeq, state);
-          const row2 = injuryLookup(r2roll);
+          const row2 = injuryLookup(r2roll, loser);
           dmg = row2.dmg * 2 * (winnerSkill.mult || 1);
           const counterSkill = (loser.skills || []).find(s => ((s.counter || 0) > 0 || (s.counterCat || 0) > 0) && (s.currentCd || 0) === 0);
           if (counterSkill && dmg > 0) {
@@ -1880,6 +1911,13 @@
       else { showToast('⚠️ 戰意檢定格式為「回合:門檻」,已保留原值喵', 'error'); return; }
       saveCombatData();
     }
+    function forgeInjTable(side, value) {
+      const v = (value || '').trim();
+      if (!v) delete battle[side].injTable;
+      else if (parseInjTable(v)) battle[side].injTable = v;
+      else { showToast('⚠️ 受傷表格式無法解析(需完整涵蓋 1-10),已保留原值喵', 'error'); return; }
+      saveCombatData();
+    }
     function forgeAddSkill(side) {
       battle[side].skills.push({ id: 'f' + Date.now(), name: '新技能', ct: 0, atkMod: 0, mult: 1, dice: '', cost: 0, counter: 0 });
       saveCombatData(); renderForge(); renderBattleCards();
@@ -1943,6 +1981,7 @@
               <label class="flex flex-col items-center gap-0.5"><span class="text-muted">穿透門檻(Atk≥)</span><input type="number" value="${c.pierceAt || 0}" min="0" onchange="forgeActor('${side}', 'pierceAt', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center" /></label>
             </div>
             <label class="flex flex-col gap-1 text-[11px]"><span class="text-muted">📋 排程表(逗號分隔技能名,按回合出卡;表外回合用普攻,如「超人烈海王,Flower star」)</span><textarea rows="1" onchange="forgeSchedule('${side}', this.value)" class="w-full border border-default rounded-lg px-2 py-1.5 bg-transparent text-xs font-mono focus:outline-none">${(c.schedule || []).join(',')}</textarea></label>
+            <label class="flex flex-col gap-1 text-[11px]"><span class="text-muted">🩹 個人受傷表(B-2,「lo-hi:label:dmg」逗號分隔,需涵蓋 1-10;例「1-2:迴避:0,3-4:小傷:1,5-6:中傷:2,7-8:大傷:3,9:特大傷:4,10:極端」;極端行走 1d2)</span><input type="text" value="${c.injTable || ''}" placeholder="1-2:迴避:0,3-4:小傷:1,5-6:中傷:2,7-8:大傷:3,9:特大傷:4,10:極端" onchange="forgeInjTable('${side}', this.value)" class="w-full border border-default rounded-lg px-2 py-1.5 bg-transparent text-xs font-mono focus:outline-none" /></label>
             <div class="space-y-2">
               ${(c.skills || []).map(skillRow).join('') || '<div class="text-muted text-center py-2 text-xs">尚無技能</div>'}
               <button onclick="forgeAddSkill('${side}')" class="w-full py-2 border border-dashed border-${color}-500/50 rounded-xl text-xs font-bold text-${color}-400 hover:bg-${color}-500/10 transition">+ 新增技能</button>
