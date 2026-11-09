@@ -1422,8 +1422,10 @@
           dmg += diceTotal;
           clashTail += ` ➔ 1d2=2 💥大失敗 ➔ 再擲 ${r2roll} ${row2.label}X2`;
         } else {
-          winner.hp -= 2;
-          clashTail += ` ➔ 1d2=1 🛡️受擊方大成功(完全防禦+反擊 2)`;
+          // 大成功(88:F1418 起):完全防禦(不扣 HP)+對攻方骰受傷反擊——原設計值「反擊 2」廢止;接連大成功自然遞歸(原作:反擊無加成)
+          clashTail += ` ➔ 1d2=1 🛡️受擊方大成功——完全防禦,並對攻方骰受傷反擊(F1418)`;
+          const rc = settleInjury(winner, winner.name, loser, {}, debugSeq, state);
+          clashTail += ` ${rc.clashTail}`;
         }
       } else {
         dmg = row.dmg * (winnerSkill.mult || 1);
@@ -1480,10 +1482,14 @@
           }
         }
       } else if ((winnerSkill.stun || 0) > 0 && dmg > 0 && (loser.stunTurns || 0) === 0) {
-        const sr = getRnd(100, debugSeq, state);
-        if (sr >= 66) { loser.stunTurns = 2; stunNote = `😵特殊攻擊判定 ${sr} ≥66 ➔ 眩暈 2 回合`; }
-        else if (sr >= 31) { loser.stunTurns = 1; stunNote = `😵特殊攻擊判定 ${sr} 31-65 ➔ 眩暈 1 回合`; }
-        else stunNote = `特殊攻擊判定 ${sr} 1-30 ➔ 不眩`;
+        // 眩暈累計難度(21033:886F):未中累計 -10 判定難度(=骰值+10),眩暈成功即重置;原作分檔「10-30 不眩」明文(1-9 原文未定義,併入不眩)
+        const srRaw = getRnd(100, debugSeq, state);
+        const stack = winner.stunFailStack || 0;
+        const sr = srRaw + stack;
+        const disp = stack > 0 ? `${srRaw}+${stack}=${sr}` : `${sr}`;
+        if (sr >= 66) { loser.stunTurns = 2; winner.stunFailStack = 0; stunNote = `😵特殊攻擊判定 ${disp} ≥66 ➔ 眩暈 2 回合`; }
+        else if (sr >= 31) { loser.stunTurns = 1; winner.stunFailStack = 0; stunNote = `😵特殊攻擊判定 ${disp} 31-65 ➔ 眩暈 1 回合`; }
+        else { winner.stunFailStack = stack + 10; stunNote = `特殊攻擊判定 ${disp} 1-30 ➔ 不眩(難度累計 -10)`; }
       }
       if (stunNote) clashTail += ` ${stunNote}`;
       // 戰意條(A-6 資源條型,24688:642F 每次受到攻擊 -1D50/350F 60 以下跑):低於門檻 ➔ 逃跑(該方判負,runBattle 收束)
@@ -1547,16 +1553,29 @@
         const tag = foeStun ? `😵${foe.name}眩暈/束縛中` : `🌀${foe.name}蓄力中【${(foe.chargeSkill || { name: '—' }).name}】`;
         return { ...base, clash: `${tag},無法行動——${self.name}攻擊自動成立 ${r.clashTail}`, dmg: r.dmg, diceParts: r.diceParts, counterNote: r.counterNote, foeHp: Math.max(0, foe.hp) };
       }
-      // 處決技(B-4,74:8130F 榮耀處決):敵 HP≤門檻比例 ➔ 直接擊殺,免對拼
-      if ((skSelf.execHp || 0) > 0 && foe.hp > 0 && foe.hp <= Math.ceil(foe.hpMax * skSelf.execHp)) {
-        const cur = foe.hp;
-        foe.hp = 0;
-        return { ...base, clash: `💀處決宣告:敵 HP ${cur} ≤ 上限 ${foe.hpMax} 的 ${Math.round(skSelf.execHp * 100)}% ➔ 直接擊殺`, dmg: '處決', foeHp: 0 };
+      // 處決技(B-4,74:8130F 榮耀處決):敵 HP ≤ 門檻比例 ➔ 直接擊殺,免對拼。
+      // 多段血條(8130F 原作):依總和生命判定+只能最後一段使用+判定區間 +10;單段維持 當段上限×比例
+      if ((skSelf.execHp || 0) > 0 && foe.hp > 0) {
+        const multi = (foe.barHps || []).length > 1;
+        const lastSeg = !multi || foe.barIdx === foe.barHps.length - 1;
+        const totalHp = multi ? foe.barHps.reduce((a, b) => a + b, 0) : foe.hpMax;
+        const execLine = multi ? Math.ceil(totalHp * skSelf.execHp) + 10 : Math.ceil(foe.hpMax * skSelf.execHp);
+        if (lastSeg && foe.hp <= execLine) {
+          const cur = foe.hp;
+          foe.hp = 0;
+          return { ...base, clash: `💀處決宣告:敵 HP ${cur} ≤ ${multi ? `總和生命 ${totalHp} 的 ${Math.round(skSelf.execHp * 100)}%+區間 10 = ` : `上限 ${foe.hpMax} 的 `}${execLine} ➔ 直接擊殺${multi ? '(74:8130F 多段:最後段限定)' : ''}`, dmg: '處決', foeHp: 0 };
+        }
       }
-      // 自動勝利(88:6117F 假腿 The World):對手 Atk < 門檻 ➔ 直接判定戰鬥結束
-      if ((skSelf.autoWin || 0) > 0 && foe.atk < (skSelf.autoWinAtk || 0)) {
-        foe.hp = 0;
-        return { ...base, clash: `🏆自動勝利:對手 Atk ${foe.atk} < 門檻 ${skSelf.autoWinAtk} ➔ 直接判定戰鬥結束(勝者 ${self.name})`, dmg: '自動勝利', foeHp: 0 };
+      // 自動勝利(88:6117F 假腿 The World 兩段):發動即本回合自動勝利+傷害必中(骰式入帳);對 Atk<門檻對手直接判定戰鬥結束
+      if ((skSelf.autoWin || 0) > 0) {
+        if (foe.atk < (skSelf.autoWinAtk || 0)) {
+          foe.hp = 0;
+          return { ...base, clash: `🏆自動勝利:對手 Atk ${foe.atk} < 門檻 ${skSelf.autoWinAtk} ➔ 直接判定戰鬥結束(勝者 ${self.name})`, dmg: '自動勝利', foeHp: 0 };
+        }
+        let wTotal = 0, wParts = [];
+        if (skSelf.dice) { const wd = rollDiceExpr(skSelf.dice, debugSeq, state); wTotal = wd.total; wParts = wd.parts; }
+        foe.hp -= wTotal;
+        return { ...base, clash: `🏆自動勝利(本回合,傷害必中,6117F)${wTotal > 0 ? '' : '——無骰式,僅判定'}`, dmg: wTotal, diceParts: wParts, foeHp: Math.max(0, foe.hp) };
       }
       // CT 操作(A-4,88:128F 武之真意):發動時雙方全技能 CT 清 0
       if ((skSelf.ctReset || 0) > 0) {
@@ -1640,6 +1659,7 @@
       A.bindLost = 0; B.bindLost = 0; // 束縛即死旗標(88:636F)
       A.chargeTurns = 0; B.chargeTurns = 0; A.chargeSkill = null; B.chargeSkill = null; // 蓄力狀態(A-5)
       A.moraleVal = 100; B.moraleVal = 100; A.moraleFled = 0; B.moraleFled = 0; // 戰意條(A-6,100 起始)
+      A.stunFailStack = 0; B.stunFailStack = 0; // 眩暈未中累計難度(21033:886F)
       A.regenVal = A.regen || 0; B.regenVal = B.regen || 0;
       const steps = [];
       let winner = null, rounds = 0, stopped = null;

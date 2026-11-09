@@ -118,7 +118,7 @@
   S['b05_bigfail'] = B('40,60,10,2,3', () => { onlyNormal('player'); onlyNormal('enemy'); battle.enemy.hp = 4; renderBattleCards(); }); // 受傷表 10 ➔ 1d2=2 大失敗 ➔ 再擲 3 中傷×2=4 擊殺
   S['b06_draw'] = B(Array.from({ length: 150 }, (_, i) => [40, 60, 1][i % 3]).join(','), () => { onlyNormal('player'); onlyNormal('enemy'); battle.enemy.hp = 999; renderBattleCards(); }); // 50 回合全迴避 ➔ 平局
   S['b07_nocscf'] = B('10,96,8,20,70,8', () => { onlyNormal('player'); onlyNormal('enemy'); battle.enemy.hp = 6; renderBattleCards(); }); // 骰 96 不再是 CS(傷害 4 而非 ×2=8):B 案保真驗證
-  S['b08_injury10_counter'] = B('40,60,10,1,10,70,5', () => { onlyNormal('player'); onlyNormal('enemy'); battle.enemy.hp = 2; renderBattleCards(); }); // 受傷表 10 ➔ 1d2=1 受擊方大成功(防禦+反擊2:烈海王 HP 17→15)➔ R2 擊殺
+  S['b08_injury10_counter'] = B('40,60,10,1,10,70,5', () => { onlyNormal('player'); onlyNormal('enemy'); battle.enemy.hp = 2; renderBattleCards(); }); // 受傷表 10 ➔ 1d2=1 大成功(F1418:完全防禦+對攻方骰受傷——反擊擲 10 又接大失敗鏈 4 傷,烈海王 HP 17→13)
   S['b09_rhythm'] = B('40,60,1,10,70,1,40,8,10,70,8', () => { battle.player.skills = [BATTLE_DEFAULT.player.skills[0], SUPERSKILL()]; battle.enemy.skills = [BATTLE_DEFAULT.enemy.skills[0]]; battle.enemy.hp = 20; renderBattleCards(); }); // 策略節奏:R1-2 普攻試探(迴避)、R3 劣勢翻盤超人(免擲)、R4 超人 CD 改普攻斬殺
   S['b10_once'] = B('40,60,5,40,60,5,40,8,40,60,5', () => { battle.player.skills = [BATTLE_DEFAULT.player.skills[0], { ...SUPERSKILL(), oncePerBattle: 1 }]; battle.enemy.skills = [BATTLE_DEFAULT.enemy.skills[0]]; battle.enemy.hp = 99; renderBattleCards(); }); // 一場一次(A-3):R3 翻盤用掉大招後 R4 不再選(once 用過)➔ 普攻
   S['b11_duration'] = B('40,60,1,40,60,1,40,5,40,10,5,40,60,5,90,5,3', () => { battle.player.skills = [BATTLE_DEFAULT.player.skills[0], { id: 'wzh', name: '武之怀', ct: 5, atkMod: 60, duration: 3, mult: 1, dice: '', cost: 0, counter: 0 }]; battle.enemy.skills = [BATTLE_DEFAULT.enemy.skills[0]]; battle.enemy.hp = 99; renderBattleCards(); }); // 持續效果(A-8):R3 發動 buff 60(免擲)、R4 普攻仍吃 buff(286)、R5 336、R6 buff 到期回落 276
@@ -169,6 +169,10 @@
   const INJ_DBL_DODGE = '1-2:迴避:0,3-4:小傷:1,5-6:中傷:2,7-8:大傷:3,9:特大傷:4,10:極端';
   S['b48_custom_table'] = B('50,2', () => moraleSetup('enemy', { injTable: INJ_DBL_DODGE })); // 個人受傷表(B-2 表驅動):雙迴避行 1-2 ➔ 擲 2 = 迴避 0 傷(預設表同骰為小傷 1),敵 HP 不動
   S['b49_custom_table_reroll'] = B('50,10,2,5', () => moraleSetup('enemy', { injTable: '1:迴避:0,2-8:小傷:1,9:特大傷:4,10:極端' })); // 自訂表+第10行鏈:極端 ➔ 1d2=2 大失敗 ➔ 再擲 5 查自訂表=小傷 1 ×2=2(HP 18→16)
+  S['b50_row10_counter'] = B('50,10,1,4', () => moraleSetup('enemy', {})); // 大成功反擊原作化(F1418):第10行 1d2=1 ➔ 完全防禦+對攻方骰受傷——反擊擲 4 中傷 2,烈海王 HP 17→15(取代舊設計值「反擊 2」)
+  S['b51_stun_stack'] = B('50,2,20,50,2,20,50,2,20', () => { moraleSetup('enemy', {}); battle.player.skills = [{ id: 'st', name: '虹色太極拳', ct: 0, atkMod: 0, mult: 1, dice: '', cost: 0, counter: 0, stun: 1 }]; renderBattleCards(); }); // 眩暈累計難度(21033:886F):R1 擲 20 不眩(stack10)、R2 20+10=30 不眩(stack20)、R3 20+20=40 ➔ 眩 1(成功重置)
+  S['b52_exec_multi'] = B('2,2,2,2,2,2,2,2,2,2', () => { moraleSetup('enemy', {}); battle.enemy.bars = '5,5,1'; battle.player.skills = [{ id: 'ex', name: '榮耀處決', ct: 0, atkMod: 0, mult: 1, dice: '', cost: 0, counter: 0, execHp: 0.2 }]; renderBattleCards(); }); // 處決多段保真(8130F):序列耗盡後 LCG 推段,R8 敵進最後段 HP 1 ≤ 總和 11×20%+10=13 ➔ 直接擊殺(前兩段不觸發=最後段限定)
+  S['b53_autowin_round'] = B('4', () => { onlyNormal('player'); battle.player.skills = [{ id: 'tw', name: '假腿 The World', ct: 0, atkMod: 0, mult: 1, dice: '2+1d5', cost: 0, counter: 0, autoWin: 1, autoWinAtk: 400 }]; battle.player.atk = 5; battle.enemy.skills = [BATTLE_DEFAULT.enemy.skills[0]]; battle.enemy.atk = 500; renderBattleCards(); }); // The World 前半補全(6117F):敵 Atk 500 ≥ 400 不終局 ➔ 本回合自動勝利+傷害必中(骰 2+4=6)
   // 還原掛鉤
   window.showToast = origToast;
   navigator.clipboard.writeText = origWrite;
