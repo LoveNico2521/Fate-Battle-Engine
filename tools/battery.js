@@ -181,6 +181,8 @@
   S['b57_revive'] = B('40,8', () => REVIVE_SETUP(5)); // 復活攔截(B-5①,1157F 急救拳式):超人免擲 16 擊殺 ➔ 🎗️HP 歸零攔截復活 5,戰鬥續行
   S['b58_revive_dice'] = B('40,8,4', () => REVIVE_SETUP('1d5')); // Death Cancel 式(2205F 0→1d5):復活量骰 1d5=4 ➔ HP→4(骰式每次重擲)
   S['b59_auto_hp'] = B('40,20,4,40,20,4,40,60', () => { onlyNormal('player'); battle.player.skills = [BATTLE_DEFAULT.player.skills[0], { id: 'xk', name: '俠客行', ct: 0, atkMod: 60, mult: 1, dice: '', cost: 0, counter: 0, autoHpPct: 0.5 }]; battle.player.hp = 8; battle.enemy.skills = [BATTLE_DEFAULT.enemy.skills[0]]; renderBattleCards(); }); // HP 閾值自動技(B-5②,2044F 俠客行):卡面 hp=8 為上限(修復後語義),受擊 8→6→4 ≤ 8×50% ➔ R3 跳過策略強制出俠客行
+  S['b60_gear_fail'] = B('10,2,80,40,60', () => { onlyNormal('player'); onlyNormal('enemy'); battle.player.gear = '20:20:假腿'; renderBattleCards(); }); // 裝備判定(B-6,77F 假腿):R1 擲 10<20 ➔ ⚙️該回合自動失敗+永久 Atk-20(216→196);R2 擲 80 通過,攻擊值 196 落空
+  S['b61_gear_pass'] = B('80,40,60', () => { onlyNormal('player'); onlyNormal('enemy'); battle.player.gear = '20:20:假腿'; renderBattleCards(); }); // 裝備判定通過:R1 擲 80≥20 ➔ 無 gear 行,正常對拼命中
   // 還原掛鉤
   window.showToast = origToast;
   navigator.clipboard.writeText = origWrite;

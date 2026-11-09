@@ -1331,6 +1331,18 @@
       return `🎗️${c.name} HP 歸零攔截 ➔ 復活 ${rv}(第 ${c.reviveUsed}/${c.reviveTimes || 1} 次,HP→${c.hp})`;
     }
 
+    // 裝備判定(B-6,88:77F 假腿「每輪戰鬥都需要進行一次【1d100】的假腿判定,20 以下假腿斷裂,該回合戰鬥自動失敗同時之後的戰鬥中 Atk-20」/83F 實演):
+    // 角色 gear DSL「門檻:減益:名稱」,例「20:20:假腿」——每回合開頭 1d100 < 門檻 ➔ 該回合自動失敗+永久 Atk-減益。回傳 {below, penalty, name} 或 null
+    function parseGear(v) {
+      if (!v) return null;
+      if (typeof v === 'object') {
+        const below = Math.floor(Number(v.below)) || 0;
+        return below > 0 ? { below, penalty: Math.max(0, Math.floor(Number(v.penalty)) || 0), name: String(v.name || '裝備') } : null;
+      }
+      const m = String(v).trim().match(/^(\d+)\s*:\s*(\d+)\s*:\s*(.+)$/);
+      return m ? { below: +m[1], penalty: +m[2], name: m[3].trim() } : null;
+    }
+
     // AI 選技(確定策略,無機率——模擬原作作者的節奏決策;骰子只負責原作有骰的位置:對拼/受傷表/破解):
     // 1) 斬殺線:預估傷害(受傷表特大 4 × mult + 骰式期望)≥ 敵 HP → 速戰速決用最大傷技
     // 2) 劣勢翻盤:開場 2 回合試探後,基礎 Atk 低於對手(對拼期望輸)→ 開 atkMod 最大技(88:紅美鈴Ⅱ戰烈海王被壓制後開超人)
@@ -1550,24 +1562,24 @@
       if (skFoe && (skFoe.shieldGain || 0) > 0) { foe.shield = (foe.shield || 0) + skFoe.shieldGain; }
       // 無法行動(眩暈 B-3/蓄力 A-5):單方 ➔ 對手攻擊自動成立;雙方 ➔ 對峙一回合
       // (88:636F 束縛=戰鬥自動失敗走 special 的 bindLost 旗標;炎火村眩暈=跳回合——本引擎採跳回合+受傷結算)
-      const selfStun = (self.stunTurns || 0) > 0, selfChg = (self.chargeTurns || 0) > 0;
-      const foeStun = (foe.stunTurns || 0) > 0, foeChg = (foe.chargeTurns || 0) > 0;
-      if (selfStun || selfChg || foeStun || foeChg) {
+      const selfStun = (self.stunTurns || 0) > 0, selfChg = (self.chargeTurns || 0) > 0, selfGear = (self.gearFailed || 0) > 0;
+      const foeStun = (foe.stunTurns || 0) > 0, foeChg = (foe.chargeTurns || 0) > 0, foeGear = (foe.gearFailed || 0) > 0;
+      if (selfStun || selfChg || selfGear || foeStun || foeChg || foeGear) {
         if (selfStun) self.stunTurns--;
         if (selfChg) self.chargeTurns--;
         if (foeStun) foe.stunTurns--;
         if (foeChg) foe.chargeTurns--;
-        if ((selfStun || selfChg) && (foeStun || foeChg)) {
-          return { ...base, clash: `🌀雙方都無法行動(眩暈/蓄力中),對峙一回合`, dmg: 0, foeHp: Math.max(0, foe.hp), selfHpAfter: Math.max(0, self.hp) };
+        if ((selfStun || selfChg || selfGear) && (foeStun || foeChg || foeGear)) {
+          return { ...base, clash: `🌀雙方都無法行動(眩暈/蓄力/裝備判定失敗),對峙一回合`, dmg: 0, foeHp: Math.max(0, foe.hp), selfHpAfter: Math.max(0, self.hp) };
         }
-        if (selfStun || selfChg) {
+        if (selfStun || selfChg || selfGear) {
           const r = settleInjury(self, self.name, foe, skFoe, debugSeq, state);
-          const tag = selfStun ? `😵${self.name}眩暈/束縛中` : `🌀${self.name}蓄力中【${(self.chargeSkill || { name: '—' }).name}】`;
-          return { ...base, clash: `${tag},無法行動——${foe.name}攻擊自動成立 ${r.clashTail}`, dmg: r.dmg, diceParts: r.diceParts, counterNote: r.counterNote, foeHp: Math.max(0, foe.hp), selfHpAfter: Math.max(0, self.hp) };
+          const tag = selfStun ? `😵${self.name}眩暈/束縛中` : selfChg ? `🌀${self.name}蓄力中【${(self.chargeSkill || { name: '—' }).name}】` : `⚙️${self.name}裝備判定失敗(1d100=${self.gearRollLast}<門檻)`;
+          return { ...base, clash: `${tag},該回合戰鬥自動失敗——${foe.name}攻擊自動成立 ${r.clashTail}`, dmg: r.dmg, diceParts: r.diceParts, counterNote: r.counterNote, foeHp: Math.max(0, foe.hp), selfHpAfter: Math.max(0, self.hp) };
         }
         const r = settleInjury(foe, foe.name, self, skSelf, debugSeq, state);
-        const tag = foeStun ? `😵${foe.name}眩暈/束縛中` : `🌀${foe.name}蓄力中【${(foe.chargeSkill || { name: '—' }).name}】`;
-        return { ...base, clash: `${tag},無法行動——${self.name}攻擊自動成立 ${r.clashTail}`, dmg: r.dmg, diceParts: r.diceParts, counterNote: r.counterNote, foeHp: Math.max(0, foe.hp) };
+        const tag = foeStun ? `😵${foe.name}眩暈/束縛中` : foeChg ? `🌀${foe.name}蓄力中【${(foe.chargeSkill || { name: '—' }).name}】` : `⚙️${foe.name}裝備判定失敗(1d100=${foe.gearRollLast}<門檻)`;
+        return { ...base, clash: `${tag},該回合戰鬥自動失敗——${self.name}攻擊自動成立 ${r.clashTail}`, dmg: r.dmg, diceParts: r.diceParts, counterNote: r.counterNote, foeHp: Math.max(0, foe.hp) };
       }
       // 處決技(B-4,74:8130F 榮耀處決):敵 HP ≤ 門檻比例 ➔ 直接擊殺,免對拼。
       // 多段血條(8130F 原作):依總和生命判定+只能最後一段使用+判定區間 +10;單段維持 當段上限×比例
@@ -1711,6 +1723,16 @@
       }
       while (rounds < (cfgMaxRounds > 0 ? cfgMaxRounds : 50)) { // loopSafety 兜底:50 回合未分勝負判平局(原作靠免擲即決收束;回合上限=cfg.maxRounds)
         rounds++;
+        // 裝備判定(B-6,88:77F 假腿):帶 gear 者每回合開頭 1d100,低於門檻 ➔ 該回合自動失敗+永久 Atk-減益
+        [A, B].forEach(c => { c.gearFailed = 0; });
+        for (const c of [A, B]) {
+          const g = parseGear(c.gear);
+          if (g) {
+            const gr = getRnd(100, debugSeq, state);
+            c.gearRollLast = gr;
+            if (gr < g.below) { c.gearFailed = 1; c.atk -= g.penalty; }
+          }
+        }
         // 每回合一次雙向對拼(88:633~642F:T1~T9 每 T 雙方各擲攻擊一次,敗方擲受傷表)
         steps.push(battleTurn(A, B, rounds, 'player', debugSeq, state));
         // 束縛即死(88:636F):special 判定束縛 ➔ 被縛方戰鬥自動失敗——先於 HP/血條/支援位結算
@@ -1954,6 +1976,13 @@
       else { showToast('⚠️ 戰意檢定格式為「回合:門檻」,已保留原值', 'error'); return; }
       saveCombatData();
     }
+    function forgeGear(side, value) {
+      const v = (value || '').trim();
+      if (!v) delete battle[side].gear;
+      else if (parseGear(v)) battle[side].gear = v;
+      else { showToast('⚠️ 裝備判定格式為「門檻:減益:名稱」,已保留原值', 'error'); return; }
+      saveCombatData();
+    }
     function forgeRevive(side, value) {
       const v = (value || '').trim();
       if (!v) delete battle[side].revive;
@@ -2035,6 +2064,7 @@
             </div>
             <label class="flex flex-col gap-1 text-[11px]"><span class="text-muted">📋 排程表(逗號分隔技能名,按回合出卡;表外回合用普攻,如「超人烈海王,Flower star」)</span><textarea rows="1" onchange="forgeSchedule('${side}', this.value)" class="w-full border border-default rounded-lg px-2 py-1.5 bg-transparent text-xs font-mono focus:outline-none">${(c.schedule || []).join(',')}</textarea></label>
             <label class="flex flex-col gap-1 text-[11px]"><span class="text-muted">🩹 個人受傷表(B-2,「lo-hi:label:dmg」逗號分隔,需涵蓋 1-10;例「1-2:迴避:0,3-4:小傷:1,5-6:中傷:2,7-8:大傷:3,9:特大傷:4,10:極端」;極端行走 1d2)</span><input type="text" value="${c.injTable || ''}" placeholder="1-2:迴避:0,3-4:小傷:1,5-6:中傷:2,7-8:大傷:3,9:特大傷:4,10:極端" onchange="forgeInjTable('${side}', this.value)" class="w-full border border-default rounded-lg px-2 py-1.5 bg-transparent text-xs font-mono focus:outline-none" /></label>
+            <label class="flex flex-col gap-1 text-[11px]"><span class="text-muted">⚙️ 裝備判定(B-6,「門檻:減益:名稱」,例「20:20:假腿」;每回合 1d100<門檻 ➔ 該回合自動失敗+永久 Atk-減益,88:77F/83F)</span><input type="text" value="${c.gear || ''}" placeholder="20:20:假腿" onchange="forgeGear('${side}', this.value)" class="w-full border border-default rounded-lg px-2 py-1.5 bg-transparent text-xs font-mono focus:outline-none" /></label>
             <div class="space-y-2">
               ${(c.skills || []).map(skillRow).join('') || '<div class="text-muted text-center py-2 text-xs">尚無技能</div>'}
               <button onclick="forgeAddSkill('${side}')" class="w-full py-2 border border-dashed border-${color}-500/50 rounded-xl text-xs font-bold text-${color}-400 hover:bg-${color}-500/10 transition">+ 新增技能</button>
