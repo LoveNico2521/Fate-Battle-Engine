@@ -1380,7 +1380,6 @@
           }
           dmg += (loser.injuryFlat || 0);
           dmg += diceTotal;
-          loser.hp -= dmg;
           clashTail += ` ➔ 1d2=2 💥大失敗 ➔ 再擲 ${r2roll} ${row2.label}X2`;
         } else {
           winner.hp -= 2;
@@ -1396,8 +1395,20 @@
         }
         dmg += (loser.injuryFlat || 0);
         dmg += diceTotal;
-        loser.hp -= dmg;
         clashTail += `(${row.dmg})${(winnerSkill.mult || 1) > 1 ? `×${winnerSkill.mult}` : ''}`;
+      }
+      // 減傷三件套(B-1,三件一體):①消力——減半/固定減 N(可歸零無傷,88:1149F「必中 1-消力 2=無傷」)②屬性攻擊繞過消力(253F「沒法用消力消掉」)③攻方 Atk 穿透門檻(325F「Atk 大於 240,傷害不會減半」)
+      if (dmg > 0 && ((loser.reduceHalf || 0) > 0 || (loser.reduceFlat || 0) > 0)) {
+        if (winnerSkill.elem) {
+          clashTail += ` 🔥屬性攻擊繞過消力`;
+        } else if ((winner.pierceAt || 0) > 0 && winner.atk >= winner.pierceAt) {
+          clashTail += ` ⚡Atk ${winner.atk} ≥ 穿透門檻 ${winner.pierceAt} ➔ 穿透消力`;
+        } else {
+          const before = dmg;
+          if ((loser.reduceHalf || 0) > 0) dmg = Math.floor(dmg / 2);
+          if ((loser.reduceFlat || 0) > 0) dmg = Math.max(0, dmg - loser.reduceFlat);
+          if (dmg !== before) clashTail += ` 🔻消力:${before}→${dmg}${dmg === 0 ? '(無傷)' : ''}`;
+        }
       }
       // 護盾池(炎火村 886F/1022F:盾先行吸收,盾破蓄力失敗;DOOM 無關)
       if ((loser.shield || 0) > 0 && dmg > 0) {
@@ -1406,6 +1417,8 @@
         dmg -= absorbed;
         clashTail += ` 🛡️護盾吸收 ${absorbed}${dmg <= 0 ? '(完全防禦)' : `,餘傷 ${dmg}`}`;
       }
+      // HP 結算:扣減消力/護盾後的最終傷害(修正:原實現 HP 全額扣減、盾池只改顯示值——b20 per 隨此修正更新)
+      loser.hp -= dmg;
       // 特殊攻擊判定(B-11 框架):卡面 special 優先(判定骰+分段表→效果;眩暈首例,效果分派留擴充);
       // 未設 special 時保留舊 stun 旗標三段表(炎火村,路徑與記錄逐位元組不變)
       if (winnerSkill.special && dmg > 0 && (loser.stunTurns || 0) === 0) {
@@ -1771,7 +1784,7 @@
       if (!s) return;
       if (field === 'name') s.name = value.trim() || s.name;
       else if (field === 'dice') s.dice = value.trim();
-      else if (field === 'alwaysHit' || field === 'oncePerBattle' || field === 'stun') s[field] = value ? 1 : 0;
+      else if (field === 'alwaysHit' || field === 'oncePerBattle' || field === 'stun' || field === 'elem') s[field] = value ? 1 : 0;
       else s[field] = Math.max(0, Math.floor(Number(value)) || 0);
       if (field === 'mult' && s.mult < 1) s.mult = 1;
       saveCombatData(); renderBattleCards();
@@ -1824,7 +1837,7 @@
       if (!sk) return;
       if (field === 'name') sk.name = value.trim() || sk.name;
       else if (field === 'dice') sk.dice = value.trim();
-      else if (['oncePerBattle', 'stun', 'alwaysHit'].includes(field)) sk[field] = value ? 1 : 0;
+      else if (['oncePerBattle', 'stun', 'alwaysHit', 'elem'].includes(field)) sk[field] = value ? 1 : 0;
       else sk[field] = Math.max(0, Math.floor(Number(value)) || 0);
       saveCombatData(); renderBattleCards();
     }
@@ -1871,6 +1884,7 @@
               <label class="flex items-center gap-1 text-[11px] text-muted cursor-pointer"><input type="checkbox" ${sk.oncePerBattle ? 'checked' : ''} onchange="forgeSkill('${side}', ${i}, 'oncePerBattle', this.checked)" class="w-4 h-4 accent-indigo-500 cursor-pointer" />一場一次</label>
               <label class="flex items-center gap-1 text-[11px] text-muted cursor-pointer"><input type="checkbox" ${sk.stun ? 'checked' : ''} onchange="forgeSkill('${side}', ${i}, 'stun', this.checked)" class="w-4 h-4 accent-indigo-500 cursor-pointer" />眩暈</label>
               <label class="flex items-center gap-1 text-[11px] text-muted cursor-pointer"><input type="checkbox" ${sk.alwaysHit ? 'checked' : ''} onchange="forgeSkill('${side}', ${i}, 'alwaysHit', this.checked)" class="w-4 h-4 accent-indigo-500 cursor-pointer" />必中</label>
+              <label class="flex items-center gap-1 text-[11px] text-muted cursor-pointer"><input type="checkbox" ${sk.elem ? 'checked' : ''} onchange="forgeSkill('${side}', ${i}, 'elem', this.checked)" class="w-4 h-4 accent-indigo-500 cursor-pointer" />屬性</label>
               <button onclick="forgeDelSkill('${side}', ${i})" class="text-rose-500 hover:text-rose-400 font-bold px-1 text-lg">&times;</button>
             </div>
             <div class="grid grid-cols-4 md:grid-cols-9 gap-1.5 text-[11px]">
@@ -1898,12 +1912,15 @@
               <label class="flex flex-col items-center gap-0.5 text-[11px]"><span class="text-muted">血條段(可「20,10,5,5,1」)</span><input type="text" value="${c.bars || 1}" onchange="forgeActor('${side}', 'bars', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center font-bold" /></label>
               <label class="flex flex-col items-center gap-0.5 text-[11px]"><span class="text-muted">支援位</span><input type="number" value="${c.supportDmg || 0}" min="0" onchange="forgeActor('${side}', 'supportDmg', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center font-bold" /></label>
             </div>
-            <div class="grid grid-cols-3 md:grid-cols-5 gap-2 text-[11px]">
+            <div class="grid grid-cols-3 md:grid-cols-8 gap-2 text-[11px]">
               <label class="flex flex-col items-center gap-0.5"><span class="text-muted">regen</span><input type="number" value="${c.regen || 0}" min="0" onchange="forgeActor('${side}', 'regen', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center" /></label>
               <label class="flex flex-col items-center gap-0.5"><span class="text-muted">表位移</span><input type="number" value="${c.injShift || 0}" onchange="forgeActor('${side}', 'injShift', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center" /></label>
               <label class="flex flex-col items-center gap-0.5"><span class="text-muted">表+N</span><input type="number" value="${c.injFlat || 0}" min="0" onchange="forgeActor('${side}', 'injFlat', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center" /></label>
               <label class="flex flex-col items-center gap-0.5"><span class="text-muted">戰意門檻(低於即逃)</span><input type="number" value="${c.moraleFlee || 0}" min="0" onchange="forgeActor('${side}', 'moraleFlee', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center" /></label>
               <label class="flex flex-col items-center gap-0.5"><span class="text-muted">戰意檢定(回合:門檻)</span><input type="text" value="${c.moraleCheck || ''}" placeholder="3:30" onchange="forgeMoraleCheck('${side}', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center font-mono" /></label>
+              <label class="flex items-center gap-1 text-muted cursor-pointer"><input type="checkbox" ${c.reduceHalf ? 'checked' : ''} onchange="forgeActor('${side}', 'reduceHalf', this.checked)" class="w-4 h-4 accent-indigo-500 cursor-pointer" />消力半</label>
+              <label class="flex flex-col items-center gap-0.5"><span class="text-muted">消力-N</span><input type="number" value="${c.reduceFlat || 0}" min="0" onchange="forgeActor('${side}', 'reduceFlat', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center" /></label>
+              <label class="flex flex-col items-center gap-0.5"><span class="text-muted">穿透門檻(Atk≥)</span><input type="number" value="${c.pierceAt || 0}" min="0" onchange="forgeActor('${side}', 'pierceAt', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center" /></label>
             </div>
             <label class="flex flex-col gap-1 text-[11px]"><span class="text-muted">📋 排程表(逗號分隔技能名,按回合出卡;表外回合用普攻,如「超人烈海王,Flower star」)</span><textarea rows="1" onchange="forgeSchedule('${side}', this.value)" class="w-full border border-default rounded-lg px-2 py-1.5 bg-transparent text-xs font-mono focus:outline-none">${(c.schedule || []).join(',')}</textarea></label>
             <div class="space-y-2">

@@ -158,6 +158,9 @@
   S['b39_morale_flee'] = B('50,2,20', () => moraleSetup('enemy', { moraleFlee: 90 })); // 戰意條(A-6 資源條型,642F/350F):R1 有效受擊 -1d50=20 ➔ 戰意 80 < 門檻 90 ➔ 逃跑,勝者烈海王(R1)
   S['b40_morale_check'] = B('50,2,50,2,40', () => moraleSetup('player', { moraleCheck: '2:50' })); // 戰意檢定(A-6 檢定型,234F):R2 末擲 40 < 50 ➔ 烈海王投降,勝者紅美鈴
   S['b41_morale_check_pass'] = B('50,2,50,2,60', () => moraleSetup('player', { moraleCheck: '2:50' })); // 檢定通過:R2 末擲 60 ≥ 50 ➔ 戰意不動,戰鬥續行(尾巴 LCG)
+  S['b42_reduce_flat_zero'] = B('50,2', () => moraleSetup('enemy', { reduceFlat: 2 })); // 消力固定減(B-1①):中傷 2-1=1 ➔ 消力-2 ➔ 0 無傷(1149F「必中 1-消力 2=無傷」),敵 HP 不動
+  S['b43_pierce'] = B('50,4', () => { moraleSetup('enemy', { reduceHalf: 1 }); battle.player.pierceAt = 240; }); // 穿透門檻(B-1③,325F):Atk 300 ≥ 240 ➔ 穿透消力,特大 4 不減半
+  S['b44_elem_bypass'] = B('50,2', () => { moraleSetup('enemy', { reduceFlat: 5 }); battle.player.skills = [{ id: 'el', name: '屬性彈', ct: 0, atkMod: 0, mult: 1, dice: '', cost: 0, counter: 0, elem: 1 }]; renderBattleCards(); }); // 屬性繞過(B-1②,253F):火焰系攻擊無視消力-5,小傷 1 全額入 HP
   // 還原掛鉤
   window.showToast = origToast;
   navigator.clipboard.writeText = origWrite;
