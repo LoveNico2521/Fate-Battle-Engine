@@ -70,7 +70,7 @@
 
 `tools/battery.js`:**battle 分支 36 個情境(引擎 31 + 戰鬥機 5),全部用 debug 序列強制確定性**,涵蓋 CS/CF 連鎖、三種 Boost(含負值與鉗制)、反向退回、0 Stacks、通用骰、自訂骰語法與錯誤、自動複製格式、Markdown 複製、輸入鉗制、戰鬥機(即決/免擲命中受傷表/破解減半/直接傷害/大失敗鏈/平局/無CS保真/第10行反擊/選技策略+排程表/一場一次/持續buff/回復regen/表位移/injuryFlat/stun眩暈/處決/自動勝利/CT操作/真實傷害/支援位/每段獨立HP/特殊判定框架+束縛即死版+蓄力+勝點制+勝利條件覆寫+戰意+減傷三件套+破解分檔+個人受傷表+標準層保真修正)+BBCode匯出(CSV 情境已移除——會觸發真實下載)。
 
-**基線(電池 hash)**:main 分支 31 情境 = `463080c0`;battle 分支 88 情境 = `12b1b43e`(兩輪一致已驗證;B 案 v3+選技策略+原語全套+支援位+每段獨立HP+排程表+BBCode+特殊判定框架 B-11+束縛即死版+蓄力 A-5+勝點制 B-12+勝利條件覆寫 A-10+戰意 A-6+減傷三件套 B-1+破解分檔 B-8+個人受傷表 B-2+標準層保真修正+UI 喵語尾掃除+三既有 bug 修正,LCG 基線;前基線 117964b4)。**驗證引擎零變更的方法**:跑 main 版電池(31 情境)於當前代碼,hash 應仍為 `463080c0`,且 s01~s32 逐項 per 與新電池完全一致。
+**基線(電池 hash)**:main 分支 31 情境 = `463080c0`;battle 分支 91 情境 = `f6f4d488`(兩輪一致已驗證;B 案 v3+選技策略+原語全套+支援位+每段獨立HP+排程表+BBCode+特殊判定框架 B-11+束縛即死版+蓄力 A-5+勝點制 B-12+勝利條件覆寫 A-10+戰意 A-6+減傷三件套 B-1+破解分檔 B-8+個人受傷表 B-2+標準層保真修正+UI 喵語尾掃除+三既有 bug 修正+復活/命運觸發器 B-5,LCG 基線;前基線 12b1b43e)。**驗證引擎零變更的方法**:跑 main 版電池(31 情境)於當前代碼,hash 應仍為 `463080c0`,且 s01~s32 逐項 per 與新電池完全一致。
 
 跑法:
 
@@ -117,6 +117,7 @@
 - Android APK 打包專案在 `C:\Users\user\.zcode\workspace\draft-2beac78f-4219-4cd9-b92e-486264f76810\fate-dreamweaver\_apkbuild`**(不在 repo 內;node_modules 與 build 產物太大故未納入 git)。重打包:`cd _apkbuild/android` 後設 `JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.11.10-hotspot`、`ANDROID_HOME=C:\Android\Sdk`,再 `gradlew assembleDebug`;SDK 已裝在 C:\Android\Sdk
 - **APK 單檔原則(主人 2026-11-09 裁決,兩分支皆然)**:`www/` 只放**當版單一檔案**——`index.html` = 當版 `index_classic.html` 全文(Capacitor 直接載入,App 打開就是引擎)。**不放版本選擇頁、不放歷史版本**(使用者不需要選 v44/v45/v46;歷史正本在 repo `legacy/` 與 GitHub Releases)。更新步驟:`cp index_classic.html _apkbuild/www/index.html` → `npx cap copy android` → `gradlew assembleDebug`
 - 桌面版 CSV 存檔走 `window.pywebview.api.save_csv`,網頁版走 blob 下載——兩條路都要測
+- **復活/命運觸發器(B-5)**:①HP 歸零攔截——角色欄位 `revive`(數值或骰式 DSL,急救拳 0→1 1157F/Death Cancel 0→1d5 2205F/蓬萊人形 190-191F)+`reviveTimes`(預設 1),血條段用盡後攔截(段推進優先),骰式每次重擲;②HP 閾值自動技——技能 `autoHpPct`,自身 HP ≤ 上限×比例時跳過策略強制出卡(俠客行 2044F/換命 2926F,插在斬殺線之前=命先於勝)。注意:卡面 hp 修復後 hp=上限,觸發區以受擊降入
 - **三既有 bug 修正(主人 2026-11-10「go」裁決)**:①injFlat/injuryFlat 鍵名統一(UI 三處改 injuryFlat,對齊引擎與 injuryShift 慣例——表+N 欄位復活)②卡面 hp 欄位復活(均勻段每段上限改用卡面 hp,原固定原廠 hp 致 Hp 輸入失效;20/10/5/5/1 逗號串裁決不動;per 大面積更新屬修復性變更,b01 斬殺線/b12 回復/b23 支援位等註解回復為真)③敵方側 duration/shieldGain 對稱生效(原僅 self 側)+免擲失敗行對手加數顯示補計 buff;新增 b54/b55/b56 實證
 - **UI 語音約定(主人 2026-11-10 裁決,對齊 d5d607e「菲特不是貓」)**:全 app toast/確認框**無喵語尾**——菲特本人語氣;全檔 22 處已掃除(引擎零變更,電池 53 情境僅 toasts 語音欄變更,經 pre/post JSON 逐欄位比對證明)
 - **倉庫分流(主人 2026-11-10 裁決)**:本倉 `Fate-Battle-Engine` = 戰鬥主線(battle 分支整段歷史遷出為 main);主線經典版在 `Fate-Dreamweaver-Engine`(其 battle 分支保留作遷出時刻的存檔快照)。**戰鬥工作從此全部在本倉 main 進行**;規則挖掘報告在本地 `C:\Users\user\Documents\anko_archive\analysis\`(不入倉,僅私人參考)

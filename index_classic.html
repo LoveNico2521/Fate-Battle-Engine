@@ -1321,6 +1321,16 @@
       return 50;
     }
 
+    // 復活攔截(B-5①,88:1157F 急救拳 0→1/2205F Death Cancel 0→1d5/74:190-191F 蓬萊人形):角色欄位 revive=數值或骰式 DSL、reviveTimes(預設 1)——
+    // HP 歸零且血條段用盡時攔截(段推進優先);骰式每次重擲。回傳復活文字,無復活資源 ➔ null
+    function tryRevive(c, debugSeq, state) {
+      if (!c.revive || (c.reviveUsed || 0) >= (c.reviveTimes || 1)) return null;
+      c.reviveUsed = (c.reviveUsed || 0) + 1;
+      const rv = rollDiceExpr(String(c.revive), debugSeq, state).total;
+      c.hp = Math.max(1, rv);
+      return `🎗️${c.name} HP 歸零攔截 ➔ 復活 ${rv}(第 ${c.reviveUsed}/${c.reviveTimes || 1} 次,HP→${c.hp})`;
+    }
+
     // AI 選技(確定策略,無機率——模擬原作作者的節奏決策;骰子只負責原作有骰的位置:對拼/受傷表/破解):
     // 1) 斬殺線:預估傷害(受傷表特大 4 × mult + 骰式期望)≥ 敵 HP → 速戰速決用最大傷技
     // 2) 劣勢翻盤:開場 2 回合試探後,基礎 Atk 低於對手(對拼期望輸)→ 開 atkMod 最大技(88:紅美鈴Ⅱ戰烈海王被壓制後開超人)
@@ -1342,6 +1352,9 @@
       }
       const usable = self.skills.filter(s => (s.currentCd || 0) === 0 && (s.cost || 0) <= self.hp && (s.oncePerBattle ? !s.usedThisBattle : true) && (s.condHpPct ? self.hp <= self.hpMax * s.condHpPct : true) && (s.condRoundMin ? round >= s.condRoundMin : true));
       if (!usable.length) return self.skills[0];
+      // HP 閾值自動技(B-5②,88:2044F 俠客行 Hp<8 自動發動/2926F 換命):自身 HP ≤ 上限×autoHpPct ➔ 跳過策略強制出卡(命先於勝)
+      const autoTrig = usable.filter(s => (s.autoHpPct || 0) > 0 && self.hp <= self.hpMax * s.autoHpPct);
+      if (autoTrig.length) return autoTrig[0];
       const dmgEst = s => 4 * (s.mult || 1) + (s.dice ? 5 : 0);
       const kill = usable.filter(s => dmgEst(s) >= foe.hp);
       if (kill.length) return kill.reduce((a, b) => dmgEst(b) > dmgEst(a) ? b : a);
@@ -1664,6 +1677,7 @@
       A.chargeTurns = 0; B.chargeTurns = 0; A.chargeSkill = null; B.chargeSkill = null; // 蓄力狀態(A-5)
       A.moraleVal = 100; B.moraleVal = 100; A.moraleFled = 0; B.moraleFled = 0; // 戰意條(A-6,100 起始)
       A.stunFailStack = 0; B.stunFailStack = 0; // 眩暈未中累計難度(21033:886F)
+      A.reviveUsed = 0; B.reviveUsed = 0; // 復活攔截計數(B-5①)
       A.regenVal = A.regen || 0; B.regenVal = B.regen || 0;
       const steps = [];
       let winner = null, rounds = 0, stopped = null;
@@ -1714,11 +1728,15 @@
           st.foeHp = Math.max(0, B.hp);
         }
         if (A.hp <= 0) {
-          if (phaseBreak(A, A.name)) steps.push({ round: rounds, side: 'player', actor: A.name, skillName: '—', clash: `💀血條擊破!${A.name} 進入下一段(HP 上限 ${A.hpMax},剩 ${A.barHps.length - A.barIdx} 段)`, dmg: 0, diceParts: [], counterNote: '', foeHp: Math.max(0, B.hp) });
+          const rvA = tryRevive(A, debugSeq, state); // 復活攔截(B-5①)優先於血條推進/判負
+          if (rvA) steps.push({ round: rounds, side: 'player', actor: A.name, skillName: '—', clash: rvA, dmg: 0, diceParts: [], counterNote: '', foeHp: Math.max(0, B.hp) });
+          else if (phaseBreak(A, A.name)) steps.push({ round: rounds, side: 'player', actor: A.name, skillName: '—', clash: `💀血條擊破!${A.name} 進入下一段(HP 上限 ${A.hpMax},剩 ${A.barHps.length - A.barIdx} 段)`, dmg: 0, diceParts: [], counterNote: '', foeHp: Math.max(0, B.hp) });
           else { winner = B; break; }
         }
         if (B.hp <= 0) {
-          if (phaseBreak(B, B.name)) steps.push({ round: rounds, side: 'player', actor: B.name, skillName: '—', clash: `💀血條擊破!${B.name} 進入下一段(HP 上限 ${B.hpMax},剩 ${B.barHps.length - B.barIdx} 段)`, dmg: 0, diceParts: [], counterNote: '', foeHp: Math.max(0, A.hp) });
+          const rvB = tryRevive(B, debugSeq, state);
+          if (rvB) steps.push({ round: rounds, side: 'player', actor: B.name, skillName: '—', clash: rvB, dmg: 0, diceParts: [], counterNote: '', foeHp: Math.max(0, A.hp) });
+          else if (phaseBreak(B, B.name)) steps.push({ round: rounds, side: 'player', actor: B.name, skillName: '—', clash: `💀血條擊破!${B.name} 進入下一段(HP 上限 ${B.hpMax},剩 ${B.barHps.length - B.barIdx} 段)`, dmg: 0, diceParts: [], counterNote: '', foeHp: Math.max(0, A.hp) });
           else { winner = A; break; }
         }
         // 離場條件(A-10,21033:3801F):任一方 HP ≤ 離場線 ➔ 戰鬥中止(無結果)
@@ -1909,6 +1927,7 @@
       if (field === 'name') sk.name = value.trim() || sk.name;
       else if (field === 'dice') sk.dice = value.trim();
       else if (field === 'cat') sk.cat = value.trim();
+      else if (field === 'autoHpPct') { const v = Number(value) || 0; sk.autoHpPct = v > 0 ? Math.min(1, v) : undefined; if (!sk.autoHpPct) delete sk.autoHpPct; }
       else if (['oncePerBattle', 'stun', 'alwaysHit', 'elem'].includes(field)) sk[field] = value ? 1 : 0;
       else sk[field] = Math.max(0, Math.floor(Number(value)) || 0);
       saveCombatData(); renderBattleCards();
@@ -1933,6 +1952,13 @@
       if (!v) delete battle[side].moraleCheck;
       else if (parseMoraleCheck(v)) battle[side].moraleCheck = v;
       else { showToast('⚠️ 戰意檢定格式為「回合:門檻」,已保留原值', 'error'); return; }
+      saveCombatData();
+    }
+    function forgeRevive(side, value) {
+      const v = (value || '').trim();
+      if (!v) delete battle[side].revive;
+      else if (/^(\d*d\d+|\d+)$/i.test(v.replace(/\s+/g, ''))) battle[side].revive = v.replace(/\s+/g, '');
+      else { showToast('⚠️ 復活格式為數值或骰式(如 1 或 1d5),已保留原值', 'error'); return; }
       saveCombatData();
     }
     function forgeInjTable(side, value) {
@@ -1969,7 +1995,7 @@
               <label class="flex items-center gap-1 text-[11px] text-muted cursor-pointer"><input type="text" value="${sk.cat || ''}" placeholder="近戰/必殺" onchange="forgeSkill('${side}', ${i}, 'cat', this.value)" class="w-16 border border-default rounded px-1 py-1 bg-transparent text-center font-mono" />類別</label>
               <button onclick="forgeDelSkill('${side}', ${i})" class="text-rose-500 hover:text-rose-400 font-bold px-1 text-lg">&times;</button>
             </div>
-            <div class="grid grid-cols-4 md:grid-cols-9 gap-1.5 text-[11px]">
+            <div class="grid grid-cols-4 md:grid-cols-10 gap-1.5 text-[11px]">
               <label class="flex flex-col items-center gap-0.5"><span class="text-muted">CT</span><input type="number" value="${sk.ct || 0}" min="0" onchange="forgeSkill('${side}', ${i}, 'ct', this.value)" class="w-full border border-default rounded px-1 py-1 bg-transparent text-center" /></label>
               <label class="flex flex-col items-center gap-0.5"><span class="text-muted">Atk±</span><input type="number" value="${sk.atkMod || 0}" onchange="forgeSkill('${side}', ${i}, 'atkMod', this.value)" class="w-full border border-default rounded px-1 py-1 bg-transparent text-center" /></label>
               <label class="flex flex-col items-center gap-0.5"><span class="text-muted">×倍</span><input type="number" value="${sk.mult || 1}" min="1" onchange="forgeSkill('${side}', ${i}, 'mult', this.value)" class="w-full border border-default rounded px-1 py-1 bg-transparent text-center" /></label>
@@ -1979,6 +2005,7 @@
               <label class="flex flex-col items-center gap-0.5"><span class="text-muted">持續T</span><input type="number" value="${sk.duration || 0}" min="0" onchange="forgeSkill('${side}', ${i}, 'duration', this.value)" class="w-full border border-default rounded px-1 py-1 bg-transparent text-center" /></label>
               <label class="flex flex-col items-center gap-0.5"><span class="text-muted">護盾+</span><input type="number" value="${sk.shieldGain || 0}" min="0" onchange="forgeSkill('${side}', ${i}, 'shieldGain', this.value)" class="w-full border border-default rounded px-1 py-1 bg-transparent text-center" /></label>
               <label class="flex flex-col items-center gap-0.5"><span class="text-muted">蓄力T</span><input type="number" value="${sk.charge || 0}" min="0" onchange="forgeSkill('${side}', ${i}, 'charge', this.value)" class="w-full border border-default rounded px-1 py-1 bg-transparent text-center" /></label>
+              <label class="flex flex-col items-center gap-0.5"><span class="text-muted">自動HP%</span><input type="text" value="${sk.autoHpPct || ''}" placeholder="0.5" onchange="forgeSkill('${side}', ${i}, 'autoHpPct', this.value)" class="w-full border border-default rounded px-1 py-1 bg-transparent text-center" /></label>
             </div>
             <label class="flex flex-col gap-0.5 text-[11px]"><span class="text-muted">⚔️ 特殊判定(B-11:「骰式|lo-hi:效果」,例「1d100|31-65:眩1|66-100:眩2」;效果:眩N/束縛/不眩)</span><input type="text" value="${sk.special || ''}" placeholder="1d100|31-65:眩1|66-100:束縛" onchange="forgeSpecial('${side}', ${i}, this.value)" class="w-full border border-default rounded px-1 py-1 bg-transparent text-center font-mono focus:outline-none" /></label>
           </div>`;
@@ -1994,7 +2021,7 @@
               <label class="flex flex-col items-center gap-0.5 text-[11px]"><span class="text-muted">血條段(可「20,10,5,5,1」)</span><input type="text" value="${c.bars || 1}" onchange="forgeActor('${side}', 'bars', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center font-bold" /></label>
               <label class="flex flex-col items-center gap-0.5 text-[11px]"><span class="text-muted">支援位</span><input type="number" value="${c.supportDmg || 0}" min="0" onchange="forgeActor('${side}', 'supportDmg', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center font-bold" /></label>
             </div>
-            <div class="grid grid-cols-3 md:grid-cols-8 gap-2 text-[11px]">
+            <div class="grid grid-cols-3 md:grid-cols-10 gap-2 text-[11px]">
               <label class="flex flex-col items-center gap-0.5"><span class="text-muted">regen</span><input type="number" value="${c.regen || 0}" min="0" onchange="forgeActor('${side}', 'regen', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center" /></label>
               <label class="flex flex-col items-center gap-0.5"><span class="text-muted">表位移</span><input type="number" value="${c.injShift || 0}" onchange="forgeActor('${side}', 'injShift', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center" /></label>
               <label class="flex flex-col items-center gap-0.5"><span class="text-muted">表+N</span><input type="number" value="${c.injuryFlat || 0}" min="0" onchange="forgeActor('${side}', 'injuryFlat', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center" /></label>
@@ -2003,6 +2030,8 @@
               <label class="flex items-center gap-1 text-muted cursor-pointer"><input type="checkbox" ${c.reduceHalf ? 'checked' : ''} onchange="forgeActor('${side}', 'reduceHalf', this.checked)" class="w-4 h-4 accent-indigo-500 cursor-pointer" />消力半</label>
               <label class="flex flex-col items-center gap-0.5"><span class="text-muted">消力-N</span><input type="number" value="${c.reduceFlat || 0}" min="0" onchange="forgeActor('${side}', 'reduceFlat', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center" /></label>
               <label class="flex flex-col items-center gap-0.5"><span class="text-muted">穿透門檻(Atk≥)</span><input type="number" value="${c.pierceAt || 0}" min="0" onchange="forgeActor('${side}', 'pierceAt', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center" /></label>
+              <label class="flex flex-col items-center gap-0.5"><span class="text-muted">復活(B-5,數值或骰式)</span><input type="text" value="${c.revive || ''}" placeholder="1 或 1d5" onchange="forgeRevive('${side}', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center font-mono" /></label>
+              <label class="flex flex-col items-center gap-0.5"><span class="text-muted">復活次數</span><input type="number" value="${c.reviveTimes || 1}" min="1" onchange="forgeActor('${side}', 'reviveTimes', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center" /></label>
             </div>
             <label class="flex flex-col gap-1 text-[11px]"><span class="text-muted">📋 排程表(逗號分隔技能名,按回合出卡;表外回合用普攻,如「超人烈海王,Flower star」)</span><textarea rows="1" onchange="forgeSchedule('${side}', this.value)" class="w-full border border-default rounded-lg px-2 py-1.5 bg-transparent text-xs font-mono focus:outline-none">${(c.schedule || []).join(',')}</textarea></label>
             <label class="flex flex-col gap-1 text-[11px]"><span class="text-muted">🩹 個人受傷表(B-2,「lo-hi:label:dmg」逗號分隔,需涵蓋 1-10;例「1-2:迴避:0,3-4:小傷:1,5-6:中傷:2,7-8:大傷:3,9:特大傷:4,10:極端」;極端行走 1d2)</span><input type="text" value="${c.injTable || ''}" placeholder="1-2:迴避:0,3-4:小傷:1,5-6:中傷:2,7-8:大傷:3,9:特大傷:4,10:極端" onchange="forgeInjTable('${side}', this.value)" class="w-full border border-default rounded-lg px-2 py-1.5 bg-transparent text-xs font-mono focus:outline-none" /></label>
