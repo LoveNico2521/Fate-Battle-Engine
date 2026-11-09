@@ -19,9 +19,9 @@
 
 ---
 
-## 戰鬥線歷史版本(battle-01–14,發布於主倉)
+## 戰鬥線歷史版本(battle-01–30)
 
-> 2026-11-09/10 的逐版演進,全部在主倉 [Releases](https://github.com/LoveNico2521/Fate-Dreamweaver-Engine/releases) 以 `battle-NN` 標籤發布,每版附當時完整單檔 `index_classic.html`。其後的修正與新原語(喵語尾掃除/標準層保真/三 bug 修復/B-5–B-9/拼點累計池)統合於上方 **v53**。
+> 2026-11-09/10 的逐版演進,**每版一個 Release 並附當時完整單檔 `index_classic.html`**:battle-01–14(分流前的 battle 分支時期)發布於主倉 [Releases](https://github.com/LoveNico2521/Fate-Dreamweaver-Engine/releases);battle-15–30(分流後)發布於本倉 [Releases](https://github.com/LoveNico2521/Fate-Battle-Engine/releases)。**battle-30 與 v53 同提交**(`b683ac0`)——v53 為主線里程碑標籤。
 
 | 標籤 | 日期 | 內容 | 電池基線 |
 |---|---|---|---|
@@ -39,6 +39,22 @@
 | [battle-12](https://github.com/LoveNico2521/Fate-Dreamweaver-Engine/releases/tag/battle-12) | 11-10 | A-9 技能排程表(21033:5147F) | 56 情境 `737f2968` |
 | [battle-13](https://github.com/LoveNico2521/Fate-Dreamweaver-Engine/releases/tag/battle-13) | 11-10 | BBCode 匯出第三格式(NGA) | 57 情境 `773d3a6f` |
 | [battle-14](https://github.com/LoveNico2521/Fate-Dreamweaver-Engine/releases/tag/battle-14) | 11-10 | B-11 特殊攻擊判定框架 | 60 情境 `4998170` |
+| [battle-15](https://github.com/LoveNico2521/Fate-Battle-Engine/releases/tag/battle-15) | 11-10 | docs: 倉庫分流說明(戰鬥主線獨立成倉) | 60 情境 `4998170` |
+| [battle-16](https://github.com/LoveNico2521/Fate-Battle-Engine/releases/tag/battle-16) | 11-10 | 束縛即死版(88:636F) | 62 情境 `52901650` |
+| [battle-17](https://github.com/LoveNico2521/Fate-Battle-Engine/releases/tag/battle-17) | 11-10 | 蓄力 A-5(88:4045F/639-642F) | 64 情境 `d41ca4dc` |
+| [battle-18](https://github.com/LoveNico2521/Fate-Battle-Engine/releases/tag/battle-18) | 11-10 | 勝點制 B-12+勝利條件覆寫 A-10 | 70 情境 `dfa1c677` |
+| [battle-19](https://github.com/LoveNico2521/Fate-Battle-Engine/releases/tag/battle-19) | 11-10 | 戰意 A-6(條型+檢定型) | 73 情境 `81953588` |
+| [battle-20](https://github.com/LoveNico2521/Fate-Battle-Engine/releases/tag/battle-20) | 11-10 | 減傷三件套 B-1(+盾池 HP 修正) | 76 情境 `7a7cb348` |
+| [battle-21](https://github.com/LoveNico2521/Fate-Battle-Engine/releases/tag/battle-21) | 11-10 | 破解分檔 B-8(類別標籤+counterRip) | 79 情境 `e39592c6` |
+| [battle-22](https://github.com/LoveNico2521/Fate-Battle-Engine/releases/tag/battle-22) | 11-10 | 個人受傷表 B-2(表驅動傷害器) | 81 情境 `659ae23` |
+| [battle-23](https://github.com/LoveNico2521/Fate-Battle-Engine/releases/tag/battle-23) | 11-10 | 標準層五規則保真修正 | 85 情境 `8bed7e04` |
+| [battle-24](https://github.com/LoveNico2521/Fate-Battle-Engine/releases/tag/battle-24) | 11-10 | UI 喵語尾掃除(菲特本人語氣) | 85 情境 `117964b4` |
+| [battle-25](https://github.com/LoveNico2521/Fate-Battle-Engine/releases/tag/battle-25) | 11-10 | 三既有 bug 修正(hp 復活/鍵名/對稱) | 88 情境 `12b1b43e` |
+| [battle-26](https://github.com/LoveNico2521/Fate-Battle-Engine/releases/tag/battle-26) | 11-10 | 復活/命運觸發器 B-5 | 91 情境 `f6f4d488` |
+| [battle-27](https://github.com/LoveNico2521/Fate-Battle-Engine/releases/tag/battle-27) | 11-10 | 裝備判定 B-6(假腿式) | 93 情境 `8ba47e28` |
+| [battle-28](https://github.com/LoveNico2521/Fate-Battle-Engine/releases/tag/battle-28) | 11-10 | 支援骰 B-7(插手+機率到場) | 96 情境 `322dc26` |
+| [battle-29](https://github.com/LoveNico2521/Fate-Battle-Engine/releases/tag/battle-29) | 11-10 | 姿態系統 B-9(閃避 ×1.8) | 98 情境 `528f8937` |
+| [battle-30](https://github.com/LoveNico2521/Fate-Battle-Engine/releases/tag/battle-30) | 11-10 | 拼點累計池(炎火村 32013F)——**與 v53 同提交** | 100 情境 `febf5ff` |
 
 ---
 
