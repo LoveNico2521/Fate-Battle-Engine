@@ -188,6 +188,9 @@
   S['b64_foe_support'] = B('40,8', () => { onlyNormal('player'); battle.enemy.skills = [BATTLE_DEFAULT.enemy.skills[0]]; battle.enemy.supportDmg = 2; renderBattleCards(); }); // 敵方支援位對稱生效:R1 我方命中後 🤝敵方支援位追加 2(烈海王 HP 17→15)
   S['b65_stance_def'] = B('40,40,40,40,40', () => { onlyNormal('player'); battle.player.skills = [BATTLE_DEFAULT.player.skills[0], { id: 'sd', name: '幻影工事', ct: 1, atkMod: 0, mult: 1, dice: '', cost: 0, counter: 0, stanceSwitch: 1 }]; battle.player.schedule = ['幻影工事']; CFG({ maxRounds: 5 }); renderBattleCards(); }); // 姿態(B-9,269:233F):R1 切閃避 ➔ 對抗值 ×1.8 免擲命中但 🛃不結算傷害;R2-5 普攻同樣不落傷 ➔ 期滿比血量敵勝(17<18)
   S['b66_stance_overcome'] = B('40,8,40', () => { onlyNormal('player'); battle.player.skills = [SUPERSKILL()]; battle.player.schedule = ['超人烈海王']; battle.enemy.skills = [BATTLE_DEFAULT.enemy.skills[0], { id: 'sd', name: '幻影工事', ct: 1, atkMod: 0, mult: 1, dice: '', cost: 0, counter: 0, stanceSwitch: 1 }]; battle.enemy.schedule = ['幻影工事']; battle.enemy.hp = 99; renderBattleCards(); }); // 攻方突破 ×1.8:超人 867 > 敵閃避 477 ➔ 免擲命中正常結算 16 傷;R2 敵(閃避中)普攻取勝 ➔ 🛃不結算傷害
+  const POOL_SETUP = (inj, pool) => { onlyNormal('player'); battle.player.atk = 300; battle.player.clashPoolDice = pool; battle.enemy.skills = [BATTLE_DEFAULT.enemy.skills[0]]; battle.enemy.atk = 5; battle.enemy.hp = 99; battle.enemy.injTable = inj; renderBattleCards(); };
+  S['b67_pool_hit'] = B('50,2,1,1,1,1,1', () => POOL_SETUP(null, '5d3')); // 拼點累計池(炎火村 32013F/912F):R1 拼點成功 ➔ 小傷 1+🎯池 5d3=5 固定傷害(不受破解/檔位影響),敵 99→93
+  S['b68_pool_dodge_row'] = B('50,1,1,1,1,1', () => POOL_SETUP('1-10:迴避:0,10:極端', '5d3')); // 累計池獨立於受傷表:自訂表全迴避(傷 0)但 R1 擲 1 落迴避行 ➔ 🎯池 5 照樣落傷(「加進受傷表每一行」912F),敵 99→94
   // 還原掛鉤
   window.showToast = origToast;
   navigator.clipboard.writeText = origWrite;

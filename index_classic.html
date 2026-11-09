@@ -1592,7 +1592,14 @@
       // 姿態結算閘(B-9,269:233F「閃避姿態:ATK×1.8,但對抗成功後不計算傷害」):交換勝者為閃避方 ➔ 敗方不受傷
       const clashSettle = (loser, loserName, winner, winSkill) => {
         if (winner.stance === 'def') return { clashTail: ` 🛃閃避姿態:對抗成功,不結算傷害(269F)`, dmg: 0, diceParts: [], counterNote: '' };
-        return settleInjury(loser, loserName, winner, winSkill, debugSeq, state);
+        const r = settleInjury(loser, loserName, winner, winSkill, debugSeq, state);
+        // 拼點累計池(B-炎火村,32013F/912F「拼點累計型技能把骰值加進受傷表每一行」):拼點成功 ➔ 勝者卡面 pool 骰固定傷害,不受受傷表檔位/破解影響(迴避行照樣落傷)
+        if (winner.clashPoolDice) {
+          const pd = rollDiceExpr(String(winner.clashPoolDice), debugSeq, state);
+          loser.hp -= pd.total;
+          r.clashTail += ` 🎯拼點累計 ${pd.parts.join(',')} ➔ 固定傷害 ${pd.total}(${loserName} HP→${Math.max(0, loser.hp)})`;
+        }
+        return r;
       };
       // 處決技(B-4,74:8130F 榮耀處決):敵 HP ≤ 門檻比例 ➔ 直接擊殺,免對拼。
       // 多段血條(8130F 原作):依總和生命判定+只能最後一段使用+判定區間 +10;單段維持 當段上限×比例
@@ -2018,6 +2025,13 @@
       else { showToast('⚠️ 戰意檢定格式為「回合:門檻」,已保留原值', 'error'); return; }
       saveCombatData();
     }
+    function forgePool(side, value) {
+      const v = (value || '').trim().replace(/\s+/g, '');
+      if (!v) delete battle[side].clashPoolDice;
+      else if (/^(\d*d\d+|\d+)(\+(\d*d\d+|\d+))*$/i.test(v)) battle[side].clashPoolDice = v;
+      else { showToast('⚠️ 拼點累計池格式為骰式(如 5d3),已保留原值', 'error'); return; }
+      saveCombatData();
+    }
     function forgeGear(side, value) {
       const v = (value || '').trim();
       if (!v) delete battle[side].gear;
@@ -2108,6 +2122,7 @@
             <label class="flex flex-col gap-1 text-[11px]"><span class="text-muted">📋 排程表(逗號分隔技能名,按回合出卡;表外回合用普攻,如「超人烈海王,Flower star」)</span><textarea rows="1" onchange="forgeSchedule('${side}', this.value)" class="w-full border border-default rounded-lg px-2 py-1.5 bg-transparent text-xs font-mono focus:outline-none">${(c.schedule || []).join(',')}</textarea></label>
             <label class="flex flex-col gap-1 text-[11px]"><span class="text-muted">🩹 個人受傷表(B-2,「lo-hi:label:dmg」逗號分隔,需涵蓋 1-10;例「1-2:迴避:0,3-4:小傷:1,5-6:中傷:2,7-8:大傷:3,9:特大傷:4,10:極端」;極端行走 1d2)</span><input type="text" value="${c.injTable || ''}" placeholder="1-2:迴避:0,3-4:小傷:1,5-6:中傷:2,7-8:大傷:3,9:特大傷:4,10:極端" onchange="forgeInjTable('${side}', this.value)" class="w-full border border-default rounded-lg px-2 py-1.5 bg-transparent text-xs font-mono focus:outline-none" /></label>
             <label class="flex flex-col gap-1 text-[11px]"><span class="text-muted">⚙️ 裝備判定(B-6,「門檻:減益:名稱」,例「20:20:假腿」;每回合 1d100<門檻 ➔ 該回合自動失敗+永久 Atk-減益,88:77F/83F)</span><input type="text" value="${c.gear || ''}" placeholder="20:20:假腿" onchange="forgeGear('${side}', this.value)" class="w-full border border-default rounded-lg px-2 py-1.5 bg-transparent text-xs font-mono focus:outline-none" /></label>
+            <label class="flex flex-col gap-1 text-[11px]"><span class="text-muted">🎯 拼點累計池(炎火村 32013F/912F,骰式如「5d3」;拼點成功 ➔ 固定傷害,不受受傷表檔位/破解影響,迴避行照樣落傷)</span><input type="text" value="${c.clashPoolDice || ''}" placeholder="5d3" onchange="forgePool('${side}', this.value)" class="w-full border border-default rounded-lg px-2 py-1.5 bg-transparent text-xs font-mono focus:outline-none" /></label>
             <div class="flex gap-1.5 text-[11px]">
               <label class="flex flex-col items-center gap-0.5 flex-1"><span class="text-muted">📣 插手回合</span><input type="number" value="${c.supportBoostRound || 0}" min="0" onchange="forgeActor('${side}', 'supportBoostRound', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center" /></label>
               <label class="flex flex-col items-center gap-0.5 flex-1"><span class="text-muted">插手值(88:1000F)</span><input type="number" value="${c.supportBoostAtk || 0}" min="0" onchange="forgeActor('${side}', 'supportBoostAtk', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center" /></label>
