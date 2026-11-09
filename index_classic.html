@@ -510,7 +510,7 @@
               <input id="battle-hp" type="number" placeholder="Hp" onchange="updateBattleActor('hp', this.value)" class="border border-default rounded-lg px-2 py-1.5 bg-transparent text-center font-bold focus:outline-none" />
               <input id="battle-regen" type="number" value="0" min="0" onchange="updateBattleActor('regen', this.value)" class="border border-default rounded-lg px-2 py-1.5 bg-transparent text-center font-bold focus:outline-none" />
               <input id="battle-injshift" type="number" value="0" onchange="updateBattleActor('injShift', this.value)" class="border border-default rounded-lg px-2 py-1.5 bg-transparent text-center font-bold focus:outline-none" />
-              <input id="battle-injflat" type="number" value="0" min="0" onchange="updateBattleActor('injFlat', this.value)" class="border border-default rounded-lg px-2 py-1.5 bg-transparent text-center font-bold focus:outline-none" />
+              <input id="battle-injflat" type="number" value="0" min="0" onchange="updateBattleActor('injuryFlat', this.value)" class="border border-default rounded-lg px-2 py-1.5 bg-transparent text-center font-bold focus:outline-none" />
               <div class="col-span-3 text-[10px] text-muted flex items-center justify-between"><span>regen(每回合回復)/表位移(受傷骰+N)/表+N(每行傷害+N)</span></div>
             </div>
             <div class="text-[10px] text-muted flex justify-between px-1 pt-1 border-t border-default">
@@ -1532,6 +1532,9 @@
       // 持續效果(A-8):duration>0 的技能,atkMod 轉入 buff(發動當回合起生效,持續 duration 回合)——88:武之怀 T5 發動 T6-T7 生效
       if (skSelf && (skSelf.duration || 0) > 0 && (skSelf.atkMod || 0) !== 0) { self.buffAtk = (self.buffAtk || 0) + skSelf.atkMod; self.buffTurns = skSelf.duration; }
       if (skSelf && (skSelf.shieldGain || 0) > 0) { self.shield = (self.shield || 0) + skSelf.shieldGain; } // 護盾增益(88:539F 護甲 3、995F 陰陽玉;炎火村護盾池)
+      // 對稱生效(既有 bug 修正):敵方側 duration/shieldGain 原語同樣處理(原實現僅 self 側)
+      if (skFoe && (skFoe.duration || 0) > 0 && (skFoe.atkMod || 0) !== 0) { foe.buffAtk = (foe.buffAtk || 0) + skFoe.atkMod; foe.buffTurns = skFoe.duration; }
+      if (skFoe && (skFoe.shieldGain || 0) > 0) { foe.shield = (foe.shield || 0) + skFoe.shieldGain; }
       // 無法行動(眩暈 B-3/蓄力 A-5):單方 ➔ 對手攻擊自動成立;雙方 ➔ 對峙一回合
       // (88:636F 束縛=戰鬥自動失敗走 special 的 bindLost 旗標;炎火村眩暈=跳回合——本引擎採跳回合+受傷結算)
       const selfStun = (self.stunTurns || 0) > 0, selfChg = (self.chargeTurns || 0) > 0;
@@ -1596,7 +1599,7 @@
       const myMin = myBase + 1, myMax = myBase + 100;
       if (myMax < defVal) {
         const r = settleInjury(self, self.name, foe, skFoe, debugSeq, state);
-        return { ...base, clash: `⚔️對拼 對手先擲 ${foe.atk + (skFoe.atkMod || 0)}+${rollB}=${defVal},我方上限 ${myMax} 追不上 ➔ 差值大於 100 自動失敗 ${r.clashTail}`, dmg: r.dmg, diceParts: r.diceParts, counterNote: r.counterNote, foeHp: Math.max(0, foe.hp), selfHpAfter: Math.max(0, self.hp) };
+        return { ...base, clash: `⚔️對拼 對手先擲 ${foe.atk + (foe.buffAtk || 0) + (skFoe.duration ? 0 : (skFoe.atkMod || 0))}+${rollB}=${defVal},我方上限 ${myMax} 追不上 ➔ 差值大於 100 自動失敗 ${r.clashTail}`, dmg: r.dmg, diceParts: r.diceParts, counterNote: r.counterNote, foeHp: Math.max(0, foe.hp), selfHpAfter: Math.max(0, self.hp) };
       }
       let rollA = null, atkVal;
       if (myMin > defVal) {
@@ -1607,7 +1610,7 @@
       }
       const clashMid = rollA === null
         ? `⚔️對拼 我方下限 ${myMin} 已高於對手 ${defVal} ➔ 免擲自動命中`
-        : `⚔️對拼 ${myBase}+${rollA}=${atkVal} vs ${foe.atk + (skFoe.atkMod || 0)}+${rollB}=${defVal}`;
+        : `⚔️對拼 ${myBase}+${rollA}=${atkVal} vs ${foe.atk + (foe.buffAtk || 0) + (skFoe.duration ? 0 : (skFoe.atkMod || 0))}+${rollB}=${defVal}`;
       // 平手裁定(88:634F/639F 同值兩次實演):雙方各擲武藝 1d100 比高低,勝者攻擊成立
       if (atkVal === defVal) {
         const wSelf = getRnd(100, debugSeq, state), wFoe = getRnd(100, debugSeq, state);
@@ -1647,9 +1650,10 @@
       [A, B].forEach((c, ci) => {
         const factoryHp = [BATTLE_DEFAULT.player.hp, BATTLE_DEFAULT.enemy.hp][ci];
         const barStr = String(c.bars || 1);
+        // 均勻段每段上限=卡面 hp(修復:原實現固定用原廠 hp,卡面 Hp 欄位被覆蓋失效);逗號串=每段獨立上限(20/10/5/5/1 裁決)
         c.barHps = barStr.includes(',')
           ? barStr.split(',').map(x => Math.max(1, Math.floor(Number(x)) || 1))
-          : Array.from({ length: Math.max(1, Math.floor(Number(barStr)) || 1) }, () => factoryHp);
+          : Array.from({ length: Math.max(1, Math.floor(Number(barStr)) || 1) }, () => Math.max(1, Math.floor(Number(c.hp)) || factoryHp));
         c.barIdx = 0;
         c.hpMax = c.barHps[0]; // heal/regen 的 clamp 上限跟隨當前段
         c.hp = c.hpMax;
@@ -1809,7 +1813,7 @@
       document.getElementById('battle-hp').value = c.hp;
       document.getElementById('battle-regen').value = c.regen || 0;
       document.getElementById('battle-injshift').value = c.injShift || 0;
-      document.getElementById('battle-injflat').value = c.injFlat || 0;
+      document.getElementById('battle-injflat').value = c.injuryFlat || 0;
       const list = document.getElementById('battle-skill-list');
       list.innerHTML = (c.skills || []).map((s, i) => `
         <div class="border border-default rounded-lg p-2 space-y-1 bg-black/10">
@@ -1993,7 +1997,7 @@
             <div class="grid grid-cols-3 md:grid-cols-8 gap-2 text-[11px]">
               <label class="flex flex-col items-center gap-0.5"><span class="text-muted">regen</span><input type="number" value="${c.regen || 0}" min="0" onchange="forgeActor('${side}', 'regen', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center" /></label>
               <label class="flex flex-col items-center gap-0.5"><span class="text-muted">表位移</span><input type="number" value="${c.injShift || 0}" onchange="forgeActor('${side}', 'injShift', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center" /></label>
-              <label class="flex flex-col items-center gap-0.5"><span class="text-muted">表+N</span><input type="number" value="${c.injFlat || 0}" min="0" onchange="forgeActor('${side}', 'injFlat', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center" /></label>
+              <label class="flex flex-col items-center gap-0.5"><span class="text-muted">表+N</span><input type="number" value="${c.injuryFlat || 0}" min="0" onchange="forgeActor('${side}', 'injuryFlat', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center" /></label>
               <label class="flex flex-col items-center gap-0.5"><span class="text-muted">戰意門檻(低於即逃)</span><input type="number" value="${c.moraleFlee || 0}" min="0" onchange="forgeActor('${side}', 'moraleFlee', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center" /></label>
               <label class="flex flex-col items-center gap-0.5"><span class="text-muted">戰意檢定(回合:門檻)</span><input type="text" value="${c.moraleCheck || ''}" placeholder="3:30" onchange="forgeMoraleCheck('${side}', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center font-mono" /></label>
               <label class="flex items-center gap-1 text-muted cursor-pointer"><input type="checkbox" ${c.reduceHalf ? 'checked' : ''} onchange="forgeActor('${side}', 'reduceHalf', this.checked)" class="w-4 h-4 accent-indigo-500 cursor-pointer" />消力半</label>
