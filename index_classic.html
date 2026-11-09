@@ -1264,7 +1264,7 @@
     }
 
     // 特殊攻擊判定框架(B-11):卡面 special 原語——命中後按卡面分段表判定(判定骰可自訂,眩暈為首例效果)。
-    // DSL:「骰式|lo-hi:效果|…」例:1d100|31-65:眩1|66-100:眩2;效果 v1:眩N(=stunN)眩 N 回合/不眩(=none)明示帶;
+    // DSL:「骰式|lo-hi:效果|…」例:1d100|31-65:眩1|66-100:眩2;效果:眩N(=stunN)眩 N 回合/束縛(=bind,636F 戰鬥自動失敗)/不眩(=none)明示帶;
     // 骰式限單骰 NdX 或定值(複合式走 JSON 形式)。物件形式 {dice, bands:[{min,max,fx,n}]} 直接通行(工房匯入/電池用)。
     // 回傳 spec 或 null(格式不合法 ➔ 無判定)。
     function parseSpecial(v) {
@@ -1272,7 +1272,7 @@
       if (typeof v === 'object') {
         if (!v.dice) return null;
         const bands = (Array.isArray(v.bands) ? v.bands : [])
-          .filter(b => b && Number(b.max) >= Number(b.min) && (b.fx === 'stun' || b.fx === 'none'))
+          .filter(b => b && Number(b.max) >= Number(b.min) && (b.fx === 'stun' || b.fx === 'none' || b.fx === 'bind'))
           .map(b => ({ min: Number(b.min), max: Number(b.max), fx: b.fx, n: Math.max(1, Number(b.n) || 1) }));
         return { dice: String(v.dice), bands };
       }
@@ -1282,9 +1282,10 @@
       if (!/^(\d*d\d+|\d+)$/i.test(dice)) return null;
       const bands = [];
       for (const seg of segs.slice(1)) {
-        const m = seg.match(/^(\d+)\s*-\s*(\d+)\s*:\s*(?:眩\s*(\d+)|stun\s*(\d+)|不眩|none)$/i);
+        const m = seg.match(/^(\d+)\s*-\s*(\d+)\s*:\s*(眩\s*(\d+)|stun\s*(\d+)|束縛|bind|不眩|none)$/i);
         if (!m) return null;
-        if (m[3] !== undefined || m[4] !== undefined) bands.push({ min: +m[1], max: +m[2], fx: 'stun', n: Math.max(1, +(m[3] || m[4]) || 1) });
+        if (m[4] !== undefined || m[5] !== undefined) bands.push({ min: +m[1], max: +m[2], fx: 'stun', n: Math.max(1, +(m[4] || m[5]) || 1) });
+        else if (m[3] === '束縛' || /^bind$/i.test(m[3])) bands.push({ min: +m[1], max: +m[2], fx: 'bind' });
         else bands.push({ min: +m[1], max: +m[2], fx: 'none' });
       }
       return { dice, bands };
@@ -1393,6 +1394,9 @@
           if (band && band.fx === 'stun') {
             loser.stunTurns = band.n;
             stunNote = `😵特殊攻擊判定 ${sr} ${band.min}-${band.max} ➔ 眩暈 ${band.n} 回合`;
+          } else if (band && band.fx === 'bind') {
+            loser.bindLost = 1; // 束縛即死(88:636F 原作語義):被縛方戰鬥自動失敗,由 runBattle 先於 HP/血條判定收束
+            stunNote = `⛓️特殊攻擊判定 ${sr} ${band.min}-${band.max} ➔ 束縛——戰鬥自動失敗`;
           } else if (band) {
             stunNote = `特殊攻擊判定 ${sr} ${band.min}-${band.max} ➔ 無效果`;
           } else {
@@ -1517,6 +1521,7 @@
       });
       A.buffAtk = 0; A.buffTurns = 0; B.buffAtk = 0; B.buffTurns = 0;
       A.stunTurns = 0; B.stunTurns = 0;
+      A.bindLost = 0; B.bindLost = 0; // 束縛即死旗標(88:636F)
       A.regenVal = A.regen || 0; B.regenVal = B.regen || 0;
       const steps = [];
       let winner = null, rounds = 0;
@@ -1528,6 +1533,9 @@
         rounds++;
         // 每回合一次雙向對拼(88:633~642F:T1~T9 每 T 雙方各擲攻擊一次,敗方擲受傷表)
         steps.push(battleTurn(A, B, rounds, 'player', debugSeq, state));
+        // 束縛即死(88:636F):special 判定束縛 ➔ 被縛方戰鬥自動失敗——先於 HP/血條/支援位結算
+        if (A.bindLost) { winner = B; break; }
+        if (B.bindLost) { winner = A; break; }
         // 支援位(炎火村 4865F 援護手式):每回合末對敵固定傷害(隊友不出戰,僅火力支援)
         const supA = A.supportDmg || 0;
         if (supA > 0 && B.hp > 0) {
@@ -1741,7 +1749,7 @@
               <label class="flex flex-col items-center gap-0.5"><span class="text-muted">持續T</span><input type="number" value="${sk.duration || 0}" min="0" onchange="forgeSkill('${side}', ${i}, 'duration', this.value)" class="w-full border border-default rounded px-1 py-1 bg-transparent text-center" /></label>
               <label class="flex flex-col items-center gap-0.5"><span class="text-muted">護盾+</span><input type="number" value="${sk.shieldGain || 0}" min="0" onchange="forgeSkill('${side}', ${i}, 'shieldGain', this.value)" class="w-full border border-default rounded px-1 py-1 bg-transparent text-center" /></label>
             </div>
-            <label class="flex flex-col gap-0.5 text-[11px]"><span class="text-muted">⚔️ 特殊判定(B-11:「骰式|lo-hi:效果」,例「1d100|31-65:眩1|66-100:眩2」;效果:眩N/不眩)</span><input type="text" value="${sk.special || ''}" placeholder="1d100|31-65:眩1|66-100:眩2" onchange="forgeSpecial('${side}', ${i}, this.value)" class="w-full border border-default rounded px-1 py-1 bg-transparent text-center font-mono focus:outline-none" /></label>
+            <label class="flex flex-col gap-0.5 text-[11px]"><span class="text-muted">⚔️ 特殊判定(B-11:「骰式|lo-hi:效果」,例「1d100|31-65:眩1|66-100:眩2」;效果:眩N/束縛/不眩)</span><input type="text" value="${sk.special || ''}" placeholder="1d100|31-65:眩1|66-100:束縛" onchange="forgeSpecial('${side}', ${i}, this.value)" class="w-full border border-default rounded px-1 py-1 bg-transparent text-center font-mono focus:outline-none" /></label>
           </div>`;
         box.innerHTML = `
           <div class="border border-${color}-500/40 rounded-2xl p-4 space-y-3 bg-${color}-500/5">

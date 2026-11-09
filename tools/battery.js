@@ -141,6 +141,8 @@
   S['b26_special_hit'] = B('50,4,9', () => specSetup('試作特殊彈', '1d10|9-10:眩1')); // 特殊判定(B-11):自訂骰 1d10+自訂帶 9-10 ➔ 判定 9 命中帶 ➔ 眩暈 1 回合,R1 敵回合跳過(無法行動)
   S['b27_special_miss'] = B('50,2,15', () => specSetup('試作特殊彈', '1d100|66-100:眩2')); // 判定 15 落帶外(1-65 無帶)➔ 無效果,敵 R1 正常行動(對照 b15 同骰值 70 會眩)
   S['b28_special_over_stun'] = B('50,3,40', () => specSetup('試作特殊彈', '1d100|95-100:眩1', { stun: 1 })); // 優先級:special 存在時蓋過舊 stun 旗標——判定 40 落舊表 31-65(本會眩 1)但帶外 ➔ 無效果,敵 R1 正常行動
+  S['b29_bind'] = B('50,2,40', () => specSetup('縛魂彈', '1d100|31-45:束縛')); // 束縛即死(88:636F):判定 40 命中帶 ➔ ⛓️束縛——戰鬥自動失敗,R1 即終局勝者烈海王
+  S['b30_bind_bars'] = B('50,2,35', () => { specSetup('縛魂彈', '1d100|31-45:束縛'); battle.enemy.bars = '2,2'; }); // 束縛壓血條:敵剩 1 段血條仍被束縛即死——bindLost 先於 HP/血條判定
   // 還原掛鉤
   window.showToast = origToast;
   navigator.clipboard.writeText = origWrite;
