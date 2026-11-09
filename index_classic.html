@@ -1263,6 +1263,33 @@
       return { total, parts };
     }
 
+    // 特殊攻擊判定框架(B-11):卡面 special 原語——命中後按卡面分段表判定(判定骰可自訂,眩暈為首例效果)。
+    // DSL:「骰式|lo-hi:效果|…」例:1d100|31-65:眩1|66-100:眩2;效果 v1:眩N(=stunN)眩 N 回合/不眩(=none)明示帶;
+    // 骰式限單骰 NdX 或定值(複合式走 JSON 形式)。物件形式 {dice, bands:[{min,max,fx,n}]} 直接通行(工房匯入/電池用)。
+    // 回傳 spec 或 null(格式不合法 ➔ 無判定)。
+    function parseSpecial(v) {
+      if (!v) return null;
+      if (typeof v === 'object') {
+        if (!v.dice) return null;
+        const bands = (Array.isArray(v.bands) ? v.bands : [])
+          .filter(b => b && Number(b.max) >= Number(b.min) && (b.fx === 'stun' || b.fx === 'none'))
+          .map(b => ({ min: Number(b.min), max: Number(b.max), fx: b.fx, n: Math.max(1, Number(b.n) || 1) }));
+        return { dice: String(v.dice), bands };
+      }
+      const segs = String(v).split('|').map(s => s.trim()).filter(Boolean);
+      if (!segs.length) return null;
+      const dice = segs[0].replace(/\s+/g, '');
+      if (!/^(\d*d\d+|\d+)$/i.test(dice)) return null;
+      const bands = [];
+      for (const seg of segs.slice(1)) {
+        const m = seg.match(/^(\d+)\s*-\s*(\d+)\s*:\s*(?:眩\s*(\d+)|stun\s*(\d+)|不眩|none)$/i);
+        if (!m) return null;
+        if (m[3] !== undefined || m[4] !== undefined) bands.push({ min: +m[1], max: +m[2], fx: 'stun', n: Math.max(1, +(m[3] || m[4]) || 1) });
+        else bands.push({ min: +m[1], max: +m[2], fx: 'none' });
+      }
+      return { dice, bands };
+    }
+
     // AI 選技(確定策略,無機率——模擬原作作者的節奏決策;骰子只負責原作有骰的位置:對拼/受傷表/破解):
     // 1) 斬殺線:預估傷害(受傷表特大 4 × mult + 骰式期望)≥ 敵 HP → 速戰速決用最大傷技
     // 2) 劣勢翻盤:開場 2 回合試探後,基礎 Atk 低於對手(對拼期望輸)→ 開 atkMod 最大技(88:紅美鈴Ⅱ戰烈海王被壓制後開超人)
@@ -1356,7 +1383,23 @@
         dmg -= absorbed;
         clashTail += ` 🛡️護盾吸收 ${absorbed}${dmg <= 0 ? '(完全防禦)' : `,餘傷 ${dmg}`}`;
       }
-      if ((winnerSkill.stun || 0) > 0 && dmg > 0 && (loser.stunTurns || 0) === 0) {
+      // 特殊攻擊判定(B-11 框架):卡面 special 優先(判定骰+分段表→效果;眩暈首例,效果分派留擴充);
+      // 未設 special 時保留舊 stun 旗標三段表(炎火村,路徑與記錄逐位元組不變)
+      if (winnerSkill.special && dmg > 0 && (loser.stunTurns || 0) === 0) {
+        const spec = parseSpecial(winnerSkill.special);
+        if (spec) {
+          const sr = rollDiceExpr(spec.dice, debugSeq, state).total;
+          const band = (spec.bands || []).find(b => sr >= b.min && sr <= b.max);
+          if (band && band.fx === 'stun') {
+            loser.stunTurns = band.n;
+            stunNote = `😵特殊攻擊判定 ${sr} ${band.min}-${band.max} ➔ 眩暈 ${band.n} 回合`;
+          } else if (band) {
+            stunNote = `特殊攻擊判定 ${sr} ${band.min}-${band.max} ➔ 無效果`;
+          } else {
+            stunNote = `特殊攻擊判定 ${sr} ➔ 無效果`;
+          }
+        }
+      } else if ((winnerSkill.stun || 0) > 0 && dmg > 0 && (loser.stunTurns || 0) === 0) {
         const sr = getRnd(100, debugSeq, state);
         if (sr >= 66) { loser.stunTurns = 2; stunNote = `😵特殊攻擊判定 ${sr} ≥66 ➔ 眩暈 2 回合`; }
         else if (sr >= 31) { loser.stunTurns = 1; stunNote = `😵特殊攻擊判定 ${sr} 31-65 ➔ 眩暈 1 回合`; }
@@ -1656,6 +1699,15 @@
       if (!arr.length) delete battle[side].schedule;
       saveCombatData();
     }
+    function forgeSpecial(side, i, value) {
+      const sk = battle[side].skills[i];
+      if (!sk) return;
+      const v = (value || '').trim();
+      if (!v) delete sk.special;
+      else if (parseSpecial(v)) sk.special = v;
+      else { showToast('⚠️ 特殊判定格式無法解析,已保留原值喵', 'error'); return; }
+      saveCombatData(); renderBattleCards();
+    }
     function forgeAddSkill(side) {
       battle[side].skills.push({ id: 'f' + Date.now(), name: '新技能', ct: 0, atkMod: 0, mult: 1, dice: '', cost: 0, counter: 0 });
       saveCombatData(); renderForge(); renderBattleCards();
@@ -1689,6 +1741,7 @@
               <label class="flex flex-col items-center gap-0.5"><span class="text-muted">持續T</span><input type="number" value="${sk.duration || 0}" min="0" onchange="forgeSkill('${side}', ${i}, 'duration', this.value)" class="w-full border border-default rounded px-1 py-1 bg-transparent text-center" /></label>
               <label class="flex flex-col items-center gap-0.5"><span class="text-muted">護盾+</span><input type="number" value="${sk.shieldGain || 0}" min="0" onchange="forgeSkill('${side}', ${i}, 'shieldGain', this.value)" class="w-full border border-default rounded px-1 py-1 bg-transparent text-center" /></label>
             </div>
+            <label class="flex flex-col gap-0.5 text-[11px]"><span class="text-muted">⚔️ 特殊判定(B-11:「骰式|lo-hi:效果」,例「1d100|31-65:眩1|66-100:眩2」;效果:眩N/不眩)</span><input type="text" value="${sk.special || ''}" placeholder="1d100|31-65:眩1|66-100:眩2" onchange="forgeSpecial('${side}', ${i}, this.value)" class="w-full border border-default rounded px-1 py-1 bg-transparent text-center font-mono focus:outline-none" /></label>
           </div>`;
         box.innerHTML = `
           <div class="border border-${color}-500/40 rounded-2xl p-4 space-y-3 bg-${color}-500/5">

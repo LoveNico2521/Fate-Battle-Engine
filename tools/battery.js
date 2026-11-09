@@ -98,7 +98,7 @@
   executeRoll('d6');
   S['s32_clamp'] = { inputs: [countInput.value, boostInput.value, targetValueInput.value].join('|'), flow: $('chain-flow-display').innerText.slice(0, 120) };
 
-  // ⚔️ 戰鬥情境(B 案對拼模型 v3,88:633~642F 精確版):debug 序列驅動;每回合消費序=守方 rollB → 攻方 rollA(免擲則缺)→ 受傷表 → 第10行 1d2 → 大失敗再擲 → 破解
+  // ⚔️ 戰鬥情境(B 案對拼模型 v3,88:633~642F 精確版):debug 序列驅動;每回合消費序=守方 rollB → 攻方 rollA(免擲則缺)→ 受傷表 → 第10行 1d2 → 大失敗再擲 → 破解 → 特殊判定(B-11,僅帶 special/stun 技且 dmg>0 時)
   const resetBattle = () => { battle = JSON.parse(JSON.stringify(BATTLE_DEFAULT)); renderBattleCards(); };
   resetBattle();
   const B = (debug, mutate) => {
@@ -136,6 +136,11 @@
   S['b17_autowin'] = B('', () => { battle.player.skills = [{ id: 'tw', name: '假腿 The World', ct: 0, atkMod: 0, mult: 1, dice: '', cost: 0, counter: 0, autoWin: 1, autoWinAtk: 160 }]; battle.enemy.atk = 100; battle.enemy.hp = 99; renderBattleCards(); }); // 自動勝利(88:6117F):對手 Atk 100 < 160 ➔ 直接判定戰鬥結束
   S['b18_ctreset'] = B('90,10,2,2,40,8', () => { battle.player.skills = [{ id: 'wzy', name: '武之真意', ct: 3, atkMod: 0, mult: 1, dice: '', cost: 0, counter: 0, ctReset: 1 }]; battle.enemy.skills = [SUPERSKILL()]; battle.enemy.hp = 20; battle.player.hp = 20; renderBattleCards(); }); // CT 操作(88:128F 武之真意):R1 發動清雙方 CT ➔ R2 敵超人(CT 清後可再用)免擲即決擊殺
   S['b19_truedmg'] = B('40,60,5', () => { battle.player.skills = [{ id: 'td', name: '真實傷害', ct: 0, atkMod: 0, mult: 1, dice: '', cost: 0, counter: 0, trueDmg: 1 }]; battle.enemy.skills = [BATTLE_DEFAULT.enemy.skills[0], { id: 'ex', name: '紅海皇', ct: 0, atkMod: 0, mult: 1, dice: '', cost: 0, counter: 50 }]; battle.enemy.hp = 99; renderBattleCards(); }); // 真實傷害(F1851):破解無效,傷害 2 全額(非減半 1)
+  const SPECSKILL = (name, dsl, extra) => ({ id: 'sp', name, ct: 0, atkMod: 0, mult: 1, dice: '', cost: 0, counter: 0, special: dsl, ...(extra || {}) });
+  const specSetup = (name, dsl, extra) => { battle.player.skills = [SPECSKILL(name, dsl, extra)]; battle.player.atk = 300; battle.enemy.skills = [BATTLE_DEFAULT.enemy.skills[0]]; battle.enemy.atk = 5; renderBattleCards(); }; // 我方 300 vs 敵 5:雙向免擲(攻必中/守必敗),序列僅耗 rollB+受傷表+判定骰
+  S['b26_special_hit'] = B('50,4,9', () => specSetup('試作特殊彈', '1d10|9-10:眩1')); // 特殊判定(B-11):自訂骰 1d10+自訂帶 9-10 ➔ 判定 9 命中帶 ➔ 眩暈 1 回合,R1 敵回合跳過(無法行動)
+  S['b27_special_miss'] = B('50,2,15', () => specSetup('試作特殊彈', '1d100|66-100:眩2')); // 判定 15 落帶外(1-65 無帶)➔ 無效果,敵 R1 正常行動(對照 b15 同骰值 70 會眩)
+  S['b28_special_over_stun'] = B('50,3,40', () => specSetup('試作特殊彈', '1d100|95-100:眩1', { stun: 1 })); // 優先級:special 存在時蓋過舊 stun 旗標——判定 40 落舊表 31-65(本會眩 1)但帶外 ➔ 無效果,敵 R1 正常行動
   // 還原掛鉤
   window.showToast = origToast;
   navigator.clipboard.writeText = origWrite;
