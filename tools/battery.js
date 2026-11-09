@@ -143,6 +143,10 @@
   S['b28_special_over_stun'] = B('50,3,40', () => specSetup('試作特殊彈', '1d100|95-100:眩1', { stun: 1 })); // 優先級:special 存在時蓋過舊 stun 旗標——判定 40 落舊表 31-65(本會眩 1)但帶外 ➔ 無效果,敵 R1 正常行動
   S['b29_bind'] = B('50,2,40', () => specSetup('縛魂彈', '1d100|31-45:束縛')); // 束縛即死(88:636F):判定 40 命中帶 ➔ ⛓️束縛——戰鬥自動失敗,R1 即終局勝者烈海王
   S['b30_bind_bars'] = B('50,2,35', () => { specSetup('縛魂彈', '1d100|31-45:束縛'); battle.enemy.bars = '2,2'; }); // 束縛壓血條:敵剩 1 段血條仍被束縛即死——bindLost 先於 HP/血條判定
+  const CHARGESKILL = (name, charge, extra) => ({ id: 'cg', name, ct: 0, atkMod: 0, mult: 4, dice: '', cost: 0, counter: 0, charge, ...(extra || {}) });
+  const chargeSetup = (name, charge) => { battle.player.skills = [CHARGESKILL(name, charge)]; battle.player.atk = 300; battle.enemy.skills = [BATTLE_DEFAULT.enemy.skills[0]]; battle.enemy.atk = 5; battle.enemy.hp = 99; renderBattleCards(); };
+  S['b31_charge1'] = B('5,50,4', () => chargeSetup('星脈地轉彈', 1)); // 蓄力 A-5(4045F/639-642F):R1 宣告➔🌀蓄力中敵攻自動成立;R2 蓄滿釋放——免擲命中,受傷表 4 中傷×4=8
+  S['b32_charge2'] = B('5,3,50,4', () => chargeSetup('星脈地轉彈', 2)); // 蓄力 2T:R1 宣告、R2 仍蓄力(敵再自動命中)、R3 釋放免擲 中傷×4=8——639-642F 蓄力 1T→2T→宣言釋放
   // 還原掛鉤
   window.showToast = origToast;
   navigator.clipboard.writeText = origWrite;

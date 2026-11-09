@@ -1416,27 +1416,48 @@
 
     // 戰鬥回合(88:633~642F 精確流程):雙方選技(確定策略)→ 守方先擲對拼骰 → 攻方免擲判定(數學必然,635F)→ 擲骰比大小 → 平手雙擲武藝(634F/639F)→ 勝者結算受傷表
     function battleTurn(self, foe, round, side, debugSeq, state) {
-      const skSelf = pickBattleSkill(self, foe, round);
-      const skFoe = pickBattleSkill(foe, self, round);
-      if (skSelf.cost) self.hp -= skSelf.cost;
-      if (skFoe.cost) foe.hp -= skFoe.cost;
-      if (skSelf.ct > 0) skSelf.currentCd = skSelf.ct;
-      if (skFoe.ct > 0) skFoe.currentCd = skFoe.ct;
-      const base = { round, side, actor: self.name, target: foe.name, skillName: skSelf.name, diceParts: [], counterNote: '' };
-      if (skSelf.oncePerBattle) skSelf.usedThisBattle = 1; // 一場一次(A-3)
+      // 蓄力(A-5,88:4045F 星脈地轉彈卡面/639-642F 實演):charge>0 的技宣告後 chargeTurns 回合不行動(對手攻擊自動成立),蓄滿後次回合強制釋放卡面強化版;
+      // cost/CT/一場一次於宣告回合結算,釋放回合免再結算;蓄力與眩暈同屬「無法行動」,同回合並存時各自遞減
+      let skSelf = null, selfRelease = false, skFoe = null, foeRelease = false;
+      if ((self.chargeTurns || 0) > 0) skSelf = null;
+      else if (self.chargeSkill) { skSelf = self.chargeSkill; self.chargeSkill = null; selfRelease = true; }
+      else skSelf = pickBattleSkill(self, foe, round);
+      if ((foe.chargeTurns || 0) > 0) skFoe = null;
+      else if (foe.chargeSkill) { skFoe = foe.chargeSkill; foe.chargeSkill = null; foeRelease = true; }
+      else skFoe = pickBattleSkill(foe, self, round);
+      if (skSelf && !selfRelease && skSelf.cost) self.hp -= skSelf.cost;
+      if (skFoe && !foeRelease && skFoe.cost) foe.hp -= skFoe.cost;
+      if (skSelf && !selfRelease && skSelf.ct > 0) skSelf.currentCd = skSelf.ct;
+      if (skFoe && !foeRelease && skFoe.ct > 0) skFoe.currentCd = skFoe.ct;
+      if (skSelf && !selfRelease && skSelf.oncePerBattle) skSelf.usedThisBattle = 1; // 一場一次(A-3)
+      if (skFoe && !foeRelease && skFoe.oncePerBattle) skFoe.usedThisBattle = 1;
+      // 蓄力宣告(A-5):選中 charge>0 的技 ➔ 本回合起進入蓄力(宣告回合即不行動)
+      if (skSelf && !selfRelease && (skSelf.charge || 0) > 0) { self.chargeTurns = skSelf.charge; self.chargeSkill = skSelf; skSelf = null; }
+      if (skFoe && !foeRelease && (skFoe.charge || 0) > 0) { foe.chargeTurns = skFoe.charge; foe.chargeSkill = skFoe; skFoe = null; }
+      const base = { round, side, actor: self.name, target: foe.name, skillName: (skSelf || self.chargeSkill || { name: '—' }).name, diceParts: [], counterNote: '' };
       // 持續效果(A-8):duration>0 的技能,atkMod 轉入 buff(發動當回合起生效,持續 duration 回合)——88:武之怀 T5 發動 T6-T7 生效
-      if ((skSelf.duration || 0) > 0 && (skSelf.atkMod || 0) !== 0) { self.buffAtk = (self.buffAtk || 0) + skSelf.atkMod; self.buffTurns = skSelf.duration; }
-      if ((skSelf.shieldGain || 0) > 0) { self.shield = (self.shield || 0) + skSelf.shieldGain; } // 護盾增益(88:539F 護甲 3、995F 陰陽玉;炎火村護盾池)
-      // 行動剝奪(B-3):眩暈/束縛中方自動敗,對手攻擊成立(88:636F 束縛=戰鬥自動失敗;炎火村眩暈=跳回合——本引擎採跳回合+受傷結算)
-      if ((foe.stunTurns || 0) > 0) {
-        foe.stunTurns--;
+      if (skSelf && (skSelf.duration || 0) > 0 && (skSelf.atkMod || 0) !== 0) { self.buffAtk = (self.buffAtk || 0) + skSelf.atkMod; self.buffTurns = skSelf.duration; }
+      if (skSelf && (skSelf.shieldGain || 0) > 0) { self.shield = (self.shield || 0) + skSelf.shieldGain; } // 護盾增益(88:539F 護甲 3、995F 陰陽玉;炎火村護盾池)
+      // 無法行動(眩暈 B-3/蓄力 A-5):單方 ➔ 對手攻擊自動成立;雙方 ➔ 對峙一回合
+      // (88:636F 束縛=戰鬥自動失敗走 special 的 bindLost 旗標;炎火村眩暈=跳回合——本引擎採跳回合+受傷結算)
+      const selfStun = (self.stunTurns || 0) > 0, selfChg = (self.chargeTurns || 0) > 0;
+      const foeStun = (foe.stunTurns || 0) > 0, foeChg = (foe.chargeTurns || 0) > 0;
+      if (selfStun || selfChg || foeStun || foeChg) {
+        if (selfStun) self.stunTurns--;
+        if (selfChg) self.chargeTurns--;
+        if (foeStun) foe.stunTurns--;
+        if (foeChg) foe.chargeTurns--;
+        if ((selfStun || selfChg) && (foeStun || foeChg)) {
+          return { ...base, clash: `🌀雙方都無法行動(眩暈/蓄力中),對峙一回合`, dmg: 0, foeHp: Math.max(0, foe.hp), selfHpAfter: Math.max(0, self.hp) };
+        }
+        if (selfStun || selfChg) {
+          const r = settleInjury(self, self.name, foe, skFoe, debugSeq, state);
+          const tag = selfStun ? `😵${self.name}眩暈/束縛中` : `🌀${self.name}蓄力中【${(self.chargeSkill || { name: '—' }).name}】`;
+          return { ...base, clash: `${tag},無法行動——${foe.name}攻擊自動成立 ${r.clashTail}`, dmg: r.dmg, diceParts: r.diceParts, counterNote: r.counterNote, foeHp: Math.max(0, foe.hp), selfHpAfter: Math.max(0, self.hp) };
+        }
         const r = settleInjury(foe, foe.name, self, skSelf, debugSeq, state);
-        return { ...base, clash: `😵${foe.name}眩暈/束縛中,無法行動——${self.name}攻擊自動成立 ${r.clashTail}`, dmg: r.dmg, diceParts: r.diceParts, counterNote: r.counterNote, foeHp: Math.max(0, foe.hp) };
-      }
-      if ((self.stunTurns || 0) > 0) {
-        self.stunTurns--;
-        const r = settleInjury(self, self.name, skFoe, debugSeq, state);
-        return { ...base, clash: `😵${self.name}眩暈/束縛中,無法行動——${foe.name}攻擊成立 ${r.clashTail}`, dmg: r.dmg, diceParts: r.diceParts, counterNote: r.counterNote, foeHp: Math.max(0, foe.hp), selfHpAfter: Math.max(0, self.hp) };
+        const tag = foeStun ? `😵${foe.name}眩暈/束縛中` : `🌀${foe.name}蓄力中【${(foe.chargeSkill || { name: '—' }).name}】`;
+        return { ...base, clash: `${tag},無法行動——${self.name}攻擊自動成立 ${r.clashTail}`, dmg: r.dmg, diceParts: r.diceParts, counterNote: r.counterNote, foeHp: Math.max(0, foe.hp) };
       }
       // 處決技(B-4,74:8130F 榮耀處決):敵 HP≤門檻比例 ➔ 直接擊殺,免對拼
       if ((skSelf.execHp || 0) > 0 && foe.hp > 0 && foe.hp <= Math.ceil(foe.hpMax * skSelf.execHp)) {
@@ -1522,6 +1543,7 @@
       A.buffAtk = 0; A.buffTurns = 0; B.buffAtk = 0; B.buffTurns = 0;
       A.stunTurns = 0; B.stunTurns = 0;
       A.bindLost = 0; B.bindLost = 0; // 束縛即死旗標(88:636F)
+      A.chargeTurns = 0; B.chargeTurns = 0; A.chargeSkill = null; B.chargeSkill = null; // 蓄力狀態(A-5)
       A.regenVal = A.regen || 0; B.regenVal = B.regen || 0;
       const steps = [];
       let winner = null, rounds = 0;
@@ -1739,7 +1761,7 @@
               <label class="flex items-center gap-1 text-[11px] text-muted cursor-pointer"><input type="checkbox" ${sk.alwaysHit ? 'checked' : ''} onchange="forgeSkill('${side}', ${i}, 'alwaysHit', this.checked)" class="w-4 h-4 accent-indigo-500 cursor-pointer" />必中</label>
               <button onclick="forgeDelSkill('${side}', ${i})" class="text-rose-500 hover:text-rose-400 font-bold px-1 text-lg">&times;</button>
             </div>
-            <div class="grid grid-cols-4 md:grid-cols-8 gap-1.5 text-[11px]">
+            <div class="grid grid-cols-4 md:grid-cols-9 gap-1.5 text-[11px]">
               <label class="flex flex-col items-center gap-0.5"><span class="text-muted">CT</span><input type="number" value="${sk.ct || 0}" min="0" onchange="forgeSkill('${side}', ${i}, 'ct', this.value)" class="w-full border border-default rounded px-1 py-1 bg-transparent text-center" /></label>
               <label class="flex flex-col items-center gap-0.5"><span class="text-muted">Atk±</span><input type="number" value="${sk.atkMod || 0}" onchange="forgeSkill('${side}', ${i}, 'atkMod', this.value)" class="w-full border border-default rounded px-1 py-1 bg-transparent text-center" /></label>
               <label class="flex flex-col items-center gap-0.5"><span class="text-muted">×倍</span><input type="number" value="${sk.mult || 1}" min="1" onchange="forgeSkill('${side}', ${i}, 'mult', this.value)" class="w-full border border-default rounded px-1 py-1 bg-transparent text-center" /></label>
@@ -1748,6 +1770,7 @@
               <label class="flex flex-col items-center gap-0.5"><span class="text-muted">回復</span><input type="number" value="${sk.heal || 0}" min="0" onchange="forgeSkill('${side}', ${i}, 'heal', this.value)" class="w-full border border-default rounded px-1 py-1 bg-transparent text-center" /></label>
               <label class="flex flex-col items-center gap-0.5"><span class="text-muted">持續T</span><input type="number" value="${sk.duration || 0}" min="0" onchange="forgeSkill('${side}', ${i}, 'duration', this.value)" class="w-full border border-default rounded px-1 py-1 bg-transparent text-center" /></label>
               <label class="flex flex-col items-center gap-0.5"><span class="text-muted">護盾+</span><input type="number" value="${sk.shieldGain || 0}" min="0" onchange="forgeSkill('${side}', ${i}, 'shieldGain', this.value)" class="w-full border border-default rounded px-1 py-1 bg-transparent text-center" /></label>
+              <label class="flex flex-col items-center gap-0.5"><span class="text-muted">蓄力T</span><input type="number" value="${sk.charge || 0}" min="0" onchange="forgeSkill('${side}', ${i}, 'charge', this.value)" class="w-full border border-default rounded px-1 py-1 bg-transparent text-center" /></label>
             </div>
             <label class="flex flex-col gap-0.5 text-[11px]"><span class="text-muted">⚔️ 特殊判定(B-11:「骰式|lo-hi:效果」,例「1d100|31-65:眩1|66-100:眩2」;效果:眩N/束縛/不眩)</span><input type="text" value="${sk.special || ''}" placeholder="1d100|31-65:眩1|66-100:束縛" onchange="forgeSpecial('${side}', ${i}, this.value)" class="w-full border border-default rounded px-1 py-1 bg-transparent text-center font-mono focus:outline-none" /></label>
           </div>`;
