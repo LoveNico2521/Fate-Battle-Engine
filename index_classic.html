@@ -1266,6 +1266,20 @@
     // 2) 劣勢翻盤:開場 2 回合試探後,基礎 Atk 低於對手(對拼期望輸)→ 開 atkMod 最大技(88:紅美鈴Ⅱ戰烈海王被壓制後開超人)
     // 3) 常態普攻(第一個 atkMod=0/mult=1/無骰式的技);多張同級由上規則自然分序
     function pickBattleSkill(self, foe, round) {
+      // 排程表(A-9,21033:5147F 符卡釋放表):角色卡附「T1 技A,T2 技B…」,按表行動;
+      // 表外回合用普攻(報告明文);表內但不可用(CD/once 用過)➔ 落回確定策略(斬殺/翻盤/常態)——避免排程卡死
+      const sched = Array.isArray(self.schedule) ? self.schedule : null;
+      if (sched && sched.length) {
+        const name = sched[round - 1];
+        if (name) {
+          const bySched = self.skills.find(s => s.name === name && (s.currentCd || 0) === 0 && (s.cost || 0) <= self.hp && (s.oncePerBattle ? !s.usedThisBattle : true) && (s.condHpPct ? self.hp <= self.hpMax * s.condHpPct : true) && (s.condRoundMin ? round >= s.condRoundMin : true));
+          if (bySched) return bySched;
+        }
+        if (round > sched.length) {
+          const normal = self.skills.find(s => (s.atkMod || 0) === 0 && (s.mult || 1) === 1 && !s.dice);
+          return normal || self.skills[0];
+        }
+      }
       const usable = self.skills.filter(s => (s.currentCd || 0) === 0 && (s.cost || 0) <= self.hp && (s.oncePerBattle ? !s.usedThisBattle : true) && (s.condHpPct ? self.hp <= self.hpMax * s.condHpPct : true) && (s.condRoundMin ? round >= s.condRoundMin : true));
       if (!usable.length) return self.skills[0];
       const dmgEst = s => 4 * (s.mult || 1) + (s.dice ? 5 : 0);
@@ -1634,6 +1648,12 @@
       else sk[field] = Math.max(0, Math.floor(Number(value)) || 0);
       saveCombatData(); renderBattleCards();
     }
+    function forgeSchedule(side, value) {
+      const arr = value.split(',').map(x => x.trim()).filter(Boolean);
+      battle[side].schedule = arr.length ? arr : undefined;
+      if (!arr.length) delete battle[side].schedule;
+      saveCombatData();
+    }
     function forgeAddSkill(side) {
       battle[side].skills.push({ id: 'f' + Date.now(), name: '新技能', ct: 0, atkMod: 0, mult: 1, dice: '', cost: 0, counter: 0 });
       saveCombatData(); renderForge(); renderBattleCards();
@@ -1685,6 +1705,7 @@
               <label class="flex flex-col items-center gap-0.5"><span class="text-muted">表位移</span><input type="number" value="${c.injShift || 0}" onchange="forgeActor('${side}', 'injShift', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center" /></label>
               <label class="flex flex-col items-center gap-0.5"><span class="text-muted">表+N</span><input type="number" value="${c.injFlat || 0}" min="0" onchange="forgeActor('${side}', 'injFlat', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center" /></label>
             </div>
+            <label class="flex flex-col gap-1 text-[11px]"><span class="text-muted">📋 排程表(逗號分隔技能名,按回合出卡;表外回合用普攻,如「超人烈海王,Flower star」)</span><textarea rows="1" onchange="forgeSchedule('${side}', this.value)" class="w-full border border-default rounded-lg px-2 py-1.5 bg-transparent text-xs font-mono focus:outline-none">${(c.schedule || []).join(',')}</textarea></label>
             <div class="space-y-2">
               ${(c.skills || []).map(skillRow).join('') || '<div class="text-muted text-center py-2 text-xs">尚無技能</div>'}
               <button onclick="forgeAddSkill('${side}')" class="w-full py-2 border border-dashed border-${color}-500/50 rounded-xl text-xs font-bold text-${color}-400 hover:bg-${color}-500/10 transition">+ 新增技能</button>
