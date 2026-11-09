@@ -1619,12 +1619,16 @@
       }
       // 對拼:守方先擲——88:635F 紅 320 已擲,烈最大 316<320 ➔ 免擲自動失敗
       const rollB = getRnd(100, debugSeq, state);
-      const defVal = foe.atk + (foe.buffAtk || 0) + (skFoe.duration ? 0 : (skFoe.atkMod || 0)) + rollB;
-      const myBase = self.atk + (self.buffAtk || 0) + (skSelf.duration ? 0 : (skSelf.atkMod || 0));
+      // 支援插手(B-7①,88:1000F 幽香魔炮「265+700+60+1d100」):指定回合友方 Atk+固定增幅一次性入對拼值
+      const supSelf = (self.supportBoostRound || 0) === round ? (self.supportBoostAtk || 0) : 0;
+      const supFoe = (foe.supportBoostRound || 0) === round ? (foe.supportBoostAtk || 0) : 0;
+      const supNote = (supSelf || supFoe) ? ` 🤝支援插手${supSelf ? `+${supSelf}` : ''}${supFoe ? `(敵+${supFoe})` : ''}(88:1000F)` : '';
+      let defVal = foe.atk + (foe.buffAtk || 0) + (skFoe.duration ? 0 : (skFoe.atkMod || 0)) + supFoe + rollB;
+      let myBase = self.atk + (self.buffAtk || 0) + (skSelf.duration ? 0 : (skSelf.atkMod || 0)) + supSelf;
       const myMin = myBase + 1, myMax = myBase + 100;
       if (myMax < defVal) {
         const r = settleInjury(self, self.name, foe, skFoe, debugSeq, state);
-        return { ...base, clash: `⚔️對拼 對手先擲 ${foe.atk + (foe.buffAtk || 0) + (skFoe.duration ? 0 : (skFoe.atkMod || 0))}+${rollB}=${defVal},我方上限 ${myMax} 追不上 ➔ 差值大於 100 自動失敗 ${r.clashTail}`, dmg: r.dmg, diceParts: r.diceParts, counterNote: r.counterNote, foeHp: Math.max(0, foe.hp), selfHpAfter: Math.max(0, self.hp) };
+        return { ...base, clash: `⚔️對拼 對手先擲 ${foe.atk + (foe.buffAtk || 0) + (skFoe.duration ? 0 : (skFoe.atkMod || 0)) + supFoe}+${rollB}=${defVal},我方上限 ${myMax} 追不上 ➔ 差值大於 100 自動失敗${supNote} ${r.clashTail}`, dmg: r.dmg, diceParts: r.diceParts, counterNote: r.counterNote, foeHp: Math.max(0, foe.hp), selfHpAfter: Math.max(0, self.hp) };
       }
       let rollA = null, atkVal;
       if (myMin > defVal) {
@@ -1634,8 +1638,8 @@
         atkVal = myBase + rollA;
       }
       const clashMid = rollA === null
-        ? `⚔️對拼 我方下限 ${myMin} 已高於對手 ${defVal} ➔ 免擲自動命中`
-        : `⚔️對拼 ${myBase}+${rollA}=${atkVal} vs ${foe.atk + (foe.buffAtk || 0) + (skFoe.duration ? 0 : (skFoe.atkMod || 0))}+${rollB}=${defVal}`;
+        ? `⚔️對拼 我方下限 ${myMin} 已高於對手 ${defVal} ➔ 免擲自動命中${supNote}`
+        : `⚔️對拼 ${myBase}+${rollA}=${atkVal} vs ${foe.atk + (foe.buffAtk || 0) + (skFoe.duration ? 0 : (skFoe.atkMod || 0)) + supFoe}+${rollB}=${defVal}${supNote}`;
       // 平手裁定(88:634F/639F 同值兩次實演):雙方各擲武藝 1d100 比高低,勝者攻擊成立
       if (atkVal === defVal) {
         const wSelf = getRnd(100, debugSeq, state), wFoe = getRnd(100, debugSeq, state);
@@ -1690,6 +1694,7 @@
       A.moraleVal = 100; B.moraleVal = 100; A.moraleFled = 0; B.moraleFled = 0; // 戰意條(A-6,100 起始)
       A.stunFailStack = 0; B.stunFailStack = 0; // 眩暈未中累計難度(21033:886F)
       A.reviveUsed = 0; B.reviveUsed = 0; // 復活攔截計數(B-5①)
+      A.supportArrived = 0; B.supportArrived = 0; // 支援骰到場旗標(B-7②)
       A.regenVal = A.regen || 0; B.regenVal = B.regen || 0;
       const steps = [];
       let winner = null, rounds = 0, stopped = null;
@@ -1742,12 +1747,31 @@
         if (A.moraleFled) { winner = B; break; }
         if (B.moraleFled) { winner = A; break; }
         // 支援位(炎火村 4865F 援護手式):每回合末對敵固定傷害(隊友不出戰,僅火力支援)
-        const supA = A.supportDmg || 0;
+        // 支援骰門控(B-7②,24688:92F 迟来的支援):supportFromRound 未到不發;supportChance 未到場時每回合 1d100 ≤ 機率 ➔ 到場後常駐
+        const supArrive = c => {
+          if (!c.supportDmg) return false;
+          if ((c.supportFromRound || 0) > 0 && rounds < c.supportFromRound) return false;
+          if ((c.supportChance || 0) > 0 && !c.supportArrived) {
+            const scr = getRnd(100, debugSeq, state);
+            if (scr <= c.supportChance) { c.supportArrived = 1; steps[steps.length - 1].clash += ` 🤝迟来的支援到場!(1d100=${scr}≤${c.supportChance}%,24688:92F)`; }
+            else return false;
+          }
+          return true;
+        };
+        const supA = supArrive(A) ? (A.supportDmg || 0) : 0;
+        const supBv = supArrive(B) ? (B.supportDmg || 0) : 0;
         if (supA > 0 && B.hp > 0) {
           B.hp -= supA;
           const st = steps[steps.length - 1];
           st.clash += ` 🤝支援位追加 ${supA}`;
           st.foeHp = Math.max(0, B.hp);
+        }
+        if (supBv > 0 && A.hp > 0) { // 敵方支援位對稱生效(既有缺漏修正)
+          A.hp -= supBv;
+          const st = steps[steps.length - 1];
+          st.clash += ` 🤝敵方支援位追加 ${supBv}`;
+          st.foeHp = Math.max(0, B.hp);
+          st.selfHpAfter = Math.max(0, A.hp);
         }
         if (A.hp <= 0) {
           const rvA = tryRevive(A, debugSeq, state); // 復活攔截(B-5①)優先於血條推進/判負
@@ -2065,6 +2089,12 @@
             <label class="flex flex-col gap-1 text-[11px]"><span class="text-muted">📋 排程表(逗號分隔技能名,按回合出卡;表外回合用普攻,如「超人烈海王,Flower star」)</span><textarea rows="1" onchange="forgeSchedule('${side}', this.value)" class="w-full border border-default rounded-lg px-2 py-1.5 bg-transparent text-xs font-mono focus:outline-none">${(c.schedule || []).join(',')}</textarea></label>
             <label class="flex flex-col gap-1 text-[11px]"><span class="text-muted">🩹 個人受傷表(B-2,「lo-hi:label:dmg」逗號分隔,需涵蓋 1-10;例「1-2:迴避:0,3-4:小傷:1,5-6:中傷:2,7-8:大傷:3,9:特大傷:4,10:極端」;極端行走 1d2)</span><input type="text" value="${c.injTable || ''}" placeholder="1-2:迴避:0,3-4:小傷:1,5-6:中傷:2,7-8:大傷:3,9:特大傷:4,10:極端" onchange="forgeInjTable('${side}', this.value)" class="w-full border border-default rounded-lg px-2 py-1.5 bg-transparent text-xs font-mono focus:outline-none" /></label>
             <label class="flex flex-col gap-1 text-[11px]"><span class="text-muted">⚙️ 裝備判定(B-6,「門檻:減益:名稱」,例「20:20:假腿」;每回合 1d100<門檻 ➔ 該回合自動失敗+永久 Atk-減益,88:77F/83F)</span><input type="text" value="${c.gear || ''}" placeholder="20:20:假腿" onchange="forgeGear('${side}', this.value)" class="w-full border border-default rounded-lg px-2 py-1.5 bg-transparent text-xs font-mono focus:outline-none" /></label>
+            <div class="flex gap-1.5 text-[11px]">
+              <label class="flex flex-col items-center gap-0.5 flex-1"><span class="text-muted">📣 插手回合</span><input type="number" value="${c.supportBoostRound || 0}" min="0" onchange="forgeActor('${side}', 'supportBoostRound', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center" /></label>
+              <label class="flex flex-col items-center gap-0.5 flex-1"><span class="text-muted">插手值(88:1000F)</span><input type="number" value="${c.supportBoostAtk || 0}" min="0" onchange="forgeActor('${side}', 'supportBoostAtk', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center" /></label>
+              <label class="flex flex-col items-center gap-0.5 flex-1"><span class="text-muted">支援自回合</span><input type="number" value="${c.supportFromRound || 0}" min="0" onchange="forgeActor('${side}', 'supportFromRound', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center" /></label>
+              <label class="flex flex-col items-center gap-0.5 flex-1"><span class="text-muted">支援機率%(24688:92F)</span><input type="number" value="${c.supportChance || 0}" min="0" max="100" onchange="forgeActor('${side}', 'supportChance', this.value)" class="w-full border border-default rounded px-1 py-1.5 bg-transparent text-center" /></label>
+            </div>
             <div class="space-y-2">
               ${(c.skills || []).map(skillRow).join('') || '<div class="text-muted text-center py-2 text-xs">尚無技能</div>'}
               <button onclick="forgeAddSkill('${side}')" class="w-full py-2 border border-dashed border-${color}-500/50 rounded-xl text-xs font-bold text-${color}-400 hover:bg-${color}-500/10 transition">+ 新增技能</button>

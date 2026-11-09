@@ -183,6 +183,9 @@
   S['b59_auto_hp'] = B('40,20,4,40,20,4,40,60', () => { onlyNormal('player'); battle.player.skills = [BATTLE_DEFAULT.player.skills[0], { id: 'xk', name: '俠客行', ct: 0, atkMod: 60, mult: 1, dice: '', cost: 0, counter: 0, autoHpPct: 0.5 }]; battle.player.hp = 8; battle.enemy.skills = [BATTLE_DEFAULT.enemy.skills[0]]; renderBattleCards(); }); // HP 閾值自動技(B-5②,2044F 俠客行):卡面 hp=8 為上限(修復後語義),受擊 8→6→4 ≤ 8×50% ➔ R3 跳過策略強制出俠客行
   S['b60_gear_fail'] = B('10,2,80,40,60', () => { onlyNormal('player'); onlyNormal('enemy'); battle.player.gear = '20:20:假腿'; renderBattleCards(); }); // 裝備判定(B-6,77F 假腿):R1 擲 10<20 ➔ ⚙️該回合自動失敗+永久 Atk-20(216→196);R2 擲 80 通過,攻擊值 196 落空
   S['b61_gear_pass'] = B('80,40,60', () => { onlyNormal('player'); onlyNormal('enemy'); battle.player.gear = '20:20:假腿'; renderBattleCards(); }); // 裝備判定通過:R1 擲 80≥20 ➔ 無 gear 行,正常對拼命中
+  S['b62_support_boost'] = B('40,8,60,8', () => { onlyNormal('player'); battle.player.skills = [SUPERSKILL(), BATTLE_DEFAULT.player.skills[0]]; battle.player.supportBoostRound = 2; battle.player.supportBoostAtk = 700; battle.enemy.skills = [BATTLE_DEFAULT.enemy.skills[0]]; battle.enemy.hp = 99; renderBattleCards(); }); // 支援插手(B-7①,1000F 幽香魔炮):R2 支援+700 入對拼值(216+700+60=976 起跳)免擲命中
+  S['b63_support_chance'] = B('40,2,40,2,50', () => { onlyNormal('player'); battle.player.atk = 300; battle.player.supportDmg = 3; battle.player.supportFromRound = 2; battle.player.supportChance = 50; battle.enemy.skills = [BATTLE_DEFAULT.enemy.skills[0]]; battle.enemy.atk = 5; renderBattleCards(); }); // 機率型支援(B-7②,92F 迟来的支援):R1 未到支援自回合不發;R2 擲 50≤50 ➔ 🤝到場!支援位 3 起效
+  S['b64_foe_support'] = B('40,8', () => { onlyNormal('player'); battle.enemy.skills = [BATTLE_DEFAULT.enemy.skills[0]]; battle.enemy.supportDmg = 2; renderBattleCards(); }); // 敵方支援位對稱生效:R1 我方命中後 🤝敵方支援位追加 2(烈海王 HP 17→15)
   // 還原掛鉤
   window.showToast = origToast;
   navigator.clipboard.writeText = origWrite;
